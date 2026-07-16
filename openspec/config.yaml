@@ -1,13 +1,18 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Tech stack: Swift, SwiftUI, iOS 17+
+  Architecture: local Swift Packages (e.g. SecureCrypto) + app target
+  Testing: strict TDD — red → green → refactor for all new behavior
+  Task ordering: write failing tests before implementation; no "tests at the end" sections
+  Spec scenarios (WHEN/THEN) are the source of truth for test cases
+  See openspec/specs/development-practices/spec.md for full policy
+
+rules:
+  tasks:
+    - Every implementation task MUST be preceded by a "Write failing tests" task in the same section
+    - Do NOT group tests in a trailing "Tests" section; interleave test-first with implementation
+    - Map OpenSpec WHEN/THEN scenarios to concrete XCTest cases in the test task description
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

@@ -65,6 +65,7 @@
 			);
 			name = superSecureNotes;
 			packageProductDependencies = (
+				AA611E7730094D0800F15876 /* SecureCrypto */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -95,6 +96,9 @@
 			mainGroup = AA611E5F30094D0300F15876;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
+			packageReferences = (
+				AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */,
+			);
 			productRefGroup = AA611E6930094D0300F15876 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -332,6 +336,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SecureCrypto;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA611E7730094D0800F15876 /* SecureCrypto */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SecureCrypto;
+			package = AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA611E6030094D0300F15876 /* Project object */;
 }
