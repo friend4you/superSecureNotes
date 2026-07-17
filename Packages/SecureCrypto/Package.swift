@@ -16,7 +16,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SecureCrypto"
+            name: "SecureCrypto",
+            resources: [
+                .process("Resources"),
+            ]
         ),
         .testTarget(
             name: "SecureCryptoTests",

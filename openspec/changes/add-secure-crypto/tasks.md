@@ -19,13 +19,13 @@
 
 ## 3. BIP39 Mnemonic
 
-- [ ] 3.1 Bundle English BIP39 wordlist (2048 words)
-- [ ] 3.2 Write failing tests: mnemonic generation produces 12 valid English words from 128-bit entropy
-- [ ] 3.3 Implement mnemonic generation from 128-bit entropy (12 words)
-- [ ] 3.4 Write failing tests: mnemonic validation accepts valid phrase, rejects bad checksum and wrong word count
-- [ ] 3.5 Implement mnemonic validation with checksum verification
-- [ ] 3.6 Write failing tests: mnemonic-to-entropy decoding roundtrip
-- [ ] 3.7 Implement mnemonic-to-entropy decoding
+- [x] 3.1 Bundle English BIP39 wordlist (2048 words)
+- [x] 3.2 Write failing tests: mnemonic generation produces 12 valid English words from 128-bit entropy
+- [x] 3.3 Implement mnemonic generation from 128-bit entropy (12 words)
+- [x] 3.4 Write failing tests: mnemonic validation accepts valid phrase, rejects bad checksum and wrong word count
+- [x] 3.5 Implement mnemonic validation with checksum verification
+- [x] 3.6 Write failing tests: mnemonic-to-entropy decoding roundtrip
+- [x] 3.7 Implement mnemonic-to-entropy decoding
 
 ## 4. Vault Header Format
 
