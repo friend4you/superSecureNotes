@@ -6,6 +6,7 @@ let package = Package(
     name: "SecureCrypto",
     platforms: [
         .iOS(.v17),
+        .macOS(.v13),
     ],
     products: [
         .library(

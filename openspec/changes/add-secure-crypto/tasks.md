@@ -6,16 +6,16 @@
 
 ## 2. Core Crypto Primitives
 
-- [ ] 2.1 Write failing tests: PBKDF2 derivation with known test vectors
-- [ ] 2.2 Implement `PasswordKeyDeriving` protocol and `PBKDF2KeyDeriver` (CommonCrypto, 600k iterations, SHA256)
-- [ ] 2.3 Write failing tests: HKDF recovery key derivation from 128-bit entropy
-- [ ] 2.4 Implement `RecoveryKeyDeriving` protocol and `HKDFRecoveryKeyDeriver` (CryptoKit)
-- [ ] 2.5 Write failing tests: ChaChaPoly encrypt/decrypt roundtrip and tamper rejection
-- [ ] 2.6 Implement ChaChaPoly `encrypt`/`decrypt` helpers with random 12-byte nonce
-- [ ] 2.7 Write failing tests: key wrap/unwrap roundtrip and wrong-key failure
-- [ ] 2.8 Implement `wrapKey`/`unwrapKey` for 256-bit key envelope encryption
-- [ ] 2.9 Write failing tests: `generateSymmetricKey()` returns 256-bit key with full entropy
-- [ ] 2.10 Implement `generateSymmetricKey()` using secure random bytes
+- [x] 2.1 Write failing tests: PBKDF2 derivation with known test vectors
+- [x] 2.2 Implement `PasswordKeyDeriving` protocol and `PBKDF2KeyDeriver` (CommonCrypto, 600k iterations, SHA256)
+- [x] 2.3 Write failing tests: HKDF recovery key derivation from 128-bit entropy
+- [x] 2.4 Implement `RecoveryKeyDeriving` protocol and `HKDFRecoveryKeyDeriver` (CryptoKit)
+- [x] 2.5 Write failing tests: ChaChaPoly encrypt/decrypt roundtrip and tamper rejection
+- [x] 2.6 Implement ChaChaPoly `encrypt`/`decrypt` helpers with random 12-byte nonce
+- [x] 2.7 Write failing tests: key wrap/unwrap roundtrip and wrong-key failure
+- [x] 2.8 Implement `wrapKey`/`unwrapKey` for 256-bit key envelope encryption
+- [x] 2.9 Write failing tests: `generateSymmetricKey()` returns 256-bit key with full entropy
+- [x] 2.10 Implement `generateSymmetricKey()` using secure random bytes
 
 ## 3. BIP39 Mnemonic
 
