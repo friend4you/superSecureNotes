@@ -27,7 +27,22 @@ public struct VaultHeader: Equatable, Sendable {
     }
 
     public func serialized() throws -> Data {
-        throw SecureCryptoError.invalidInput("VaultHeader serialization is not implemented.")
+        guard salt.count == Self.saltLength else {
+            throw SecureCryptoError.invalidInput("Salt must be exactly \(Self.saltLength) bytes.")
+        }
+        guard iterations >= 0, iterations <= Int(UInt32.max) else {
+            throw SecureCryptoError.invalidInput("Iterations must fit in a UInt32.")
+        }
+
+        var buffer = ByteBuffer()
+        buffer.appendFixedBytes(Data(Self.magic))
+        buffer.appendUInt8(Self.formatVersion)
+        buffer.appendUInt8(kdfID)
+        buffer.appendFixedBytes(salt)
+        buffer.appendUInt32BE(UInt32(iterations))
+        try buffer.appendLengthPrefixedBytes(wrappedUDKPassword)
+        try buffer.appendLengthPrefixedBytes(wrappedUDKRecovery)
+        return buffer.bytes
     }
 
     public static func parse(_ data: Data) throws -> VaultHeader {
