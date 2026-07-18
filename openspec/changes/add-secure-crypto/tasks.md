@@ -37,7 +37,7 @@
 
 ## 5. Vault Lifecycle
 
-- [ ] 5.1 Write failing tests: vault create → unlock (password) → recover (mnemonic) → same UDK
+- [x] 5.1 Write failing tests: vault create → unlock (password) → recover (mnemonic) → same UDK
 - [ ] 5.2 Implement `createVault(password:)` — generate UDK, mnemonic, both wraps, return header + phrase
 - [ ] 5.3 Implement `unlockVault(header:password:)` — derive KEK, unwrap password wrap, return UDK
 - [ ] 5.4 Implement `recoverVault(header:mnemonic:)` — validate phrase, derive recovery KEK, unwrap, return UDK
