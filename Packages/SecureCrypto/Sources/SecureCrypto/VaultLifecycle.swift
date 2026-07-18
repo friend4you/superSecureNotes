@@ -52,5 +52,10 @@ public func unlockVault(header: VaultHeader, password: String) throws -> Symmetr
 }
 
 public func recoverVault(header: VaultHeader, mnemonic: [String]) throws -> SymmetricKey {
-    throw SecureCryptoError.invalidInput("Vault recovery is not implemented.")
+    let recoveryDeriver = HKDFRecoveryKeyDeriver()
+    let keyWrapper = ChaChaPolyKeyWrapper()
+
+    let recoveryEntropy = try BIP39Mnemonic.validate(mnemonic)
+    let recoveryKEK = try recoveryDeriver.deriveKey(entropy: recoveryEntropy)
+    return try keyWrapper.unwrapKey(header.wrappedUDKRecovery, with: recoveryKEK)
 }
