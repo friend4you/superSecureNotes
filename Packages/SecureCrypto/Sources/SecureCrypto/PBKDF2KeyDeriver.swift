@@ -1,14 +1,7 @@
 import CommonCrypto
 import CryptoKit
 import Foundation
-
-public protocol PasswordKeyDeriving: Sendable {
-    var algorithmID: UInt8 { get }
-    var iterations: Int { get }
-
-    func deriveKey(password: String, salt: Data) throws -> SymmetricKey
-    func serializeParameters(salt: Data) throws -> Data
-}
+import SecureCryptoProtocol
 
 public struct PBKDF2KeyDeriver: PasswordKeyDeriving {
     public static let defaultIterations = 600_000

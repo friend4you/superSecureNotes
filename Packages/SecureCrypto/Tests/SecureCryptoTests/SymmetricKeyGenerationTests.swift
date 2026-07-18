@@ -4,6 +4,13 @@ import XCTest
 @testable import SecureCrypto
 
 final class SymmetricKeyGenerationTests: XCTestCase {
+    func testCryptoKitKeyGeneratorConformsToSymmetricKeyGenerating() {
+        let generator = CryptoKitKeyGenerator()
+        let key = generator.generateSymmetricKey()
+
+        XCTAssertEqual(key.bitCount, 256)
+    }
+
     func testGenerateSymmetricKeyReturns256BitKey() {
         let key = generateSymmetricKey()
 

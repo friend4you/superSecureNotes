@@ -13,13 +13,25 @@ let package = Package(
             name: "SecureCrypto",
             targets: ["SecureCrypto"]
         ),
+        .library(
+            name: "SecureCryptoProtocol",
+            targets: ["SecureCryptoProtocol"]
+        ),
     ],
     targets: [
         .target(
-            name: "SecureCrypto",
+            name: "SecureCryptoProtocol",
             resources: [
                 .process("Resources"),
             ]
+        ),
+        .target(
+            name: "SecureCrypto",
+            dependencies: ["SecureCryptoProtocol"]
+        ),
+        .testTarget(
+            name: "SecureCryptoProtocolTests",
+            dependencies: ["SecureCryptoProtocol"]
         ),
         .testTarget(
             name: "SecureCryptoTests",

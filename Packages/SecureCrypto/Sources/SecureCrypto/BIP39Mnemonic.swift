@@ -1,11 +1,14 @@
 import CryptoKit
 import Foundation
+import SecureCryptoProtocol
 
-public enum BIP39Mnemonic {
-    public static let wordCount = 12
-    public static let entropyLength = 16
+public struct BIP39MnemonicEncoder: MnemonicEncoding {
+    public let wordCount = 12
+    public let entropyLength = 16
 
-    public static func words(from entropy: Data) throws -> [String] {
+    public init() {}
+
+    public func words(from entropy: Data) throws -> [String] {
         guard entropy.count == entropyLength else {
             throw SecureCryptoError.invalidInput("Mnemonic entropy must be exactly 16 bytes.")
         }
@@ -17,11 +20,11 @@ public enum BIP39Mnemonic {
         return try words(fromBits: combinedBits)
     }
 
-    public static func validate(_ words: [String]) throws -> Data {
+    public func validate(_ words: [String]) throws -> Data {
         try entropy(from: words)
     }
 
-    public static func entropy(from words: [String]) throws -> Data {
+    public func entropy(from words: [String]) throws -> Data {
         guard words.count == wordCount else {
             throw SecureCryptoError.invalidInput("Mnemonic must contain exactly 12 words.")
         }
@@ -52,7 +55,7 @@ public enum BIP39Mnemonic {
         return entropy
     }
 
-    private static func words(fromBits bits: [Bool]) throws -> [String] {
+    private func words(fromBits bits: [Bool]) throws -> [String] {
         guard bits.count == wordCount * 11 else {
             throw SecureCryptoError.decodingFailed("Invalid mnemonic bit length.")
         }
@@ -72,7 +75,7 @@ public enum BIP39Mnemonic {
         return words
     }
 
-    private static func entropyBits(from data: Data) -> [Bool] {
+    private func entropyBits(from data: Data) -> [Bool] {
         var result: [Bool] = []
         result.reserveCapacity(data.count * 8)
 
@@ -85,13 +88,13 @@ public enum BIP39Mnemonic {
         return result
     }
 
-    private static func indexBits(from index: Int) -> [Bool] {
+    private func indexBits(from index: Int) -> [Bool] {
         (0 ..< 11).reversed().map { shift in
             (index >> shift) & 1 == 1
         }
     }
 
-    private static func data(from bits: [Bool]) -> Data {
+    private func data(from bits: [Bool]) -> Data {
         var bytes = [UInt8]()
         bytes.reserveCapacity(bits.count / 8)
 
@@ -106,5 +109,24 @@ public enum BIP39Mnemonic {
         }
 
         return Data(bytes)
+    }
+}
+
+public enum BIP39Mnemonic {
+    private static let encoder = BIP39MnemonicEncoder()
+
+    public static let wordCount = 12
+    public static let entropyLength = 16
+
+    public static func words(from entropy: Data) throws -> [String] {
+        try encoder.words(from: entropy)
+    }
+
+    public static func validate(_ words: [String]) throws -> Data {
+        try encoder.validate(words)
+    }
+
+    public static func entropy(from words: [String]) throws -> Data {
+        try encoder.entropy(from: words)
     }
 }

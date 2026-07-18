@@ -4,6 +4,28 @@ import XCTest
 @testable import SecureCrypto
 
 final class ChaChaPolyCipherTests: XCTestCase {
+    func testChaChaPolyCipherConformsToSymmetricCipher() throws {
+        let cipher = ChaChaPolyCipher()
+        let key = SymmetricKey(size: .bits256)
+        let plaintext = Data("protocol impl".utf8)
+
+        let ciphertext = try cipher.encrypt(plaintext, key: key)
+        let decrypted = try cipher.decrypt(ciphertext, key: key)
+
+        XCTAssertEqual(decrypted, plaintext)
+    }
+
+    func testChaChaPolyCipherRejectsTamperedCiphertext() throws {
+        let cipher = ChaChaPolyCipher()
+        let key = SymmetricKey(size: .bits256)
+        var ciphertext = try cipher.encrypt(Data("tamper".utf8), key: key)
+        ciphertext[ciphertext.count - 1] ^= 0xFF
+
+        XCTAssertThrowsError(try cipher.decrypt(ciphertext, key: key)) { error in
+            XCTAssertEqual(error as? SecureCryptoError, .authenticationFailed)
+        }
+    }
+
     func testEncryptDecryptRoundtrip() throws {
         let key = SymmetricKey(size: .bits256)
         let plaintext = Data("super secure note body".utf8)

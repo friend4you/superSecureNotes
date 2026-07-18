@@ -1,20 +1,20 @@
 import Foundation
 
-enum BIP39Wordlist {
-    static let wordCount = 2048
+public enum BIP39Wordlist {
+    public static let wordCount = 2048
     private static let loader = Loader()
 
-    static var words: [String] { loader.words }
+    public static var words: [String] { loader.words }
 
-    static func contains(_ word: String) -> Bool {
+    public static func contains(_ word: String) -> Bool {
         loader.index(of: word) != nil
     }
 
-    static func word(at index: Int) -> String {
+    public static func word(at index: Int) -> String {
         loader.words[index]
     }
 
-    static func index(of word: String) -> Int? {
+    public static func index(of word: String) -> Int? {
         loader.index(of: word)
     }
 
