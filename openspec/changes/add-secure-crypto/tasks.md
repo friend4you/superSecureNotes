@@ -29,10 +29,10 @@
 
 ## 4. Vault Header Format
 
-- [ ] 4.1 Define `VaultHeader` model (salt, kdf params, both wrapped UDK blobs)
-- [ ] 4.2 Write failing tests: vault header serialize → deserialize roundtrip
+- [x] 4.1 Define `VaultHeader` model (salt, kdf params, both wrapped UDK blobs)
+- [x] 4.2 Write failing tests: vault header serialize → deserialize roundtrip
 - [ ] 4.3 Implement binary serialization (magic `SSNV`, version, length-prefixed fields)
-- [ ] 4.4 Write failing tests: vault header rejects invalid magic and unsupported version
+- [x] 4.4 Write failing tests: vault header rejects invalid magic and unsupported version
 - [ ] 4.5 Implement binary deserialization with magic/version validation
 
 ## 5. Vault Lifecycle
