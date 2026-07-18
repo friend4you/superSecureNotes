@@ -46,6 +46,30 @@ public struct VaultHeader: Equatable, Sendable {
     }
 
     public static func parse(_ data: Data) throws -> VaultHeader {
-        throw SecureCryptoError.invalidInput("VaultHeader parsing is not implemented.")
+        var reader = ByteBuffer(data: data)
+        try reader.expectMagic(Self.magic)
+
+        let version = try reader.readUInt8()
+        guard version == Self.formatVersion else {
+            throw SecureCryptoError.unsupportedVersion(version)
+        }
+
+        let kdfID = try reader.readUInt8()
+        let salt = try reader.readFixedBytes(count: Self.saltLength)
+        let iterations = Int(try reader.readUInt32BE())
+        let wrappedUDKPassword = try reader.readLengthPrefixedBytes()
+        let wrappedUDKRecovery = try reader.readLengthPrefixedBytes()
+
+        guard reader.isAtEnd else {
+            throw SecureCryptoError.invalidInput("Vault header contains trailing bytes.")
+        }
+
+        return VaultHeader(
+            kdfID: kdfID,
+            salt: salt,
+            iterations: iterations,
+            wrappedUDKPassword: wrappedUDKPassword,
+            wrappedUDKRecovery: wrappedUDKRecovery
+        )
     }
 }

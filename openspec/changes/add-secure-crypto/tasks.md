@@ -33,7 +33,7 @@
 - [x] 4.2 Write failing tests: vault header serialize → deserialize roundtrip
 - [x] 4.3 Implement binary serialization (magic `SSNV`, version, length-prefixed fields)
 - [x] 4.4 Write failing tests: vault header rejects invalid magic and unsupported version
-- [ ] 4.5 Implement binary deserialization with magic/version validation
+- [x] 4.5 Implement binary deserialization with magic/version validation
 
 ## 5. Vault Lifecycle
 
