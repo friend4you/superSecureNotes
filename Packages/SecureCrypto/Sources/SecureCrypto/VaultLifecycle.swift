@@ -44,7 +44,11 @@ public func createVault(password: String) throws -> VaultCreationResult {
 }
 
 public func unlockVault(header: VaultHeader, password: String) throws -> SymmetricKey {
-    throw SecureCryptoError.invalidInput("Vault unlock is not implemented.")
+    let passwordDeriver = PBKDF2KeyDeriver(iterations: header.iterations)
+    let keyWrapper = ChaChaPolyKeyWrapper()
+
+    let passwordKEK = try passwordDeriver.deriveKey(password: password, salt: header.salt)
+    return try keyWrapper.unwrapKey(header.wrappedUDKPassword, with: passwordKEK)
 }
 
 public func recoverVault(header: VaultHeader, mnemonic: [String]) throws -> SymmetricKey {
