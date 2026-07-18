@@ -58,8 +58,8 @@
 
 ## 7. Note Encryption Helpers
 
-- [ ] 7.1 Write failing tests: FEK wrap/unwrap roundtrip with UDK
-- [ ] 7.2 Implement `wrapFEK(fek:udk:)` and `unwrapFEK(wrappedFek:udk:)`
-- [ ] 7.3 Write failing tests: payload encrypt → decrypt roundtrip with JSON body and attachments
-- [ ] 7.4 Implement `encryptPayload(_:fek:)` — JSON encode + ChaChaPoly encrypt
-- [ ] 7.5 Implement `decryptPayload(_:fek:)` — ChaChaPoly decrypt + JSON decode
+- [x] 7.1 Write failing tests: FEK wrap/unwrap roundtrip with UDK
+- [x] 7.2 Implement `wrapFEK(fek:udk:)` and `unwrapFEK(wrappedFek:udk:)`
+- [x] 7.3 Write failing tests: payload encrypt → decrypt roundtrip with JSON body and attachments
+- [x] 7.4 Implement `encryptPayload(_:fek:)` — JSON encode + ChaChaPoly encrypt
+- [x] 7.5 Implement `decryptPayload(_:fek:)` — ChaChaPoly decrypt + JSON decode
