@@ -46,15 +46,15 @@
 
 ## 6. Note File Format
 
-- [ ] 6.1 Define `NoteMetadata` model (note_id, title, created_at, updated_at, attachment_count, attachments_total_size)
-- [ ] 6.2 Define `NotePayload` Codable model (body, attachments array)
-- [ ] 6.3 Write failing tests: plaintext metadata serialize → parse roundtrip via `NoteMetadata.fromNoteFile`
-- [ ] 6.4 Implement plaintext metadata serialization (length-prefixed binary, magic `SSNT`)
-- [ ] 6.5 Implement `NoteMetadata.fromNoteFile(data:)` parser (no decryption required)
-- [ ] 6.6 Write failing tests: note file assembly → section parser roundtrip
-- [ ] 6.7 Implement note file assembly helper (metadata + wrapped FEK + encrypted payload → `.note` bytes)
-- [ ] 6.8 Write failing tests: note file rejects invalid magic and unsupported version
-- [ ] 6.9 Implement note file section parser (split blob into metadata, wrapped FEK, encrypted payload)
+- [x] 6.1 Define `NoteMetadata` model (note_id, title, created_at, updated_at, attachment_count, attachments_total_size)
+- [x] 6.2 Define `NotePayload` Codable model (body, attachments array)
+- [x] 6.3 Write failing tests: plaintext metadata serialize → parse roundtrip via `NoteMetadata.fromNoteFile`
+- [x] 6.4 Implement plaintext metadata serialization (length-prefixed binary, magic `SSNT`)
+- [x] 6.5 Implement `NoteMetadata.fromNoteFile(data:)` parser (no decryption required)
+- [x] 6.6 Write failing tests: note file assembly → section parser roundtrip
+- [x] 6.7 Implement note file assembly helper (metadata + wrapped FEK + encrypted payload → `.note` bytes)
+- [x] 6.8 Write failing tests: note file rejects invalid magic and unsupported version
+- [x] 6.9 Implement note file section parser (split blob into metadata, wrapped FEK, encrypted payload)
 
 ## 7. Note Encryption Helpers
 
