@@ -59,3 +59,11 @@ public func recoverVault(header: VaultHeader, mnemonic: [String]) throws -> Symm
     let recoveryKEK = try recoveryDeriver.deriveKey(entropy: recoveryEntropy)
     return try keyWrapper.unwrapKey(header.wrappedUDKRecovery, with: recoveryKEK)
 }
+
+public func changePassword(
+    header: VaultHeader,
+    oldPassword: String,
+    newPassword: String
+) throws -> VaultHeader {
+    throw SecureCryptoError.invalidInput("Password change is not implemented.")
+}
