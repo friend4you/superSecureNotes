@@ -42,7 +42,7 @@
 - [x] 5.3 Implement `unlockVault(header:password:)` — derive KEK, unwrap password wrap, return UDK
 - [x] 5.4 Implement `recoverVault(header:mnemonic:)` — validate phrase, derive recovery KEK, unwrap, return UDK
 - [x] 5.5 Write failing tests: password change preserves UDK and note decryptability; wrong old password rejected
-- [ ] 5.6 Implement `changePassword(header:oldPassword:newPassword:)` — re-wrap UDK, return updated header
+- [x] 5.6 Implement `changePassword(header:oldPassword:newPassword:)` — re-wrap UDK, return updated header
 
 ## 6. Note File Format
 

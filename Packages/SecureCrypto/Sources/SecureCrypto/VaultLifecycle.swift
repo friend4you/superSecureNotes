@@ -65,5 +65,22 @@ public func changePassword(
     oldPassword: String,
     newPassword: String
 ) throws -> VaultHeader {
-    throw SecureCryptoError.invalidInput("Password change is not implemented.")
+    guard !newPassword.isEmpty else {
+        throw SecureCryptoError.invalidInput("Password must not be empty.")
+    }
+
+    let passwordDeriver = PBKDF2KeyDeriver(iterations: header.iterations)
+    let keyWrapper = ChaChaPolyKeyWrapper()
+
+    let udk = try unlockVault(header: header, password: oldPassword)
+    let newPasswordKEK = try passwordDeriver.deriveKey(password: newPassword, salt: header.salt)
+    let wrappedUDKPassword = try keyWrapper.wrapKey(udk, with: newPasswordKEK)
+
+    return VaultHeader(
+        kdfID: header.kdfID,
+        salt: header.salt,
+        iterations: header.iterations,
+        wrappedUDKPassword: wrappedUDKPassword,
+        wrappedUDKRecovery: header.wrappedUDKRecovery
+    )
 }
