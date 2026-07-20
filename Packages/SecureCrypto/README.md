@@ -16,6 +16,26 @@ SecureCryptoProtocol
     └── CryptoKit (type references only)
 ```
 
+### Source folders
+
+```
+Sources/SecureCrypto/
+├── Core/           SecureCrypto.swift (re-export)
+├── Symmetric/      ChaChaPoly, key wrapping, symmetric key generation
+├── KDF/            PBKDF2, HKDF
+├── Identity/       Curve25519 key pair, UDK identity wrap/unwrap
+├── Mnemonic/       BIP39 mnemonic encoding
+├── Vault/          vault.meta format, lifecycle (create/unlock/recover)
+└── Note/           .note format, payload encryption
+
+Sources/SecureCryptoProtocol/
+├── Protocols/      crypto abstraction protocols
+├── Shared/         ByteBuffer, SecureCryptoError
+└── Mnemonic/       BIP39Wordlist + english.txt resource
+
+Tests/ mirror the same domain folders per target.
+```
+
 ## Import guidance
 
 | Consumer | Import | Why |

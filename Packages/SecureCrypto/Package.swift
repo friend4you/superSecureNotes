@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "SecureCryptoProtocol",
             resources: [
-                .process("Resources"),
+                .process("Mnemonic/Resources"),
             ]
         ),
         .target(
