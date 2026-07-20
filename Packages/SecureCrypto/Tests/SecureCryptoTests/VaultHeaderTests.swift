@@ -3,20 +3,38 @@ import XCTest
 @testable import SecureCrypto
 
 final class VaultHeaderTests: XCTestCase {
-    func testSerializeDeserializeRoundtrip() throws {
-        let header = makeSampleHeader()
+    func testSerializeDeserializeRoundtripV1() throws {
+        let header = makeSampleV1Header()
 
         let data = try header.serialized()
         let parsed = try VaultHeader.parse(data)
 
         XCTAssertEqual(parsed, header)
+        XCTAssertFalse(parsed.hasIdentity)
     }
 
-    func testSerializedBytesStartWithMagicAndVersion() throws {
-        let data = try makeSampleHeader().serialized()
+    func testSerializeDeserializeRoundtripV2() throws {
+        let header = makeSampleV2Header()
+
+        let data = try header.serialized()
+        let parsed = try VaultHeader.parse(data)
+
+        XCTAssertEqual(parsed, header)
+        XCTAssertTrue(parsed.hasIdentity)
+    }
+
+    func testV1SerializedBytesStartWithMagicAndVersion() throws {
+        let data = try makeSampleV1Header().serialized()
 
         XCTAssertEqual(data.prefix(4), Data(VaultHeader.magic))
-        XCTAssertEqual(data[4], VaultHeader.formatVersion)
+        XCTAssertEqual(data[4], VaultHeader.formatVersionV1)
+    }
+
+    func testV2SerializedBytesStartWithMagicAndVersion() throws {
+        let data = try makeSampleV2Header().serialized()
+
+        XCTAssertEqual(data.prefix(4), Data(VaultHeader.magic))
+        XCTAssertEqual(data[4], VaultHeader.formatVersionV2)
     }
 
     func testRejectsInvalidMagic() {
@@ -46,13 +64,38 @@ final class VaultHeaderTests: XCTestCase {
         }
     }
 
-    private func makeSampleHeader() -> VaultHeader {
+    func testV1HeaderRejectsTrailingBytes() throws {
+        var data = try makeSampleV1Header().serialized()
+        data.append(0xFF)
+
+        XCTAssertThrowsError(try VaultHeader.parse(data)) { error in
+            XCTAssertEqual(
+                error as? SecureCryptoError,
+                .invalidInput("Vault header contains trailing bytes.")
+            )
+        }
+    }
+
+    private func makeSampleV1Header() -> VaultHeader {
         VaultHeader(
             kdfID: PBKDF2KeyDeriver().algorithmID,
             salt: Data(repeating: 0xAA, count: VaultHeader.saltLength),
             iterations: PBKDF2KeyDeriver.defaultIterations,
             wrappedUDKPassword: Data(repeating: 0x01, count: 60),
             wrappedUDKRecovery: Data(repeating: 0x02, count: 60)
+        )
+    }
+
+    private func makeSampleV2Header() -> VaultHeader {
+        VaultHeader(
+            kdfID: PBKDF2KeyDeriver().algorithmID,
+            salt: Data(repeating: 0xAA, count: VaultHeader.saltLength),
+            iterations: PBKDF2KeyDeriver.defaultIterations,
+            wrappedUDKPassword: Data(repeating: 0x01, count: 60),
+            wrappedUDKRecovery: Data(repeating: 0x02, count: 60),
+            identityAlgorithmID: Curve25519KeyPairGenerator.algorithmID,
+            identityPublicKey: Data(repeating: 0x11, count: VaultHeader.identityPublicKeyLength),
+            wrappedIdentityPrivateKey: Data(repeating: 0x22, count: 60)
         )
     }
 }

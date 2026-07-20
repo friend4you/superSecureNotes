@@ -12,6 +12,16 @@ public struct VaultCreationResult: Equatable, Sendable {
     }
 }
 
+public struct VaultUnlockResult: Sendable {
+    public let udk: SymmetricKey
+    public let header: VaultHeader
+
+    public init(udk: SymmetricKey, header: VaultHeader) {
+        self.udk = udk
+        self.header = header
+    }
+}
+
 public func createVault(password: String) throws -> VaultCreationResult {
     guard !password.isEmpty else {
         throw SecureCryptoError.invalidInput("Password must not be empty.")
@@ -32,32 +42,39 @@ public func createVault(password: String) throws -> VaultCreationResult {
     let wrappedUDKPassword = try keyWrapper.wrapKey(udk, with: passwordKEK)
     let wrappedUDKRecovery = try keyWrapper.wrapKey(udk, with: recoveryKEK)
 
-    let header = VaultHeader(
+    let header = try makeVaultHeaderWithIdentity(
         kdfID: passwordDeriver.algorithmID,
         salt: salt,
         iterations: passwordDeriver.iterations,
         wrappedUDKPassword: wrappedUDKPassword,
-        wrappedUDKRecovery: wrappedUDKRecovery
+        wrappedUDKRecovery: wrappedUDKRecovery,
+        udk: udk
     )
 
     return VaultCreationResult(header: header, mnemonic: mnemonic)
 }
 
-public func unlockVault(header: VaultHeader, password: String) throws -> SymmetricKey {
+public func unlockVault(header: VaultHeader, password: String) throws -> VaultUnlockResult {
     let passwordDeriver = PBKDF2KeyDeriver(iterations: header.iterations)
     let keyWrapper = ChaChaPolyKeyWrapper()
 
     let passwordKEK = try passwordDeriver.deriveKey(password: password, salt: header.salt)
-    return try keyWrapper.unwrapKey(header.wrappedUDKPassword, with: passwordKEK)
+    let udk = try keyWrapper.unwrapKey(header.wrappedUDKPassword, with: passwordKEK)
+    let upgradedHeader = try upgradeHeaderWithIdentity(header, udk: udk)
+
+    return VaultUnlockResult(udk: udk, header: upgradedHeader)
 }
 
-public func recoverVault(header: VaultHeader, mnemonic: [String]) throws -> SymmetricKey {
+public func recoverVault(header: VaultHeader, mnemonic: [String]) throws -> VaultUnlockResult {
     let recoveryDeriver = HKDFRecoveryKeyDeriver()
     let keyWrapper = ChaChaPolyKeyWrapper()
 
     let recoveryEntropy = try BIP39Mnemonic.validate(mnemonic)
     let recoveryKEK = try recoveryDeriver.deriveKey(entropy: recoveryEntropy)
-    return try keyWrapper.unwrapKey(header.wrappedUDKRecovery, with: recoveryKEK)
+    let udk = try keyWrapper.unwrapKey(header.wrappedUDKRecovery, with: recoveryKEK)
+    let upgradedHeader = try upgradeHeaderWithIdentity(header, udk: udk)
+
+    return VaultUnlockResult(udk: udk, header: upgradedHeader)
 }
 
 public func changePassword(
@@ -72,15 +89,18 @@ public func changePassword(
     let passwordDeriver = PBKDF2KeyDeriver(iterations: header.iterations)
     let keyWrapper = ChaChaPolyKeyWrapper()
 
-    let udk = try unlockVault(header: header, password: oldPassword)
+    let unlockResult = try unlockVault(header: header, password: oldPassword)
     let newPasswordKEK = try passwordDeriver.deriveKey(password: newPassword, salt: header.salt)
-    let wrappedUDKPassword = try keyWrapper.wrapKey(udk, with: newPasswordKEK)
+    let wrappedUDKPassword = try keyWrapper.wrapKey(unlockResult.udk, with: newPasswordKEK)
 
     return VaultHeader(
-        kdfID: header.kdfID,
-        salt: header.salt,
-        iterations: header.iterations,
+        kdfID: unlockResult.header.kdfID,
+        salt: unlockResult.header.salt,
+        iterations: unlockResult.header.iterations,
         wrappedUDKPassword: wrappedUDKPassword,
-        wrappedUDKRecovery: header.wrappedUDKRecovery
+        wrappedUDKRecovery: unlockResult.header.wrappedUDKRecovery,
+        identityAlgorithmID: unlockResult.header.identityAlgorithmID,
+        identityPublicKey: unlockResult.header.identityPublicKey,
+        wrappedIdentityPrivateKey: unlockResult.header.wrappedIdentityPrivateKey
     )
 }
