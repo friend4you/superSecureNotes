@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA611EB4301109FC00F15876 /* SecureCrypto in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7730094D0800F15876 /* SecureCrypto */; };
+		AA611EB5301109FC00F15876 /* VaultSession in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7930094D0900F15876 /* VaultSession */; };
+		AA611EB6301109FC00F15876 /* NotesFlow in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7B30094D0A00F15876 /* NotesFlow */; };
+		AA611EB7301109FC00F15876 /* AuthRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7D30094D0B00F15876 /* AuthRepository */; };
+		AA611EB8301109FC00F15876 /* VaultRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7F30094D0C00F15876 /* VaultRepository */; };
+		AA611EB9301109FC00F15876 /* AuthFlowUI in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8130094D0D00F15876 /* AuthFlowUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		AA611E6830094D0300F15876 /* superSecureNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = superSecureNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +32,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA611EB9301109FC00F15876 /* AuthFlowUI in Frameworks */,
+				AA611EB8301109FC00F15876 /* VaultRepository in Frameworks */,
+				AA611EB7301109FC00F15876 /* AuthRepository in Frameworks */,
+				AA611EB6301109FC00F15876 /* NotesFlow in Frameworks */,
+				AA611EB5301109FC00F15876 /* VaultSession in Frameworks */,
+				AA611EB4301109FC00F15876 /* SecureCrypto in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,6 +85,7 @@
 				AA611E7B30094D0A00F15876 /* NotesFlow */,
 				AA611E7D30094D0B00F15876 /* AuthRepository */,
 				AA611E7F30094D0C00F15876 /* VaultRepository */,
+				AA611E8130094D0D00F15876 /* AuthFlowUI */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -99,14 +115,14 @@
 			);
 			mainGroup = AA611E5F30094D0300F15876;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			packageReferences = (
-				AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */,
-				AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "VaultSession" */,
-				AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "NotesFlow" */,
-				AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "AuthFlow" */,
-				AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "VaultRepository" */,
+				AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "Packages/SecureCrypto" */,
+				AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "Packages/VaultSession" */,
+				AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "Packages/NotesFlow" */,
+				AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */,
+				AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "Packages/VaultRepository" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = AA611E6930094D0300F15876 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -346,23 +362,23 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */ = {
+		AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "Packages/SecureCrypto" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SecureCrypto;
 		};
-		AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "VaultSession" */ = {
+		AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "Packages/VaultSession" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/VaultSession;
 		};
-		AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "NotesFlow" */ = {
+		AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "Packages/NotesFlow" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/NotesFlow;
 		};
-		AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "AuthFlow" */ = {
+		AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/AuthFlow;
 		};
-		AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "VaultRepository" */ = {
+		AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "Packages/VaultRepository" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/VaultRepository;
 		};
@@ -371,28 +387,33 @@
 /* Begin XCSwiftPackageProductDependency section */
 		AA611E7730094D0800F15876 /* SecureCrypto */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "Packages/SecureCrypto" */;
 			productName = SecureCrypto;
-			package = AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */;
 		};
 		AA611E7930094D0900F15876 /* VaultSession */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "Packages/VaultSession" */;
 			productName = VaultSession;
-			package = AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "VaultSession" */;
 		};
 		AA611E7B30094D0A00F15876 /* NotesFlow */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "Packages/NotesFlow" */;
 			productName = NotesFlow;
-			package = AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "NotesFlow" */;
 		};
 		AA611E7D30094D0B00F15876 /* AuthRepository */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
 			productName = AuthRepository;
-			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "AuthFlow" */;
 		};
 		AA611E7F30094D0C00F15876 /* VaultRepository */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "Packages/VaultRepository" */;
 			productName = VaultRepository;
-			package = AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "VaultRepository" */;
+		};
+		AA611E8130094D0D00F15876 /* AuthFlowUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
+			productName = AuthFlowUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
