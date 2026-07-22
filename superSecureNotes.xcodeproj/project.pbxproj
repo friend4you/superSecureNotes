@@ -66,6 +66,7 @@
 			name = superSecureNotes;
 			packageProductDependencies = (
 				AA611E7730094D0800F15876 /* SecureCrypto */,
+				AA611E7930094D0900F15876 /* VaultSession */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -98,6 +99,7 @@
 			preferredProjectObjectVersion = 77;
 			packageReferences = (
 				AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */,
+				AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "VaultSession" */,
 			);
 			productRefGroup = AA611E6930094D0300F15876 /* Products */;
 			projectDirPath = "";
@@ -342,6 +344,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SecureCrypto;
 		};
+		AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "VaultSession" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/VaultSession;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -349,6 +355,11 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = SecureCrypto;
 			package = AA611E7630094D0800F15876 /* XCLocalSwiftPackageReference "SecureCrypto" */;
+		};
+		AA611E7930094D0900F15876 /* VaultSession */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VaultSession;
+			package = AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "VaultSession" */;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
