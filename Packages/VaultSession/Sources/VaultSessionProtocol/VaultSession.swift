@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 
-public protocol VaultSession: Actor {
+public protocol VaultSessionProtocol: Actor {
     var isActive: Bool { get }
     nonisolated var changes: AsyncStream<Bool> { get }
 

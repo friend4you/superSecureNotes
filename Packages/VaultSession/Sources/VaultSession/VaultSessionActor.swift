@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 
-public actor VaultSession: VaultSessionProtocol.VaultSession {
+public actor VaultSession: VaultSessionProtocol {
     private var keys: VaultSessionKeys?
     private var subscribers: [UUID: AsyncStream<Bool>.Continuation] = [:]
 
