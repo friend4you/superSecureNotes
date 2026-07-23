@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "common.loading" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
