@@ -13,6 +13,8 @@
 		AA611EB7301109FC00F15876 /* AuthRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7D30094D0B00F15876 /* AuthRepository */; };
 		AA611EB8301109FC00F15876 /* VaultRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7F30094D0C00F15876 /* VaultRepository */; };
 		AA611EB9301109FC00F15876 /* AuthFlowUI in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8130094D0D00F15876 /* AuthFlowUI */; };
+		AA611EBA301109FC00F15876 /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8230094D0E00F15876 /* Navigation */; };
+		AA611EBB301109FC00F15876 /* NavigationProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8330094D0F00F15876 /* NavigationProtocol */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +40,8 @@
 				AA611EB6301109FC00F15876 /* NotesFlow in Frameworks */,
 				AA611EB5301109FC00F15876 /* VaultSession in Frameworks */,
 				AA611EB4301109FC00F15876 /* SecureCrypto in Frameworks */,
+				AA611EBB301109FC00F15876 /* NavigationProtocol in Frameworks */,
+				AA611EBA301109FC00F15876 /* Navigation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,6 +90,8 @@
 				AA611E7D30094D0B00F15876 /* AuthRepository */,
 				AA611E7F30094D0C00F15876 /* VaultRepository */,
 				AA611E8130094D0D00F15876 /* AuthFlowUI */,
+				AA611E8230094D0E00F15876 /* Navigation */,
+				AA611E8330094D0F00F15876 /* NavigationProtocol */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -121,6 +127,7 @@
 				AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "Packages/NotesFlow" */,
 				AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */,
 				AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "Packages/VaultRepository" */,
+				AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA611E6930094D0300F15876 /* Products */;
@@ -382,6 +389,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/VaultRepository;
 		};
+		AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Navigation;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -414,6 +425,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
 			productName = AuthFlowUI;
+		};
+		AA611E8230094D0E00F15876 /* Navigation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */;
+			productName = Navigation;
+		};
+		AA611E8330094D0F00F15876 /* NavigationProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */;
+			productName = NavigationProtocol;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

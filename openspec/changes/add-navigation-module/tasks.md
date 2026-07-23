@@ -1,14 +1,14 @@
 ## 1. Navigation package scaffold
 
-- [ ] 1.1 Create `Packages/Navigation/` with `NavigationProtocol` and `Navigation` targets, test targets, and `Package.swift` (iOS 17+, macOS 13+)
-- [ ] 1.2 Add `Navigation` and `NavigationProtocol` products to `superSecureNotes.xcodeproj`
+- [x] 1.1 Create `Packages/Navigation/` with `NavigationProtocol` and `Navigation` targets, test targets, and `Package.swift` (iOS 17+, macOS 13+)
+- [x] 1.2 Add `Navigation` and `NavigationProtocol` products to `superSecureNotes.xcodeproj`
 
 ## 2. NavigationProtocol — Route and NavigationRouting
 
-- [ ] 2.1 Write failing tests for `Route` constraint (sample enum conforms, is `Hashable`/`Sendable`) and `RoutePresentation` cases in `NavigationProtocolTests`
-- [ ] 2.2 Implement `Route`, `RoutePresentation`, and `NavigationRouting` in `NavigationProtocol`
-- [ ] 2.3 Write failing tests for `NavigationRouting` mock verifying `push`, `present`, `pop`, `popToRoot` contracts in `NavigationProtocolTests`
-- [ ] 2.4 Verify protocol surface compiles without SwiftUI
+- [x] 2.1 Write failing tests for `Route` constraint (sample enum conforms, is `Hashable`/`Sendable`) and `RoutePresentation` cases in `NavigationProtocolTests`
+- [x] 2.2 Implement `Route`, `RoutePresentation`, and `NavigationRouting` in `NavigationProtocol`
+- [x] 2.3 Write failing tests for `NavigationRouting` mock verifying `push`, `present`, `pop`, `popToRoot` contracts in `NavigationProtocolTests`
+- [x] 2.4 Verify protocol surface compiles without SwiftUI
 
 ## 3. Navigation — RouteBox
 
