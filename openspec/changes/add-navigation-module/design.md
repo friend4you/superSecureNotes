@@ -18,8 +18,8 @@ The project follows a protocol/implementation split per package (`VaultSessionPr
 - Per-module `*Routes` targets exporting route enums only (minimal dependency for cross-module navigation)
 - Per-module `*DependencyProviding` protocols — public protocol only; concrete app implementations stay in app target
 - `view(for:deps:)` static builders per module, registered in app at startup
-- `NavigationRouting`: `push`, `present` (sheet + fullScreenCover), `pop`, `popToRoot`
-- `RouteBox` type erasure for heterogeneous `NavigationPath`
+- `NavigationRouting`: `setRoot`, `push`, `present` (sheet + fullScreenCover), `pop`, `popToRoot`
+- `NavigationRouter` owns a SwiftUI `NavigationPath`; `push` appends module routes directly (`path.append(route)`)
 - App handles `VaultSession` and instructs router on session changes (root zone transitions)
 - Strict TDD per `development-practices`
 
@@ -29,7 +29,7 @@ The project follows a protocol/implementation split per package (`VaultSessionPr
 - Tab bar navigation (future)
 - Auth unlock, biometrics, Keychain (auth module)
 - Note data persistence or crypto (notes module)
-- `AppRoute` aggregator enum (deferred; module routes pushed directly via `RouteBox`)
+- `AppRoute` aggregator enum (deferred; module routes pushed directly into `NavigationPath`)
 
 ## Decisions
 
@@ -45,7 +45,6 @@ Packages/Navigation/
 │   │   └── RoutePresentation.swift
 │   └── Navigation/
 │       ├── Navigation.swift              # re-export
-│       ├── RouteBox.swift
 │       ├── RouteRegistry.swift
 │       ├── NavigationRouter.swift
 │       └── SwiftUI/
@@ -116,6 +115,7 @@ enum AuthNavigation {
 ### 6. Presentation on router API (Option A)
 
 ```swift
+func setRoot<R: Route>(_ route: R)  // replace path with single root; dismiss modals
 func push<R: Route>(_ route: R)
 func present<R: Route>(_ route: R, style: RoutePresentation)  // .sheet | .fullScreenCover
 func pop()
@@ -126,29 +126,40 @@ Routes remain pure data; presentation is a navigation concern.
 
 **Rationale:** Keeps route enums simple. Call site explicitly chooses presentation.
 
-### 7. `RouteBox` for heterogeneous NavigationPath
+### 7. `NavigationPath` for heterogeneous module routes
+
+`NavigationRouter` owns a SwiftUI `NavigationPath`. `push` appends the concrete route directly:
 
 ```swift
-public struct RouteBox: Hashable, Sendable {
-    // wraps AnyHashable + type metadata for registry lookup
+func push<R: Route>(_ route: R) {
+    path.append(route)
 }
 ```
 
-Router appends `RouteBox(route)` to `NavigationPath`. `NavigationHost` uses registry to resolve `view(for:deps:)`.
+`NavigationPath` natively stores different `Hashable` route types (`AuthRoute`, `NotesRoute`, etc.) without a custom type-erasure wrapper.
 
-**Rationale:** User chose pushing module routes directly over a single `AppRoute` enum.
+`NavigationHost` applies `.navigationDestination(for:)` per registered route type. The route registry maps each `Route.Type` to its `view(for:deps:)` builder.
+
+**Rationale:** Simpler mental model than `RouteBox`; SwiftUI's `NavigationPath` already handles heterogeneous storage.
+
+**Alternatives considered:**
+- `RouteBox` wrapper — rejected; redundant with `NavigationPath` type erasure
+- Single `AppRoute` aggregator enum — deferred; module routes pushed directly
 
 ### 8. Route registry at app composition
 
 ```swift
-registry.register(AuthRoute.self) { route, box in
+registry.register(AuthRoute.self) { route in
     AnyView(AuthNavigation.view(for: route, deps: authDeps))
+}
+registry.register(NotesRoute.self) { route in
+    AnyView(NotesNavigation.view(for: route, deps: notesDeps))
 }
 ```
 
-Deps captured at registration (protocol-typed). Registry keyed by `ObjectIdentifier(Route.Type)`.
+Deps captured at registration (protocol-typed). Registry keyed by `ObjectIdentifier(Route.Type)`. `NavigationHost` wires one `navigationDestination(for:)` modifier per registered route type.
 
-**Rationale:** Single registration point in app; modules don't know about each other.
+**Rationale:** Registration stays centralized; destinations stay type-safe per module route enum.
 
 ### 9. Session-driven root (app owns when, navigation owns how)
 
@@ -158,8 +169,8 @@ VaultSession.changes
        ▼
   App (RootView)
        │
-  false → router.popToRoot(); router.push(AuthRoute.login)
-  true  → router.popToRoot(); router.push(NotesRoute.list)
+  false → router.setRoot(AuthRoute.login)
+  true  → router.setRoot(NotesRoute.list)
 ```
 
 Navigation module does not observe `VaultSession` directly.
@@ -176,7 +187,7 @@ Remove `NavigationLink` from `LoginView`. Login screen uses `NavigationRouting` 
 
 ## Risks / Trade-offs
 
-- **[Risk] RouteBox registry mismatch at runtime** → Mitigation: `register` asserts/fails in debug when route type not registered; unit tests per registered route
+- **[Risk] Unregistered route type at runtime** → Mitigation: `register` asserts/fails in debug when a pushed route type was not registered; unit tests per registered route
 - **[Risk] Breaking AuthFlowUI public API** → Mitigation: update app wiring, previews, and tests in same change; document in proposal
 - **[Risk] Environment-injected router harder to test** → Mitigation: `NavigationRouting` protocol with mock router in ViewTests
 - **[Risk] Modal + push state complexity** → Mitigation: v1 keeps single presented route; document limitation

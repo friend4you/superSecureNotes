@@ -5,14 +5,14 @@ Feature modules (`AuthFlow`, `NotesFlow`) own their screens but the app has no u
 ## What Changes
 
 - Add Swift Package `Navigation` with `NavigationProtocol` (contracts) and `Navigation` (router, registry, `NavigationHost`)
-- Define `Route` protocol (`Hashable`, `Sendable`) and `NavigationRouting` (`push`, `present`, `pop`, `popToRoot`)
-- Add `RouteBox` type erasure so `NavigationPath` can hold heterogeneous module routes
+- Define `Route` protocol (`Hashable`, `Sendable`) and `NavigationRouting` (`setRoot`, `push`, `present`, `pop`, `popToRoot`)
+- Store module routes directly in SwiftUI `NavigationPath` (no `RouteBox` type erasure)
 - Add route registry: maps concrete route types to `view(for:deps:)` builders registered at app startup
 - Add `AuthFlowRoutes` target with `AuthRoute`; refactor `AuthFlowUI` to use app-level routing instead of in-package `NavigationLink` (**BREAKING** for auth screen wiring)
 - Add `NotesFlowRoutes` target with `NotesRoute`; add `NotesDependencyProviding` and `NotesNavigation` in `NotesFlow`
 - Add `AuthFlowDependencyProviding` in `AuthFlowProtocol` / `AuthFlowUI` and `AuthNavigation.view(for:deps:)`
 - App implements module dependency protocols (`AppAuthDependencies`, `AppNotesDependencies`); modules never receive `AppDependencies`
-- App observes `VaultSession.changes` and instructs the router (reset path, push auth or main entry routes)
+- App observes `VaultSession.changes` and instructs the router (`setRoot` to auth or main entry routes)
 - Support push, sheet, and full-screen modal presentation via router API
 - Strict TDD: failing tests before each implementation task
 
@@ -20,7 +20,7 @@ Feature modules (`AuthFlow`, `NotesFlow`) own their screens but the app has no u
 
 ### New Capabilities
 
-- `navigation`: Navigation SPM package — `Route`, `NavigationRouting`, `RouteBox`, route registry, `NavigationHost`, presentation APIs
+- `navigation`: Navigation SPM package — `Route`, `NavigationRouting`, `NavigationPath` router storage, route registry, `NavigationHost`, presentation APIs
 - `auth-flow-routes`: `AuthFlowRoutes` library — `AuthRoute` enum for cross-module auth navigation
 - `auth-flow-ui`: Auth routing refactor — `AuthFlowDependencyProviding`, `AuthNavigation.view(for:deps:)`, remove internal `NavigationLink` navigation
 - `notes-flow-routes`: `NotesFlowRoutes` library — `NotesRoute` enum for cross-module notes navigation

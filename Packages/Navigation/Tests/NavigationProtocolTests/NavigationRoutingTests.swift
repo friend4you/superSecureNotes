@@ -9,13 +9,20 @@ private enum MockRoute: Route {
 
 @MainActor
 private final class MockNavigationRouter: NavigationRouting {
-    private(set) var pushedRoutes: [AnyHashable] = []
+    private(set) var stack: [AnyHashable] = []
     private(set) var presentedRoutes: [(route: AnyHashable, style: RoutePresentation)] = []
     private(set) var popCount = 0
     private(set) var popToRootCount = 0
 
+    var pushedRoutes: [AnyHashable] { stack }
+
+    func setRoot<R: Route>(_ route: R) {
+        stack = [AnyHashable(route)]
+        presentedRoutes = []
+    }
+
     func push<R: Route>(_ route: R) {
-        pushedRoutes.append(AnyHashable(route))
+        stack.append(AnyHashable(route))
     }
 
     func present<R: Route>(_ route: R, style: RoutePresentation) {
@@ -24,10 +31,16 @@ private final class MockNavigationRouter: NavigationRouting {
 
     func pop() {
         popCount += 1
+        if !stack.isEmpty {
+            stack.removeLast()
+        }
     }
 
     func popToRoot() {
         popToRootCount += 1
+        if let first = stack.first {
+            stack = [first]
+        }
     }
 }
 
@@ -78,5 +91,27 @@ final class NavigationRoutingTests: XCTestCase {
         router.popToRoot()
 
         XCTAssertEqual(router.popToRootCount, 1)
+    }
+
+    @MainActor
+    func testSetRootReplacesStackWithSingleRoute() {
+        let router = MockNavigationRouter()
+        router.push(MockRoute.detail(1))
+        router.push(MockRoute.detail(2))
+
+        router.setRoot(MockRoute.list)
+
+        XCTAssertEqual(router.stack.count, 1)
+        XCTAssertEqual(router.stack.first?.base as? MockRoute, .list)
+    }
+
+    @MainActor
+    func testSetRootClearsPresentedRoutes() {
+        let router = MockNavigationRouter()
+        router.present(MockRoute.detail(1), style: .sheet)
+
+        router.setRoot(MockRoute.list)
+
+        XCTAssertTrue(router.presentedRoutes.isEmpty)
     }
 }

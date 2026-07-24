@@ -25,17 +25,17 @@ The app SHALL create a route registry, register `AuthRoute` and `NotesRoute` (an
 
 ### Requirement: VaultSession drives root navigation
 
-The app SHALL observe `VaultSession.changes` and instruct the navigation router when session activity changes. When the session becomes inactive, the app SHALL reset navigation and push the auth entry route. When the session becomes active, the app SHALL reset navigation and push the main notes entry route.
+The app SHALL observe `VaultSession.changes` and instruct the navigation router when session activity changes. When the session becomes inactive, the app SHALL call `setRoot` with the auth entry route. When the session becomes active, the app SHALL call `setRoot` with the main notes entry route.
 
 #### Scenario: Inactive session shows auth entry
 
 - **WHEN** `VaultSession` becomes inactive
-- **THEN** the router pushes `AuthRoute.login` after clearing the path
+- **THEN** the router calls `setRoot(AuthRoute.login)`
 
 #### Scenario: Active session shows notes entry
 
 - **WHEN** `VaultSession` becomes active
-- **THEN** the router pushes `NotesRoute.list` after clearing the path
+- **THEN** the router calls `setRoot(NotesRoute.list)`
 
 ### Requirement: App links Navigation package
 

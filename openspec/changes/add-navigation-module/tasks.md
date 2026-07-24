@@ -9,26 +9,27 @@
 - [x] 2.2 Implement `Route`, `RoutePresentation`, and `NavigationRouting` in `NavigationProtocol`
 - [x] 2.3 Write failing tests for `NavigationRouting` mock verifying `push`, `present`, `pop`, `popToRoot` contracts in `NavigationProtocolTests`
 - [x] 2.4 Verify protocol surface compiles without SwiftUI
+- [x] 2.5 Add `setRoot` to `NavigationRouting` with tests (replaces stack, clears modals)
 
-## 3. Navigation — RouteBox
+## 3. Navigation — NavigationPath storage
 
-- [ ] 3.1 Write failing tests: `RouteBox` round-trip for sample route; equality/hash stability (`NavigationTests`)
-- [ ] 3.2 Implement `RouteBox` with typed unwrap
+- [x] 3.1 Design decision: `NavigationPath` stores module routes directly (no `RouteBox`)
+- [x] 3.2 Remove `RouteBox` implementation and tests from Navigation package
 
 ## 4. Navigation — RouteRegistry
 
-- [ ] 4.1 Write failing tests: registered `NotesRoute` resolves to view; unregistered route fails in debug (`NavigationTests`)
+- [ ] 4.1 Write failing tests: registered `NotesRoute` resolves to view; unregistered route type fails in debug (`NavigationTests`)
 - [ ] 4.2 Implement `RouteRegistry` keyed by route type with `AnyView` builder capture
 
 ## 5. Navigation — NavigationRouter
 
-- [ ] 5.1 Write failing tests: `push` appends `RouteBox`; `popToRoot` clears path; `present` sets modal state (`NavigationTests`)
-- [ ] 5.2 Implement `@Observable NavigationRouter` conforming to `NavigationRouting`
+- [ ] 5.1 Write failing tests: `setRoot` replaces `NavigationPath`; `push` appends route; `popToRoot` keeps root; `present` sets modal state (`NavigationTests`)
+- [ ] 5.2 Implement `@Observable NavigationRouter` conforming to `NavigationRouting` with `NavigationPath`
 
 ## 6. Navigation — NavigationHost
 
 - [ ] 6.1 Write failing SwiftUI tests: host renders pushed registered route; sheet presentation appears (`NavigationTests`)
-- [ ] 6.2 Implement `NavigationHost` with `NavigationStack`, `navigationDestination`, sheet, and fullScreenCover bindings
+- [ ] 6.2 Implement `NavigationHost` with `NavigationStack`, per-route-type `navigationDestination`, sheet, and fullScreenCover bindings
 
 ## 7. AuthFlowRoutes target
 
@@ -65,7 +66,7 @@
 
 - [ ] 12.1 Write failing tests or integration checks: `AppAuthDependencies` conforms to `AuthFlowDependencyProviding`; `AppNotesDependencies` conforms to `NotesDependencyProviding` (app test target if present, else compile-time wiring review task with XCTest scaffold)
 - [ ] 12.2 Implement `AppAuthDependencies` and `AppNotesDependencies` in app target mapping from `AppDependencies`
-- [ ] 12.3 Write failing tests: on `VaultSession` inactive → `AuthRoute.login` pushed; on active → `NotesRoute.list` pushed (app/UI test scaffold)
+- [ ] 12.3 Write failing tests: on `VaultSession` inactive → `setRoot(AuthRoute.login)`; on active → `setRoot(NotesRoute.list)` (app/UI test scaffold)
 - [ ] 12.4 Refactor `RootView` to register routes, mount `NavigationHost`, observe `VaultSession.changes`, and drive router on session transitions
 - [ ] 12.5 Remove ad-hoc `NavigationStack` wrappers from `RootView`
 - [ ] 12.6 Link `Navigation`, `NavigationProtocol`, `AuthFlowRoutes`, `NotesFlowRoutes` in app target
