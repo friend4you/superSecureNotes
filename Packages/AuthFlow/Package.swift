@@ -67,7 +67,7 @@ let package = Package(
             dependencies: [
                 "AuthFlowProtocol",
                 "AuthFlowRoutes",
-                .product(name: "NavigationProtocol", package: "Navigation"),
+                .product(name: "Navigation", package: "Navigation"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
             ],
             resources: [

@@ -3,9 +3,9 @@ import AuthFlowRoutes
 import SwiftUI
 
 @MainActor
-enum AuthNavigation {
+public enum AuthNavigation {
     @ViewBuilder
-    static func view(
+    public static func view(
         for route: AuthRoute,
         deps: any AuthFlowDependencyProviding,
         navigator: any LoginNavigating
@@ -18,14 +18,14 @@ enum AuthNavigation {
         }
     }
 
-    static func loginView(
+    public static func loginView(
         deps: any AuthFlowDependencyProviding,
         navigator: any LoginNavigating
     ) -> LoginView {
         LoginView(viewModel: deps.makeLoginViewModel(navigator: navigator))
     }
 
-    static func registerView(deps: any AuthFlowDependencyProviding) -> RegisterView {
+    public static func registerView(deps: any AuthFlowDependencyProviding) -> RegisterView {
         RegisterView(viewModel: deps.makeRegisterViewModel())
     }
 }

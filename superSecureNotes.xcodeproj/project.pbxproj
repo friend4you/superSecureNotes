@@ -17,16 +17,42 @@
 		AA611EBB301109FC00F15876 /* NavigationProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8330094D0F00F15876 /* NavigationProtocol */; };
 		AA611EBC301109FC00F15876 /* AuthFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8530094D1100F15876 /* AuthFlowRoutes */; };
 		AA611EBD301109FC00F15876 /* NotesFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8630094D1200F15876 /* NotesFlowRoutes */; };
+		AA6121323013996E00F15876 /* SecureCrypto in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7730094D0800F15876 /* SecureCrypto */; };
+		AA6121333013996E00F15876 /* VaultSession in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7930094D0900F15876 /* VaultSession */; };
+		AA6121343013996E00F15876 /* NotesFlow in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7B30094D0A00F15876 /* NotesFlow */; };
+		AA6121353013996E00F15876 /* AuthRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7D30094D0B00F15876 /* AuthRepository */; };
+		AA6121363013996E00F15876 /* VaultRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E7F30094D0C00F15876 /* VaultRepository */; };
+		AA6121373013996E00F15876 /* AuthFlowUI in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8130094D0D00F15876 /* AuthFlowUI */; };
+		AA6121383013996E00F15876 /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8230094D0E00F15876 /* Navigation */; };
+		AA6121393013996E00F15876 /* NavigationProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8330094D0F00F15876 /* NavigationProtocol */; };
+		AA61213A3013996E00F15876 /* AuthFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8530094D1100F15876 /* AuthFlowRoutes */; };
+		AA61213B3013996E00F15876 /* NotesFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8630094D1200F15876 /* NotesFlowRoutes */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA611EBF301109FC00F15876 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA611E6030094D0300F15876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA611E6730094D0300F15876;
+			remoteInfo = superSecureNotes;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		AA611E6830094D0300F15876 /* superSecureNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = superSecureNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = superSecureNotesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA611E6A30094D0300F15876 /* superSecureNotes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = superSecureNotes;
+			sourceTree = "<group>";
+		};
+		AA611E6C30094D0300F15876 /* superSecureNotesTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = superSecureNotesTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +75,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA611E8A30094D1300F15876 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA61213B3013996E00F15876 /* NotesFlowRoutes in Frameworks */,
+				AA6121353013996E00F15876 /* AuthRepository in Frameworks */,
+				AA6121363013996E00F15876 /* VaultRepository in Frameworks */,
+				AA61213A3013996E00F15876 /* AuthFlowRoutes in Frameworks */,
+				AA6121333013996E00F15876 /* VaultSession in Frameworks */,
+				AA6121343013996E00F15876 /* NotesFlow in Frameworks */,
+				AA6121393013996E00F15876 /* NavigationProtocol in Frameworks */,
+				AA6121383013996E00F15876 /* Navigation in Frameworks */,
+				AA6121373013996E00F15876 /* AuthFlowUI in Frameworks */,
+				AA6121323013996E00F15876 /* SecureCrypto in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -56,6 +99,7 @@
 			isa = PBXGroup;
 			children = (
 				AA611E6A30094D0300F15876 /* superSecureNotes */,
+				AA611E6C30094D0300F15876 /* superSecureNotesTests */,
 				AA611E6930094D0300F15876 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -64,6 +108,7 @@
 			isa = PBXGroup;
 			children = (
 				AA611E6830094D0300F15876 /* superSecureNotes.app */,
+				AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -103,6 +148,39 @@
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AA611E8730094D1300F15876 /* superSecureNotesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA611E8E30094D1300F15876 /* Build configuration list for PBXNativeTarget "superSecureNotesTests" */;
+			buildPhases = (
+				AA611E8930094D1300F15876 /* Sources */,
+				AA611E8A30094D1300F15876 /* Frameworks */,
+				AA611E8B30094D1300F15876 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA611EBE301109FC00F15876 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA611E6C30094D0300F15876 /* superSecureNotesTests */,
+			);
+			name = superSecureNotesTests;
+			packageProductDependencies = (
+				AA611E7730094D0800F15876 /* SecureCrypto */,
+				AA611E7930094D0900F15876 /* VaultSession */,
+				AA611E7B30094D0A00F15876 /* NotesFlow */,
+				AA611E7D30094D0B00F15876 /* AuthRepository */,
+				AA611E7F30094D0C00F15876 /* VaultRepository */,
+				AA611E8130094D0D00F15876 /* AuthFlowUI */,
+				AA611E8230094D0E00F15876 /* Navigation */,
+				AA611E8330094D0F00F15876 /* NavigationProtocol */,
+				AA611E8530094D1100F15876 /* AuthFlowRoutes */,
+				AA611E8630094D1200F15876 /* NotesFlowRoutes */,
+			);
+			productName = superSecureNotesTests;
+			productReference = AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -141,12 +219,20 @@
 			projectRoot = "";
 			targets = (
 				AA611E6730094D0300F15876 /* superSecureNotes */,
+				AA611E8730094D1300F15876 /* superSecureNotesTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AA611E6630094D0300F15876 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA611E8B30094D1300F15876 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -163,7 +249,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA611E8930094D1300F15876 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA611EBE301109FC00F15876 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA611E6730094D0300F15876 /* superSecureNotes */;
+			targetProxy = AA611EBF301109FC00F15876 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AA611E7130094D0800F15876 /* Debug */ = {
@@ -351,6 +452,48 @@
 			};
 			name = Release;
 		};
+		AA611E8C30094D1300F15876 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H7A8S5HDP4;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.arseniuk.superSecureNotesTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/superSecureNotes.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/superSecureNotes";
+			};
+			name = Debug;
+		};
+		AA611E8D30094D1300F15876 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H7A8S5HDP4;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.arseniuk.superSecureNotesTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/superSecureNotes.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/superSecureNotes";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -368,6 +511,15 @@
 			buildConfigurations = (
 				AA611E7430094D0800F15876 /* Debug */,
 				AA611E7530094D0800F15876 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA611E8E30094D1300F15876 /* Build configuration list for PBXNativeTarget "superSecureNotesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA611E8C30094D1300F15876 /* Debug */,
+				AA611E8D30094D1300F15876 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

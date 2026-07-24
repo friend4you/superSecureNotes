@@ -21,35 +21,18 @@ enum PreviewSupport {
     }
 
     @MainActor
-    static func makeDependencies() -> some AuthFlowDependencyProviding {
-        PreviewAuthFlowDependencies()
-    }
-
-    @MainActor
-    static func makeLoginNavigator() -> LoginNavigating {
-        PreviewLoginNavigator()
-    }
-}
-
-@MainActor
-private final class PreviewAuthFlowDependencies: AuthFlowDependencyProviding {
-    func makeLoginViewModel(navigator: any LoginNavigating) -> DefaultLoginViewModel {
-        DefaultLoginViewModel(
-            authRepository: PreviewAuthRepository(),
-            vaultRepository: PreviewVaultRepository(),
-            vaultAuthenticator: PreviewVaultAuthenticator(),
-            vaultSession: PreviewVaultSession(),
-            navigator: navigator
-        )
-    }
-
-    func makeRegisterViewModel() -> DefaultRegisterViewModel {
-        DefaultRegisterViewModel(
+    static func makeDependencies() -> AuthFlowDependencies {
+        AuthFlowDependencies(
             authRepository: PreviewAuthRepository(),
             vaultRepository: PreviewVaultRepository(),
             vaultAuthenticator: PreviewVaultAuthenticator(),
             vaultSession: PreviewVaultSession()
         )
+    }
+
+    @MainActor
+    static func makeLoginNavigator() -> LoginNavigating {
+        PreviewLoginNavigator()
     }
 }
 

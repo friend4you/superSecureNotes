@@ -24,7 +24,10 @@ let package = Package(
     targets: [
         .target(
             name: "NotesFlow",
-            dependencies: ["NotesFlowRoutes"]
+            dependencies: [
+                "NotesFlowRoutes",
+                .product(name: "Navigation", package: "Navigation"),
+            ]
         ),
         .target(
             name: "NotesFlowRoutes",

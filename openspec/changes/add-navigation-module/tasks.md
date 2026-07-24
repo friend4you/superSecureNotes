@@ -64,12 +64,12 @@
 
 ## 12. App navigation wiring
 
-- [ ] 12.1 Write failing tests or integration checks: `AppAuthDependencies` conforms to `AuthFlowDependencyProviding`; `AppNotesDependencies` conforms to `NotesDependencyProviding` (app test target if present, else compile-time wiring review task with XCTest scaffold)
-- [ ] 12.2 Implement `AppAuthDependencies` and `AppNotesDependencies` in app target mapping from `AppDependencies`
-- [ ] 12.3 Write failing tests: on `VaultSession` inactive → `setRoot(AuthRoute.login)`; on active → `setRoot(NotesRoute.list)` (app/UI test scaffold)
-- [ ] 12.4 Refactor `RootView` to register routes, mount `NavigationHost`, observe `VaultSession.changes`, and drive router on session transitions
-- [ ] 12.5 Remove ad-hoc `NavigationStack` wrappers from `RootView`
-- [ ] 12.6 Link `Navigation`, `NavigationProtocol`, `AuthFlowRoutes`, `NotesFlowRoutes` in app target
+- [x] 12.1 Write failing tests or integration checks: `AppAuthDependencies` conforms to `AuthFlowDependencyProviding`; `AppNotesDependencies` conforms to `NotesDependencyProviding` (app test target if present, else compile-time wiring review task with XCTest scaffold)
+- [x] 12.2 Implement `AppAuthDependencies` and `AppNotesDependencies` in app target mapping from `AppDependencies`
+- [x] 12.3 Write failing tests: on `VaultSession` inactive → `setRoot(AuthRoute.login)`; on active → `setRoot(NotesRoute.list)` (app/UI test scaffold)
+- [x] 12.4 Refactor `RootView` to register routes, mount `NavigationHost`, observe `VaultSession.changes`, and drive router on session transitions
+- [x] 12.5 Remove ad-hoc `NavigationStack` wrappers from `RootView`
+- [x] 12.6 Link `Navigation`, `NavigationProtocol`, `AuthFlowRoutes`, `NotesFlowRoutes` in app target
 
 ## 13. Final verification
 
