@@ -45,10 +45,10 @@
 
 ## 9. AuthFlowUI routing refactor
 
-- [ ] 9.1 Write failing tests: `LoginView` has no `NavigationLink`; tapping register calls `router.push(AuthRoute.register)` (`AuthFlowUITests`)
-- [ ] 9.2 Refactor `LoginView` to use `NavigationRouting` from environment; remove `makeRegisterViewModel` navigation parameter
-- [ ] 9.3 Update `RegisterView` previews and `PreviewSupport` to use `AuthFlowDependencyProviding` mock and router
-- [ ] 9.4 Update existing `LoginViewTests` and `RegisterViewTests` for new API
+- [x] 9.1 Write failing tests: `LoginView` has no `NavigationLink`; tapping register calls `router.push(AuthRoute.register)` (`AuthFlowUITests`)
+- [x] 9.2 Refactor `LoginView` to use `NavigationRouting` from environment; remove `makeRegisterViewModel` navigation parameter
+- [x] 9.3 Update `RegisterView` previews and `PreviewSupport` to use `AuthFlowDependencyProviding` mock and router
+- [x] 9.4 Update existing `LoginViewTests` and `RegisterViewTests` for new API
 
 ## 10. NotesFlowRoutes target
 

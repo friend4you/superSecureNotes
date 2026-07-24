@@ -6,9 +6,6 @@ import XCTest
 @MainActor
 final class LoginViewTests: XCTestCase {
     func testLoginViewIsPubliclyConstructible() {
-        _ = LoginView(
-            viewModel: PreviewSupport.makeLoginViewModel(),
-            makeRegisterViewModel: PreviewSupport.makeRegisterViewModel
-        )
+        _ = LoginView(viewModel: PreviewSupport.makeLoginViewModel())
     }
 }

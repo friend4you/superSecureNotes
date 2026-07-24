@@ -20,4 +20,5 @@ private final class MockLoginViewModel: LoginViewModel {
     private(set) var state: AuthFormState = .idle
 
     func login() async {}
+    func registerTapped() {}
 }

@@ -9,10 +9,12 @@ import XCTest
 private final class MockAuthFlowDependencies: AuthFlowDependencyProviding {
     private(set) var makeLoginViewModelCallCount = 0
     private(set) var makeRegisterViewModelCallCount = 0
+    private(set) var lastLoginNavigator: (any LoginNavigating)?
 
-    func makeLoginViewModel() -> DefaultLoginViewModel {
+    func makeLoginViewModel(navigator: any LoginNavigating) -> DefaultLoginViewModel {
         makeLoginViewModelCallCount += 1
-        return PreviewSupport.makeLoginViewModel()
+        lastLoginNavigator = navigator
+        return PreviewSupport.makeLoginViewModel(navigator: navigator)
     }
 
     func makeRegisterViewModel() -> DefaultRegisterViewModel {
@@ -22,14 +24,21 @@ private final class MockAuthFlowDependencies: AuthFlowDependencyProviding {
 }
 
 @MainActor
+private final class MockLoginNavigator: LoginNavigating {
+    func showRegister() {}
+}
+
+@MainActor
 final class AuthNavigationTests: XCTestCase {
     func testViewForLoginBuildsLoginView() {
         let deps = MockAuthFlowDependencies()
+        let navigator = MockLoginNavigator()
 
-        _ = AuthNavigation.loginView(deps: deps)
+        _ = AuthNavigation.loginView(deps: deps, navigator: navigator)
 
         XCTAssertEqual(deps.makeLoginViewModelCallCount, 1)
         XCTAssertEqual(deps.makeRegisterViewModelCallCount, 0)
+        XCTAssertTrue(deps.lastLoginNavigator === navigator)
     }
 
     func testViewForRegisterBuildsRegisterView() {
@@ -43,16 +52,18 @@ final class AuthNavigationTests: XCTestCase {
 
     func testViewForLoginUsesDependencyProviding() {
         let deps = MockAuthFlowDependencies()
+        let navigator = MockLoginNavigator()
 
-        _ = AuthNavigation.view(for: .login, deps: deps)
+        _ = AuthNavigation.view(for: .login, deps: deps, navigator: navigator)
 
         XCTAssertEqual(deps.makeLoginViewModelCallCount, 1)
     }
 
     func testViewForRegisterUsesDependencyProviding() {
         let deps = MockAuthFlowDependencies()
+        let navigator = MockLoginNavigator()
 
-        _ = AuthNavigation.view(for: .register, deps: deps)
+        _ = AuthNavigation.view(for: .register, deps: deps, navigator: navigator)
 
         XCTAssertEqual(deps.makeRegisterViewModelCallCount, 1)
     }

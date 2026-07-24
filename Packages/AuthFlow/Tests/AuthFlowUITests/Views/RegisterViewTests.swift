@@ -6,6 +6,7 @@ import XCTest
 @MainActor
 final class RegisterViewTests: XCTestCase {
     func testRegisterViewIsPubliclyConstructible() {
-        _ = RegisterView(viewModel: PreviewSupport.makeRegisterViewModel())
+        let deps = PreviewSupport.makeDependencies()
+        _ = RegisterView(viewModel: deps.makeRegisterViewModel())
     }
 }

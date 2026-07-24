@@ -1,5 +1,5 @@
-import AuthRepositoryProtocol
 import AuthFlowProtocol
+import AuthRepositoryProtocol
 import CryptoKit
 import Foundation
 import VaultRepositoryProtocol
@@ -7,17 +7,43 @@ import VaultSessionProtocol
 
 enum PreviewSupport {
     @MainActor
-    static func makeLoginViewModel() -> DefaultLoginViewModel {
-        DefaultLoginViewModel(
-            authRepository: PreviewAuthRepository(),
-            vaultRepository: PreviewVaultRepository(),
-            vaultAuthenticator: PreviewVaultAuthenticator(),
-            vaultSession: PreviewVaultSession()
+    static func makeLoginViewModel(
+        navigator: (any LoginNavigating)? = nil
+    ) -> DefaultLoginViewModel {
+        makeDependencies().makeLoginViewModel(
+            navigator: navigator ?? makeLoginNavigator()
         )
     }
 
     @MainActor
     static func makeRegisterViewModel() -> DefaultRegisterViewModel {
+        makeDependencies().makeRegisterViewModel()
+    }
+
+    @MainActor
+    static func makeDependencies() -> some AuthFlowDependencyProviding {
+        PreviewAuthFlowDependencies()
+    }
+
+    @MainActor
+    static func makeLoginNavigator() -> LoginNavigating {
+        PreviewLoginNavigator()
+    }
+}
+
+@MainActor
+private final class PreviewAuthFlowDependencies: AuthFlowDependencyProviding {
+    func makeLoginViewModel(navigator: any LoginNavigating) -> DefaultLoginViewModel {
+        DefaultLoginViewModel(
+            authRepository: PreviewAuthRepository(),
+            vaultRepository: PreviewVaultRepository(),
+            vaultAuthenticator: PreviewVaultAuthenticator(),
+            vaultSession: PreviewVaultSession(),
+            navigator: navigator
+        )
+    }
+
+    func makeRegisterViewModel() -> DefaultRegisterViewModel {
         DefaultRegisterViewModel(
             authRepository: PreviewAuthRepository(),
             vaultRepository: PreviewVaultRepository(),
@@ -25,6 +51,11 @@ enum PreviewSupport {
             vaultSession: PreviewVaultSession()
         )
     }
+}
+
+@MainActor
+private final class PreviewLoginNavigator: LoginNavigating {
+    func showRegister() {}
 }
 
 private actor PreviewAuthRepository: AuthRepository {

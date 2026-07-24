@@ -15,17 +15,24 @@ public final class DefaultLoginViewModel: LoginViewModel {
     private let vaultRepository: any VaultRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
+    private let navigator: any LoginNavigating
 
     public init(
         authRepository: any AuthRepository,
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
-        vaultSession: any VaultSessionProtocol
+        vaultSession: any VaultSessionProtocol,
+        navigator: any LoginNavigating
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
+        self.navigator = navigator
+    }
+
+    public func registerTapped() {
+        navigator.showRegister()
     }
 
     public func login() async {

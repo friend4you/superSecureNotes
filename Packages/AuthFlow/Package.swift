@@ -67,6 +67,7 @@ let package = Package(
             dependencies: [
                 "AuthFlowProtocol",
                 "AuthFlowRoutes",
+                .product(name: "NavigationProtocol", package: "Navigation"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
             ],
             resources: [
@@ -91,7 +92,11 @@ let package = Package(
         ),
         .testTarget(
             name: "AuthFlowUITests",
-            dependencies: ["AuthFlowUI"]
+            dependencies: [
+                "AuthFlowUI",
+                "AuthFlowRoutes",
+                .product(name: "NavigationProtocol", package: "Navigation"),
+            ]
         ),
     ]
 )

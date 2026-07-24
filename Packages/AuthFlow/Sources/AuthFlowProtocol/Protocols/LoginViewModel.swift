@@ -8,4 +8,5 @@ public protocol LoginViewModel: AnyObject, Observable {
     var state: AuthFormState { get }
 
     func login() async
+    func registerTapped()
 }

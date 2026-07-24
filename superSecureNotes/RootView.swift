@@ -1,6 +1,7 @@
 import AuthFlowUI
 import AuthRepository
 import Foundation
+import Navigation
 import NotesFlow
 import SecureCrypto
 import SwiftUI
@@ -27,12 +28,13 @@ final class AppDependencies {
         vaultAuthenticator = SecureCryptoVaultAuthenticator()
     }
 
-    func makeLoginViewModel() -> DefaultLoginViewModel {
+    func makeLoginViewModel(navigator: any LoginNavigating) -> DefaultLoginViewModel {
         DefaultLoginViewModel(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            navigator: navigator
         )
     }
 
@@ -48,6 +50,7 @@ final class AppDependencies {
 
 struct RootView: View {
     @State private var dependencies = AppDependencies()
+    @State private var router = NavigationRouter()
     @State private var isVaultActive = false
 
     var body: some View {
@@ -55,10 +58,11 @@ struct RootView: View {
             if isVaultActive {
                 NoteListView()
             } else {
-                NavigationStack {
+                NavigationStack(path: router.pathBinding) {
                     LoginView(
-                        viewModel: dependencies.makeLoginViewModel(),
-                        makeRegisterViewModel: dependencies.makeRegisterViewModel
+                        viewModel: dependencies.makeLoginViewModel(
+                            navigator: AuthLoginNavigator(router: router)
+                        )
                     )
                 }
             }

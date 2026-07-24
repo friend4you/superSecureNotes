@@ -12,7 +12,8 @@ final class DefaultLoginViewModelSuccessTests: XCTestCase {
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            navigator: MockLoginNavigator()
         )
         viewModel.email = "user@example.com"
         viewModel.password = "secret"

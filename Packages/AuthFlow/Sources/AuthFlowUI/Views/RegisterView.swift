@@ -49,7 +49,8 @@ public struct RegisterView: View {
 }
 
 #Preview {
-    NavigationStack {
-        RegisterView(viewModel: PreviewSupport.makeRegisterViewModel())
+    let deps = PreviewSupport.makeDependencies()
+    return NavigationStack {
+        RegisterView(viewModel: deps.makeRegisterViewModel())
     }
 }

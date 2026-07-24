@@ -5,20 +5,24 @@ import SwiftUI
 @MainActor
 enum AuthNavigation {
     @ViewBuilder
-    static func view(for route: AuthRoute, deps: any AuthFlowDependencyProviding) -> some View {
+    static func view(
+        for route: AuthRoute,
+        deps: any AuthFlowDependencyProviding,
+        navigator: any LoginNavigating
+    ) -> some View {
         switch route {
         case .login:
-            loginView(deps: deps)
+            loginView(deps: deps, navigator: navigator)
         case .register:
             registerView(deps: deps)
         }
     }
 
-    static func loginView(deps: any AuthFlowDependencyProviding) -> LoginView {
-        LoginView(
-            viewModel: deps.makeLoginViewModel(),
-            makeRegisterViewModel: { deps.makeRegisterViewModel() }
-        )
+    static func loginView(
+        deps: any AuthFlowDependencyProviding,
+        navigator: any LoginNavigating
+    ) -> LoginView {
+        LoginView(viewModel: deps.makeLoginViewModel(navigator: navigator))
     }
 
     static func registerView(deps: any AuthFlowDependencyProviding) -> RegisterView {

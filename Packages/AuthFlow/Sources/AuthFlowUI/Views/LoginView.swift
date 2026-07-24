@@ -1,17 +1,11 @@
-import AuthRepositoryProtocol
 import AuthFlowProtocol
 import SwiftUI
 
 public struct LoginView: View {
     @Bindable private var viewModel: DefaultLoginViewModel
-    private let makeRegisterViewModel: () -> DefaultRegisterViewModel
 
-    public init(
-        viewModel: DefaultLoginViewModel,
-        makeRegisterViewModel: @escaping () -> DefaultRegisterViewModel
-    ) {
+    public init(viewModel: DefaultLoginViewModel) {
         self.viewModel = viewModel
-        self.makeRegisterViewModel = makeRegisterViewModel
     }
 
     public var body: some View {
@@ -49,10 +43,8 @@ public struct LoginView: View {
                 }
                 .disabled(viewModel.state == .loading)
 
-                NavigationLink(
-                    String(localized: "login.registerLink", bundle: .module)
-                ) {
-                    RegisterView(viewModel: makeRegisterViewModel())
+                Button(String(localized: "login.registerLink", bundle: .module)) {
+                    viewModel.registerTapped()
                 }
             }
         }
@@ -61,10 +53,12 @@ public struct LoginView: View {
 }
 
 #Preview {
-    NavigationStack {
+    let deps = PreviewSupport.makeDependencies()
+    return NavigationStack {
         LoginView(
-            viewModel: PreviewSupport.makeLoginViewModel(),
-            makeRegisterViewModel: PreviewSupport.makeRegisterViewModel
+            viewModel: deps.makeLoginViewModel(
+                navigator: PreviewSupport.makeLoginNavigator()
+            )
         )
     }
 }

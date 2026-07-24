@@ -20,7 +20,8 @@ final class AuthFlowMocksSmokeTests: XCTestCase {
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            navigator: MockLoginNavigator()
         )
 
         XCTAssertEqual(viewModel.state, .idle)
@@ -202,5 +203,14 @@ actor MockVaultSession: VaultSessionProtocol {
             throw VaultSessionError.notActive
         }
         return establishedKeys.identityPrivateKey
+    }
+}
+
+@MainActor
+final class MockLoginNavigator: LoginNavigating {
+    private(set) var showRegisterCallCount = 0
+
+    func showRegister() {
+        showRegisterCallCount += 1
     }
 }

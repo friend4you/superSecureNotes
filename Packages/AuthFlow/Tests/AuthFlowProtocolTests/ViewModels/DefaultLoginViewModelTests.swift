@@ -52,7 +52,8 @@ final class DefaultLoginViewModelTests: XCTestCase {
             authRepository: authRepository,
             vaultRepository: MockVaultRepository(),
             vaultAuthenticator: MockVaultAuthenticator(),
-            vaultSession: MockVaultSession()
+            vaultSession: MockVaultSession(),
+            navigator: MockLoginNavigator()
         )
     }
 }
