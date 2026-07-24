@@ -6,21 +6,38 @@ let package = Package(
     name: "NotesFlow",
     platforms: [
         .iOS(.v17),
-        .macOS(.v13),
+        .macOS(.v14),
     ],
     products: [
         .library(
             name: "NotesFlow",
             targets: ["NotesFlow"]
         ),
+        .library(
+            name: "NotesFlowRoutes",
+            targets: ["NotesFlowRoutes"]
+        ),
+    ],
+    dependencies: [
+        .package(path: "../Navigation"),
     ],
     targets: [
         .target(
             name: "NotesFlow"
         ),
+        .target(
+            name: "NotesFlowRoutes",
+            dependencies: [
+                .product(name: "NavigationProtocol", package: "Navigation"),
+            ]
+        ),
         .testTarget(
             name: "NotesFlowTests",
             dependencies: ["NotesFlow"]
+        ),
+        .testTarget(
+            name: "NotesFlowRoutesTests",
+            dependencies: ["NotesFlowRoutes"]
         ),
     ]
 )

@@ -52,9 +52,9 @@
 
 ## 10. NotesFlowRoutes target
 
-- [ ] 10.1 Write failing tests: `NotesRoute` conforms to `Route`; includes `.list` (`NotesFlowTests`)
-- [ ] 10.2 Add `NotesFlowRoutes` target to `NotesFlow` package depending on `NavigationProtocol`; implement `NotesRoute`
-- [ ] 10.3 Export `NotesFlowRoutes` product; add to Xcode project
+- [x] 10.1 Write failing tests: `NotesRoute` conforms to `Route`; includes `.list` (`NotesFlowTests`)
+- [x] 10.2 Add `NotesFlowRoutes` target to `NotesFlow` package depending on `NavigationProtocol`; implement `NotesRoute`
+- [x] 10.3 Export `NotesFlowRoutes` product; add to Xcode project
 
 ## 11. NotesDependencyProviding and NotesNavigation
 
