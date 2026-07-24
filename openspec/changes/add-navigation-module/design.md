@@ -19,7 +19,7 @@ The project follows a protocol/implementation split per package (`VaultSessionPr
 - Per-module `*DependencyProviding` protocols — public protocol only; concrete app implementations stay in app target
 - `view(for:deps:)` static builders per module, registered in app at startup
 - `NavigationRouting`: `setRoot`, `push`, `present` (sheet + fullScreenCover), `pop`, `popToRoot`
-- `NavigationRouter` owns a SwiftUI `NavigationPath`; `push` appends module routes directly (`path.append(route)`)
+- `NavigationRouter` stores root separately; push path holds pushed module routes (`path.append(route)`)
 - App handles `VaultSession` and instructs router on session changes (root zone transitions)
 - Strict TDD per `development-practices`
 
@@ -115,7 +115,7 @@ enum AuthNavigation {
 ### 6. Presentation on router API (Option A)
 
 ```swift
-func setRoot<R: Route>(_ route: R)  // replace path with single root; dismiss modals
+func setRoot<R: Route>(_ route: R)  // set root route; clear push path; dismiss modals
 func push<R: Route>(_ route: R)
 func present<R: Route>(_ route: R, style: RoutePresentation)  // .sheet | .fullScreenCover
 func pop()
@@ -126,9 +126,9 @@ Routes remain pure data; presentation is a navigation concern.
 
 **Rationale:** Keeps route enums simple. Call site explicitly chooses presentation.
 
-### 7. `NavigationPath` for heterogeneous module routes
+### 7. Root route and `NavigationPath` for pushes
 
-`NavigationRouter` owns a SwiftUI `NavigationPath`. `push` appends the concrete route directly:
+`NavigationRouter` stores the root route separately from a SwiftUI `NavigationPath` used for pushed routes. `setRoot` sets the root and clears the push path. `push` appends the concrete route directly:
 
 ```swift
 func push<R: Route>(_ route: R) {
@@ -138,12 +138,13 @@ func push<R: Route>(_ route: R) {
 
 `NavigationPath` natively stores different `Hashable` route types (`AuthRoute`, `NotesRoute`, etc.) without a custom type-erasure wrapper.
 
-`NavigationHost` applies `.navigationDestination(for:)` per registered route type. The route registry maps each `Route.Type` to its `view(for:deps:)` builder.
+`NavigationHost` renders the root from the router and binds `NavigationStack(path:)` to the push path only. It applies `.navigationDestination(for:)` per registered route type. The route registry maps each `Route.Type` to its `view(for:deps:)` builder.
 
-**Rationale:** Simpler mental model than `RouteBox`; SwiftUI's `NavigationPath` already handles heterogeneous storage.
+**Rationale:** Matches SwiftUI's `NavigationStack` model (root content + push path). Avoids mirroring route state because `NavigationPath` is opaque and cannot expose the root entry.
 
 **Alternatives considered:**
 - `RouteBox` wrapper — rejected; redundant with `NavigationPath` type erasure
+- Root stored inside `NavigationPath` — rejected; requires opaque path mirroring (`StoredRoute`)
 - Single `AppRoute` aggregator enum — deferred; module routes pushed directly
 
 ### 8. Route registry at app composition

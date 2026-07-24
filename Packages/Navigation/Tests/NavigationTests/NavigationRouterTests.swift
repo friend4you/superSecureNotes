@@ -10,7 +10,7 @@ private enum TestRoute: Route {
 
 @MainActor
 final class NavigationRouterTests: XCTestCase {
-    func testSetRootReplacesNavigationPath() {
+    func testSetRootClearsPushPathAndSetsRoot() {
         let router = NavigationRouter()
         router.setRoot(TestRoute.root)
         router.push(TestRoute.detail(1))
@@ -18,9 +18,8 @@ final class NavigationRouterTests: XCTestCase {
 
         router.setRoot(TestRoute.detail(99))
 
-        var expected = NavigationPath()
-        expected.append(TestRoute.detail(99))
-        XCTAssertEqual(router.path, expected)
+        XCTAssertTrue(router.path.isEmpty)
+        XCTAssertEqual(router.rootRoute?.route.base as? TestRoute, .detail(99))
     }
 
     func testPushAppendsRouteToNavigationPath() {
@@ -30,12 +29,12 @@ final class NavigationRouterTests: XCTestCase {
         router.push(TestRoute.detail(42))
 
         var expected = NavigationPath()
-        expected.append(TestRoute.root)
         expected.append(TestRoute.detail(42))
         XCTAssertEqual(router.path, expected)
+        XCTAssertEqual(router.rootRoute?.route.base as? TestRoute, .root)
     }
 
-    func testPopToRootKeepsRootRoute() {
+    func testPopToRootClearsPushPathAndKeepsRoot() {
         let router = NavigationRouter()
         router.setRoot(TestRoute.root)
         router.push(TestRoute.detail(1))
@@ -43,9 +42,8 @@ final class NavigationRouterTests: XCTestCase {
 
         router.popToRoot()
 
-        var expected = NavigationPath()
-        expected.append(TestRoute.root)
-        XCTAssertEqual(router.path, expected)
+        XCTAssertTrue(router.path.isEmpty)
+        XCTAssertEqual(router.rootRoute?.route.base as? TestRoute, .root)
     }
 
     func testPresentSetsModalState() {

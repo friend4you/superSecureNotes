@@ -28,8 +28,8 @@
 
 ## 6. Navigation — NavigationHost
 
-- [ ] 6.1 Write failing SwiftUI tests: host renders pushed registered route; sheet presentation appears (`NavigationTests`)
-- [ ] 6.2 Implement `NavigationHost` with `NavigationStack`, per-route-type `navigationDestination`, sheet, and fullScreenCover bindings
+- [x] 6.1 Write failing SwiftUI tests: host renders pushed registered route; sheet presentation appears (`NavigationTests`)
+- [x] 6.2 Implement `NavigationHost` with `NavigationStack`, per-route-type `navigationDestination`, sheet, and fullScreenCover bindings
 
 ## 7. AuthFlowRoutes target
 

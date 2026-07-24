@@ -30,7 +30,7 @@ The project SHALL provide a Swift Package `Navigation` with two library products
 #### Scenario: SetRoot replaces stack with one route
 
 - **WHEN** `router.setRoot(AuthRoute.login)` is called
-- **THEN** the router's navigation path contains only `AuthRoute.login`
+- **THEN** the router's root route is `AuthRoute.login` and the push path is empty
 
 #### Scenario: SetRoot clears presented modals
 
@@ -49,17 +49,17 @@ The project SHALL provide a Swift Package `Navigation` with two library products
 
 #### Scenario: PopToRoot keeps root route
 
-- **WHEN** `router.popToRoot()` is called on a path with multiple entries
-- **THEN** the navigation path contains only the root entry
+- **WHEN** `router.popToRoot()` is called after pushing routes on top of a root
+- **THEN** the push path is empty and the root route is unchanged
 
 ### Requirement: NavigationPath storage
 
-`Navigation` SHALL provide a `NavigationRouter` that owns a SwiftUI `NavigationPath`. The router's `push` method SHALL append the concrete route value directly to the path (`path.append(route)`). Module route enums (`AuthRoute`, `NotesRoute`, etc.) SHALL be storable in the same path without a custom type-erasure wrapper.
+`Navigation` SHALL provide a `NavigationRouter` that stores the root route separately from a SwiftUI `NavigationPath` used for pushed routes. The router's `push` method SHALL append the concrete route value directly to the push path (`path.append(route)`). Module route enums (`AuthRoute`, `NotesRoute`, etc.) SHALL be storable in the same push path without a custom type-erasure wrapper.
 
-#### Scenario: Heterogeneous routes in one path
+#### Scenario: Heterogeneous routes in one push path
 
 - **WHEN** `router.push(AuthRoute.login)` is called and then `router.push(NotesRoute.list)` is called
-- **THEN** the router's `NavigationPath` contains both entries
+- **THEN** the router's push `NavigationPath` contains both entries
 
 #### Scenario: Push appends route directly
 

@@ -9,6 +9,7 @@ private struct UnregisteredRoutePlaceholder: View {
 @MainActor
 public final class RouteRegistry {
     private var builders: [ObjectIdentifier: (AnyHashable) -> AnyView] = [:]
+    private var destinationModifiers: [(AnyView) -> AnyView] = []
     private let assertOnUnregisteredRoutes: Bool
 
     public init(assertOnUnregisteredRoutes: Bool = true) {
@@ -26,6 +27,13 @@ public final class RouteRegistry {
             }
             return builder(route)
         }
+        destinationModifiers.append { view in
+            AnyView(
+                view.navigationDestination(for: routeType) { route in
+                    builder(route)
+                }
+            )
+        }
     }
 
     public func view<R: Route>(for route: R) -> AnyView {
@@ -40,6 +48,22 @@ public final class RouteRegistry {
 
     public func isRegistered<R: Route>(_ routeType: R.Type) -> Bool {
         builders[ObjectIdentifier(routeType)] != nil
+    }
+
+    public func view(forAny route: AnyHashable, routeType: ObjectIdentifier) -> AnyView {
+        guard let builder = builders[routeType] else {
+            if assertOnUnregisteredRoutes {
+                assertionFailure("No view registered for route type id \(routeType)")
+            }
+            return Self.unregisteredPlaceholder
+        }
+        return builder(route)
+    }
+
+    func applyingNavigationDestinations<V: View>(to view: V) -> some View {
+        destinationModifiers.reduce(AnyView(view)) { partial, modifier in
+            modifier(partial)
+        }
     }
 
     private static let unregisteredPlaceholder = AnyView(UnregisteredRoutePlaceholder())
