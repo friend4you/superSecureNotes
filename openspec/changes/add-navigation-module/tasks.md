@@ -39,9 +39,9 @@
 
 ## 8. AuthFlowDependencyProviding and AuthNavigation
 
-- [ ] 8.1 Write failing tests: `AuthNavigation.view(for: .login, deps:)` returns `LoginView`; `.register` returns `RegisterView` using mock `AuthFlowDependencyProviding` (`AuthFlowUITests`)
-- [ ] 8.2 Add public `AuthFlowDependencyProviding` protocol to `AuthFlowProtocol`
-- [ ] 8.3 Implement internal `AuthNavigation.view(for:deps:)` in `AuthFlowUI`
+- [x] 8.1 Write failing tests: `AuthNavigation.view(for: .login, deps:)` returns `LoginView`; `.register` returns `RegisterView` using mock `AuthFlowDependencyProviding` (`AuthFlowUITests`)
+- [x] 8.2 Add public `AuthFlowDependencyProviding` protocol to `AuthFlowProtocol`
+- [x] 8.3 Implement internal `AuthNavigation.view(for:deps:)` in `AuthFlowUI`
 
 ## 9. AuthFlowUI routing refactor
 
