@@ -18,8 +18,8 @@
 
 ## 4. Navigation — RouteRegistry
 
-- [ ] 4.1 Write failing tests: registered `NotesRoute` resolves to view; unregistered route type fails in debug (`NavigationTests`)
-- [ ] 4.2 Implement `RouteRegistry` keyed by route type with `AnyView` builder capture
+- [x] 4.1 Write failing tests: registered `NotesRoute` resolves to view; unregistered route type fails in debug (`NavigationTests`)
+- [x] 4.2 Implement `RouteRegistry` keyed by route type with `AnyView` builder capture
 
 ## 5. Navigation — NavigationRouter
 
