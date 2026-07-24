@@ -15,6 +15,7 @@
 		AA611EB9301109FC00F15876 /* AuthFlowUI in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8130094D0D00F15876 /* AuthFlowUI */; };
 		AA611EBA301109FC00F15876 /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8230094D0E00F15876 /* Navigation */; };
 		AA611EBB301109FC00F15876 /* NavigationProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8330094D0F00F15876 /* NavigationProtocol */; };
+		AA611EBC301109FC00F15876 /* AuthFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8530094D1100F15876 /* AuthFlowRoutes */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 				AA611EB4301109FC00F15876 /* SecureCrypto in Frameworks */,
 				AA611EBB301109FC00F15876 /* NavigationProtocol in Frameworks */,
 				AA611EBA301109FC00F15876 /* Navigation in Frameworks */,
+				AA611EBC301109FC00F15876 /* AuthFlowRoutes in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +94,7 @@
 				AA611E8130094D0D00F15876 /* AuthFlowUI */,
 				AA611E8230094D0E00F15876 /* Navigation */,
 				AA611E8330094D0F00F15876 /* NavigationProtocol */,
+				AA611E8530094D1100F15876 /* AuthFlowRoutes */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -435,6 +438,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */;
 			productName = NavigationProtocol;
+		};
+		AA611E8530094D1100F15876 /* AuthFlowRoutes */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
+			productName = AuthFlowRoutes;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

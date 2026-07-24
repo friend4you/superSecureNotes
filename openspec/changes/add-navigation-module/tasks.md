@@ -33,9 +33,9 @@
 
 ## 7. AuthFlowRoutes target
 
-- [ ] 7.1 Write failing tests: `AuthRoute` conforms to `Route`; includes `.login` and `.register` (`AuthFlowRoutesTests` or `AuthFlowTests`)
-- [ ] 7.2 Add `AuthFlowRoutes` target to `AuthFlow` package depending on `NavigationProtocol`; implement `AuthRoute`
-- [ ] 7.3 Export `AuthFlowRoutes` product; add to Xcode project
+- [x] 7.1 Write failing tests: `AuthRoute` conforms to `Route`; includes `.login` and `.register` (`AuthFlowRoutesTests` or `AuthFlowTests`)
+- [x] 7.2 Add `AuthFlowRoutes` target to `AuthFlow` package depending on `NavigationProtocol`; implement `AuthRoute`
+- [x] 7.3 Export `AuthFlowRoutes` product; add to Xcode project
 
 ## 8. AuthFlowDependencyProviding and AuthNavigation
 

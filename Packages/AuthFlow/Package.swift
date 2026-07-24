@@ -26,11 +26,16 @@ let package = Package(
             name: "AuthFlowUI",
             targets: ["AuthFlowUI"]
         ),
+        .library(
+            name: "AuthFlowRoutes",
+            targets: ["AuthFlowRoutes"]
+        ),
     ],
     dependencies: [
         .package(path: "../VaultRepository"),
         .package(path: "../SecureCrypto"),
         .package(path: "../VaultSession"),
+        .package(path: "../Navigation"),
     ],
     targets: [
         .target(
@@ -49,6 +54,12 @@ let package = Package(
                 "AuthRepositoryProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
+            ]
+        ),
+        .target(
+            name: "AuthFlowRoutes",
+            dependencies: [
+                .product(name: "NavigationProtocol", package: "Navigation"),
             ]
         ),
         .target(
@@ -72,6 +83,10 @@ let package = Package(
         .testTarget(
             name: "AuthFlowProtocolTests",
             dependencies: ["AuthFlowProtocol"]
+        ),
+        .testTarget(
+            name: "AuthFlowRoutesTests",
+            dependencies: ["AuthFlowRoutes"]
         ),
         .testTarget(
             name: "AuthFlowUITests",
