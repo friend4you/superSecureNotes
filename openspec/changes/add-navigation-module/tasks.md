@@ -23,8 +23,8 @@
 
 ## 5. Navigation — NavigationRouter
 
-- [ ] 5.1 Write failing tests: `setRoot` replaces `NavigationPath`; `push` appends route; `popToRoot` keeps root; `present` sets modal state (`NavigationTests`)
-- [ ] 5.2 Implement `@Observable NavigationRouter` conforming to `NavigationRouting` with `NavigationPath`
+- [x] 5.1 Write failing tests: `setRoot` replaces `NavigationPath`; `push` appends route; `popToRoot` keeps root; `present` sets modal state (`NavigationTests`)
+- [x] 5.2 Implement `@Observable NavigationRouter` conforming to `NavigationRouting` with `NavigationPath`
 
 ## 6. Navigation — NavigationHost
 
