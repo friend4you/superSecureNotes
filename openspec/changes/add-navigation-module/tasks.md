@@ -58,9 +58,9 @@
 
 ## 11. NotesDependencyProviding and NotesNavigation
 
-- [ ] 11.1 Write failing tests: `NotesNavigation.view(for: .list, deps:)` returns `NoteListView` with mock `NotesDependencyProviding` (`NotesFlowTests`)
-- [ ] 11.2 Add public `NotesDependencyProviding` protocol and internal `NotesNavigation.view(for:deps:)` to `NotesFlow`
-- [ ] 11.3 Update `NotesFlow` target to depend on `NotesFlowRoutes`
+- [x] 11.1 Write failing tests: `NotesNavigation.view(for: .list, deps:)` returns `NoteListView` with mock `NotesDependencyProviding` (`NotesFlowTests`)
+- [x] 11.2 Add public `NotesDependencyProviding` protocol and internal `NotesNavigation.view(for:deps:)` to `NotesFlow`
+- [x] 11.3 Update `NotesFlow` target to depend on `NotesFlowRoutes`
 
 ## 12. App navigation wiring
 
