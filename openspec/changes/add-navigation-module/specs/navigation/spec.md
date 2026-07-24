@@ -97,3 +97,58 @@ The `Navigation` package SHALL NOT depend on `VaultSession` or observe session s
 
 - **WHEN** `Navigation` package sources are inspected
 - **THEN** they do not import `VaultSession` or `VaultSessionProtocol`
+
+### Requirement: Navigating protocol
+
+`NavigationProtocol` SHALL define a `@MainActor` protocol `Navigating` that inherits `NavigationRouting` and adds `dismissPresentation()`. Feature modules SHALL depend on `NavigationProtocol` (UI-free) to navigate.
+
+#### Scenario: Navigating includes dismissPresentation
+
+- **WHEN** `Navigating` is inspected
+- **THEN** it includes `dismissPresentation()` in addition to `NavigationRouting` methods
+
+### Requirement: AppNavigator
+
+`Navigation` SHALL provide an `AppNavigator` type that implements `Navigating`, wraps an internal `NavigationRouter` and `RouteRegistry`, and validates route type registration before `setRoot`, `push`, or `present`.
+
+#### Scenario: Push validates registration before mutating state
+
+- **WHEN** `navigator.push(route)` is called with an unregistered route type
+- **THEN** debug builds surface a diagnosable failure and the router push path is not mutated
+
+#### Scenario: Push delegates to router when registered
+
+- **WHEN** `navigator.push(NotesRoute.list)` is called and `NotesRoute` is registered
+- **THEN** the internal router's push path grows by one entry
+
+### Requirement: Route registry startup verification
+
+`RouteRegistry` SHALL auto-track route types registered via `register()`. It SHALL provide `verifyRegistered(...)` to assert all expected route types were registered. App composition SHALL call `verifyRegistered` after all module registrations (debug builds).
+
+#### Scenario: VerifyRegistered passes when all types registered
+
+- **WHEN** `AuthRoute` and `NotesRoute` are registered and `verifyRegistered(AuthRoute.self, NotesRoute.self)` is called
+- **THEN** verification succeeds
+
+#### Scenario: VerifyRegistered fails when type missing
+
+- **WHEN** `NotesRoute` is not registered and `verifyRegistered(NotesRoute.self)` is called
+- **THEN** debug builds surface a diagnosable failure
+
+### Requirement: NavigationCoordinator exposes navigator
+
+`NavigationCoordinator` SHALL expose `navigator: Navigating` as its public navigation API. `NavigationRouter` SHALL NOT be exposed to the app target.
+
+#### Scenario: App uses navigator not router
+
+- **WHEN** app composition performs session-driven root transitions
+- **THEN** it calls `navigator.setRoot(...)` not `router.setRoot(...)`
+
+### Requirement: No environment-injected router
+
+`NavigationHost` SHALL NOT inject `NavigationRouting` into the SwiftUI environment. Feature navigation SHALL use `Navigating` from module deps bags.
+
+#### Scenario: NavigationHost does not set navigationRouter environment
+
+- **WHEN** `NavigationHost` source is inspected
+- **THEN** it does not set `\.navigationRouter` on the environment

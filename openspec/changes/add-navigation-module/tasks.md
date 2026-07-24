@@ -73,5 +73,53 @@
 
 ## 13. Final verification
 
-- [ ] 13.1 Run full test suite; fix regressions from `LoginView` API change
+- [x] 13.1 Run full test suite; fix regressions from `LoginView` API change
 - [ ] 13.2 Manual smoke: login → register via router; session activate → notes list; logout/session clear → auth entry
+
+## 14. Navigating facade and deps-based navigation
+
+### 14.1 NavigationProtocol — Navigating
+
+- [ ] 14.1.1 Write failing tests: `Navigating` inherits `NavigationRouting`; includes `dismissPresentation()` (`NavigationProtocolTests`)
+- [ ] 14.1.2 Implement `Navigating` protocol in `NavigationProtocol`
+
+### 14.2 Navigation — AppNavigator
+
+- [ ] 14.2.1 Write failing tests: `AppNavigator.push` validates route type is registered before delegating; unregistered type does not mutate router (`NavigationTests`)
+- [ ] 14.2.2 Write failing tests: `AppNavigator` delegates `setRoot`, `present`, `pop`, `popToRoot`, `dismissPresentation` to internal router (`NavigationTests`)
+- [ ] 14.2.3 Implement `AppNavigator` conforming to `Navigating`
+
+### 14.3 Navigation — RouteRegistry verifyRegistered
+
+- [ ] 14.3.1 Write failing tests: `verifyRegistered` passes when all expected types registered; fails in debug when a type is missing (`NavigationTests`)
+- [ ] 14.3.2 Implement `RouteRegistry.verifyRegistered(_:)` using auto-tracked registration from `register()`
+
+### 14.4 Navigation — Coordinator and environment cleanup
+
+- [ ] 14.4.1 Update `NavigationCoordinator` to expose `navigator: Navigating`; make `router` internal
+- [ ] 14.4.2 Remove `NavigationRouterEnvironment.swift` and environment injection from `NavigationHost`
+- [ ] 14.4.3 Update `NavigationTests` and `NavigationHost` tests for coordinator API change
+
+### 14.5 AuthFlow — replace LoginNavigating with Navigating on deps
+
+- [ ] 14.5.1 Write failing tests: `DefaultLoginViewModel.registerTapped()` calls `navigator.push(AuthRoute.register)` via deps (`AuthFlowProtocolTests`)
+- [ ] 14.5.2 Add `NavigationProtocol` dependency to `AuthFlowProtocol`; add `navigator: Navigating` to `AuthFlowDependencies` init
+- [ ] 14.5.3 Remove `LoginNavigating`, `AuthLoginNavigator`; update `AuthFlowDependencyProviding.makeLoginViewModel()` to take no navigator param
+- [ ] 14.5.4 Update `AuthNavigation.view(for:deps:)` and `RouteRegistry+AuthRoutes` to remove navigator parameter
+- [ ] 14.5.5 Update `LoginViewRoutingTests`, previews, and mocks to use `MockNavigating`
+
+### 14.6 NotesFlow — Navigating on deps
+
+- [ ] 14.6.1 Add `NavigationProtocol` dependency to `NotesFlow`; add `navigator: Navigating` to `NotesFlowDependencies` init
+- [ ] 14.6.2 Update `NotesFlowTests` and mocks as needed
+
+### 14.7 App composition wiring
+
+- [ ] 14.7.1 Refactor `AppComposition` to create coordinator first, pass `coordinator.navigator` into deps inits, register routes without navigator param
+- [ ] 14.7.2 Call `registry.verifyRegistered(AuthRoute.self, NotesRoute.self)` after registration (debug)
+- [ ] 14.7.3 Update `SessionRootNavigation` to use `navigator.setRoot(...)` instead of `router`
+
+### 14.8 Final verification
+
+- [ ] 14.8.1 Run full test suite; fix regressions from `LoginNavigating` removal and coordinator API change
+- [ ] 14.8.2 Manual smoke: login → register via navigator; session transitions via navigator; no environment router usage in feature code

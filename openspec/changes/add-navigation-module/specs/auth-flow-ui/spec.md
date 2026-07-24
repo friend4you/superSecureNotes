@@ -28,9 +28,9 @@
 - **WHEN** `AuthNavigation.view(for: .register, deps:)` is called
 - **THEN** a `RegisterView` is produced
 
-### Requirement: Auth screens use NavigationRouting instead of NavigationLink
+### Requirement: Auth screens use Navigating from deps instead of NavigationLink
 
-`LoginView` SHALL NOT use `NavigationLink` to reach `RegisterView`. Register navigation SHALL be triggered via `NavigationRouting.push(AuthRoute.register)` (or equivalent router API).
+`LoginView` SHALL NOT use `NavigationLink` to reach `RegisterView`. Register navigation SHALL be triggered via `Navigating.push(AuthRoute.register)` on the view model, which obtains `Navigating` from the deps bag.
 
 #### Scenario: LoginView has no NavigationLink to register
 
@@ -40,13 +40,18 @@
 #### Scenario: Register navigation uses AuthRoute
 
 - **WHEN** the user initiates register navigation from login
-- **THEN** the router receives `AuthRoute.register`
+- **THEN** the navigator receives `AuthRoute.register`
 
 ### Requirement: LoginView initializer change
 
-`LoginView` SHALL accept a `LoginViewModel` and obtain `NavigationRouting` from the SwiftUI environment (or explicit injection). It SHALL NOT require a `makeRegisterViewModel` closure for navigation purposes.
+`LoginView` SHALL accept a `LoginViewModel`. The view model SHALL obtain `Navigating` from the deps bag. `LoginView` SHALL NOT require a `makeRegisterViewModel` closure for navigation purposes and SHALL NOT read `NavigationRouting` from the SwiftUI environment.
 
 #### Scenario: LoginView does not require register factory for navigation
 
 - **WHEN** `LoginView` is constructed for production use
 - **THEN** its initializer does not require `makeRegisterViewModel` solely to navigate to register
+
+#### Scenario: LoginView does not use environment router
+
+- **WHEN** `LoginView` source is inspected
+- **THEN** it does not reference `navigationRouter` from the environment

@@ -19,8 +19,12 @@ The project follows a protocol/implementation split per package (`VaultSessionPr
 - Per-module `*DependencyProviding` protocols — public protocol only; concrete app implementations stay in app target
 - `view(for:deps:)` static builders per module, registered in app at startup
 - `NavigationRouting`: `setRoot`, `push`, `present` (sheet + fullScreenCover), `pop`, `popToRoot`
-- `NavigationRouter` stores root separately; push path holds pushed module routes (`path.append(route)`)
-- App handles `VaultSession` and instructs router on session changes (root zone transitions)
+- `Navigating`: shared feature-facing protocol (`NavigationRouting` + `dismissPresentation`); implemented by `AppNavigator`
+- `NavigationRouter` stores root separately; push path holds pushed module routes (`path.append(route)`); **internal** to Navigation package — app uses `navigator` only
+- Module deps bags hold `navigator: Navigating` (init parameter); view models navigate via deps
+- Route registration validation: navigate-time in `AppNavigator` + startup `verifyRegistered(...)` + render-time safety net
+- Cross-module navigation is free-for-all: any feature imports target `*Routes` and calls `push` / `present` / `setRoot`
+- App handles `VaultSession` and instructs navigator on session changes (root zone transitions)
 - Strict TDD per `development-practices`
 
 **Non-Goals:**
@@ -30,6 +34,8 @@ The project follows a protocol/implementation split per package (`VaultSessionPr
 - Auth unlock, biometrics, Keychain (auth module)
 - Note data persistence or crypto (notes module)
 - `AppRoute` aggregator enum (deferred; module routes pushed directly into `NavigationPath`)
+- Route namespace statics (e.g. `Settings.general`); keep `AuthRoute` / `NotesRoute` naming for now
+- Settings module (pattern proof only; no new feature screens in this change)
 
 ## Decisions
 
@@ -42,11 +48,14 @@ Packages/Navigation/
 │   ├── NavigationProtocol/
 │   │   ├── Route.swift
 │   │   ├── NavigationRouting.swift
+│   │   ├── Navigating.swift
 │   │   └── RoutePresentation.swift
 │   └── Navigation/
 │       ├── Navigation.swift              # re-export
 │       ├── RouteRegistry.swift
-│       ├── NavigationRouter.swift
+│       ├── NavigationRouter.swift        # internal
+│       ├── AppNavigator.swift
+│       ├── NavigationCoordinator.swift
 │       └── SwiftUI/
 │           └── NavigationHost.swift
 └── Tests/
@@ -180,17 +189,112 @@ Navigation module does not observe `VaultSession` directly.
 
 ### 10. AuthFlow internal navigation removal (**BREAKING**)
 
-Remove `NavigationLink` from `LoginView`. Login screen uses `NavigationRouting` (environment-injected) to `push(AuthRoute.register)`.
+Remove `NavigationLink` from `LoginView`. Login view model uses `Navigating` from the deps bag to `push(AuthRoute.register)`.
 
 `LoginView` no longer takes `makeRegisterViewModel` closure for navigation purposes — register route built via `AuthNavigation.view(for: .register, deps:)`.
 
 **Rationale:** All auth screens reachable from outside via `AuthRoute`. Consistent with modular navigation goal.
 
+### 11. Shared `Navigating` protocol (replaces per-module navigators)
+
+`NavigationProtocol` defines a `@MainActor` protocol `Navigating` that inherits `NavigationRouting` and adds `dismissPresentation()`.
+
+```swift
+@MainActor
+public protocol Navigating: NavigationRouting {
+    func dismissPresentation()
+}
+```
+
+`AppNavigator` in the `Navigation` package implements `Navigating`, wrapping an internal `NavigationRouter` and `RouteRegistry`.
+
+Feature modules depend on `NavigationProtocol` (UI-free) and receive `any Navigating` via their deps bag — not via SwiftUI environment and not via module-specific protocols (e.g. delete `LoginNavigating` / `AuthLoginNavigator`).
+
+**Rationale:** One navigation contract for all modules; supports free-for-all cross-module navigation without proliferating `*Navigating` adapters.
+
+**Alternatives considered:**
+- Per-module navigators (`LoginNavigating`) — rejected; does not scale to cross-module destinations
+- Environment-injected router — rejected; bypasses validation, harder to test in view models
+
+### 12. `Navigating` on module deps bags
+
+Each module deps implementation holds `navigator: any Navigating`, passed as an **init parameter** (immutable):
+
+```swift
+authDeps = AuthFlowDependencies(..., navigator: coordinator.navigator)
+notesDeps = NotesFlowDependencies(navigator: coordinator.navigator)
+```
+
+View models obtain the navigator from deps at creation time:
+
+```swift
+func makeLoginViewModel() -> DefaultLoginViewModel {
+    DefaultLoginViewModel(..., navigator: navigator)
+}
+```
+
+`AuthFlowDependencyProviding.makeLoginViewModel()` no longer takes a navigator parameter. `AuthNavigation.view(for:deps:)` no longer takes a navigator parameter. `registerAuthRoutes(deps:)` no longer takes a navigator parameter.
+
+Add `navigator` to all module deps bags upfront (including modules that do not navigate yet) for uniform app wiring and to support free-for-all cross-module navigation without future deps refactors.
+
+**Rationale:** Composition root creates coordinator first, then deps with navigator, then registers routes. Keeps navigation out of SwiftUI environment and out of registration closures.
+
+### 13. `NavigationCoordinator` public surface
+
+`NavigationCoordinator` exposes:
+- `navigator: Navigating` — app and feature code use this
+- `registry: RouteRegistry` — route registration at startup
+- `hostModel: NavigationHostModel` — `NavigationHost` binding
+
+`NavigationRouter` is **internal** to the Navigation package. App code (including `SessionRootNavigation`) calls `navigator.setRoot(...)` — never `router` directly.
+
+**Rationale:** Single validated navigation path; prevents bypassing `AppNavigator` registration checks.
+
+### 14. Route registration validation (layered)
+
+Three validation layers:
+
+| Layer | When | Purpose |
+|-------|------|---------|
+| Startup | After all `register*Routes()` | `registry.verifyRegistered(AuthRoute.self, NotesRoute.self, ...)` — catches missing registration at launch (debug) |
+| Navigate-time | `AppNavigator.push` / `present` / `setRoot` | Assert route type is registered before mutating router state (primary; debug assert, release log + no-op) |
+| Render-time | `RouteRegistry.view(forAny:)` | Safety net if router accessed directly (existing behavior) |
+
+Registry auto-tracks registered types on `register()`. App passes expected types to `verifyRegistered(...)`. No separate per-module manifest type — registration is the source of truth; startup verifies the expected set.
+
+**Rationale:** Fail closest to the bug. Navigate-time prevents ghost entries in `NavigationPath`. Startup catches composition mistakes before user interaction.
+
+### 15. Remove environment-injected router
+
+Remove `@Environment(\.navigationRouter)` from `NavigationHost` and delete `NavigationRouterEnvironment.swift`.
+
+All navigation goes through `Navigating` injected into deps / view models. No environment escape hatch.
+
+**Rationale:** Consistent with deps-based injection; prevents bypassing `AppNavigator` validation.
+
+### 16. Cross-module navigation policy
+
+Any feature module may navigate to any registered route by importing the target module's `*Routes` target:
+
+```swift
+import SettingsFlowRoutes  // lightweight; no UI
+
+navigator.push(SettingsRoute.general)
+```
+
+No navigation boundaries between modules. Presentation is always explicit at the call site (`push` vs `present(..., style:)`).
+
+**Rationale:** Matches modular monolith goals; `*Routes` targets keep cross-module deps minimal.
+
+### 17. Route naming (unchanged for now)
+
+Keep existing per-module enum names (`AuthRoute`, `NotesRoute`). Namespace statics (e.g. `Settings.general`) deferred to a later change.
+
 ## Risks / Trade-offs
 
-- **[Risk] Unregistered route type at runtime** → Mitigation: `register` asserts/fails in debug when a pushed route type was not registered; unit tests per registered route
-- **[Risk] Breaking AuthFlowUI public API** → Mitigation: update app wiring, previews, and tests in same change; document in proposal
-- **[Risk] Environment-injected router harder to test** → Mitigation: `NavigationRouting` protocol with mock router in ViewTests
+- **[Risk] Unregistered route type at runtime** → Mitigation: navigate-time validation in `AppNavigator`, startup `verifyRegistered`, render-time assertion; unit tests per registered route
+- **[Risk] Breaking AuthFlowUI public API** → Mitigation: update app wiring, previews, and tests in same change; remove `LoginNavigating`; document in proposal
+- **[Risk] Feature protocol packages depend on NavigationProtocol** → Mitigation: `NavigationProtocol` is UI-free and lightweight; acceptable trade-off vs per-module navigator protocols
 - **[Risk] Modal + push state complexity** → Mitigation: v1 keeps single presented route; document limitation
 - **[Trade-off] No `AppRoute` aggregator** → Deep links need multi-module URL mapping later; acceptable per scope
 - **[Trade-off] `AnyObject` on dependency protocols** → Slight reference-semantics requirement; enables stable registration captures
@@ -203,9 +307,11 @@ Remove `NavigationLink` from `LoginView`. Login screen uses `NavigationRouting` 
 4. Add `NotesDependencyProviding` / `NotesNavigation`
 5. Wire app: dependency protocol impls, registry, `NavigationHost`, `VaultSession` observer
 6. Remove dead `NavigationStack` / `NavigationLink` wiring from `RootView`
+7. Add `Navigating`, `AppNavigator`, `verifyRegistered`; refactor auth to deps-based navigation; remove environment router and `LoginNavigating`
 
 No data migration. Rollback: revert package and restore prior `RootView` + `LoginView` API.
 
 ## Open Questions
 
 - None blocking v1. Deep linking module will define URL → `Route` mapping later.
+- Route namespace statics (`Settings.general`) deferred to a later change.

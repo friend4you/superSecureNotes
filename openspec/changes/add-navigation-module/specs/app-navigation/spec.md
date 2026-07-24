@@ -16,26 +16,31 @@ The app target SHALL provide concrete types conforming to `AuthFlowDependencyPro
 
 ### Requirement: App registers all routes at composition root
 
-The app SHALL create a route registry, register `AuthRoute` and `NotesRoute` (and future module routes) with their `view(for:deps:)` builders, and mount `NavigationHost` with a shared `NavigationRouting` instance.
+The app SHALL create a route registry, register `AuthRoute` and `NotesRoute` (and future module routes) with their `view(for:deps:)` builders, call `verifyRegistered` for all expected route types, and mount `NavigationHost` with a shared `Navigating` instance. Module deps bags SHALL receive `navigator` via init parameter.
 
 #### Scenario: Auth and notes routes registered
 
 - **WHEN** the app launches
 - **THEN** both `AuthRoute` and `NotesRoute` are registered in the route registry
 
+#### Scenario: Navigator passed to module deps
+
+- **WHEN** the app composition root is initialized
+- **THEN** `AuthFlowDependencies` and `NotesFlowDependencies` receive the shared `Navigating` instance
+
 ### Requirement: VaultSession drives root navigation
 
-The app SHALL observe `VaultSession.changes` and instruct the navigation router when session activity changes. When the session becomes inactive, the app SHALL call `setRoot` with the auth entry route. When the session becomes active, the app SHALL call `setRoot` with the main notes entry route.
+The app SHALL observe `VaultSession.changes` and instruct the navigator when session activity changes. When the session becomes inactive, the app SHALL call `setRoot` with the auth entry route. When the session becomes active, the app SHALL call `setRoot` with the main notes entry route.
 
 #### Scenario: Inactive session shows auth entry
 
 - **WHEN** `VaultSession` becomes inactive
-- **THEN** the router calls `setRoot(AuthRoute.login)`
+- **THEN** the navigator calls `setRoot(AuthRoute.login)`
 
 #### Scenario: Active session shows notes entry
 
 - **WHEN** `VaultSession` becomes active
-- **THEN** the router calls `setRoot(NotesRoute.list)`
+- **THEN** the navigator calls `setRoot(NotesRoute.list)`
 
 ### Requirement: App links Navigation package
 

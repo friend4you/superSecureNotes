@@ -11,7 +11,6 @@ public struct NavigationHost: View {
         NavigationStack(path: model.pushPath) {
             model.registry.applyingNavigationDestinations(to: rootContent)
         }
-        .environment(\.navigationRouter, model.router)
         .sheet(isPresented: model.isSheetPresented) {
             presentedRouteContent
         }
