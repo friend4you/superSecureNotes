@@ -55,10 +55,6 @@ public struct LoginView: View {
 #Preview {
     let deps = PreviewSupport.makeDependencies()
     return NavigationStack {
-        LoginView(
-            viewModel: deps.makeLoginViewModel(
-                navigator: PreviewSupport.makeLoginNavigator()
-            )
-        )
+        LoginView(viewModel: deps.makeLoginViewModel())
     }
 }

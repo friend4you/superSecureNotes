@@ -6,36 +6,6 @@ import XCTest
 @testable import AuthFlowUI
 
 @MainActor
-private final class MockNavigationRouter: NavigationRouting {
-    private(set) var pushedRoutes: [AnyHashable] = []
-
-    func setRoot<R: Route>(_ route: R) {}
-
-    func push<R: Route>(_ route: R) {
-        pushedRoutes.append(AnyHashable(route))
-    }
-
-    func present<R: Route>(_ route: R, style: RoutePresentation) {}
-
-    func pop() {}
-
-    func popToRoot() {}
-}
-
-@MainActor
-final class AuthLoginNavigatorTests: XCTestCase {
-    func testShowRegisterPushesAuthRouteRegister() {
-        let router = MockNavigationRouter()
-        let navigator = AuthLoginNavigator(router: router)
-
-        navigator.showRegister()
-
-        XCTAssertEqual(router.pushedRoutes.count, 1)
-        XCTAssertEqual(router.pushedRoutes.first?.base as? AuthRoute, .register)
-    }
-}
-
-@MainActor
 final class LoginViewRoutingTests: XCTestCase {
     func testLoginViewSourceHasNoNavigationLink() throws {
         let source = try Self.loginViewSource()

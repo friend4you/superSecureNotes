@@ -2,6 +2,7 @@ import AuthRepositoryProtocol
 import AuthFlowProtocol
 import CryptoKit
 import Foundation
+import NavigationProtocol
 import VaultRepositoryProtocol
 import VaultSessionProtocol
 import XCTest
@@ -21,7 +22,7 @@ final class AuthFlowMocksSmokeTests: XCTestCase {
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
             vaultSession: vaultSession,
-            navigator: MockLoginNavigator()
+            navigator: MockNavigating()
         )
 
         XCTAssertEqual(viewModel.state, .idle)
@@ -207,10 +208,25 @@ actor MockVaultSession: VaultSessionProtocol {
 }
 
 @MainActor
-final class MockLoginNavigator: LoginNavigating {
-    private(set) var showRegisterCallCount = 0
+final class MockNavigating: Navigating {
+    private(set) var pushedRoutes: [AnyHashable] = []
+    private(set) var dismissPresentationCallCount = 0
 
-    func showRegister() {
-        showRegisterCallCount += 1
+    func setRoot<R: Route>(_ route: R) {
+        pushedRoutes = [AnyHashable(route)]
+    }
+
+    func push<R: Route>(_ route: R) {
+        pushedRoutes.append(AnyHashable(route))
+    }
+
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+
+    func pop() {}
+
+    func popToRoot() {}
+
+    func dismissPresentation() {
+        dismissPresentationCallCount += 1
     }
 }

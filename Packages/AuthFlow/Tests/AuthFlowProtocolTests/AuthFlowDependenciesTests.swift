@@ -1,4 +1,5 @@
 import AuthFlowProtocol
+import AuthFlowRoutes
 import XCTest
 
 @MainActor
@@ -8,23 +9,27 @@ final class AuthFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultRepository: MockVaultRepository(),
             vaultAuthenticator: MockVaultAuthenticator(),
-            vaultSession: MockVaultSession()
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating()
         )
 
         XCTAssertTrue(dependencies is AuthFlowDependencies)
     }
 
-    func testMakeLoginViewModelUsesInjectedNavigator() {
-        let navigator = MockLoginNavigator()
+    func testMakeLoginViewModelUsesNavigatorFromDependencies() {
+        let navigator = MockNavigating()
         let dependencies = AuthFlowDependencies(
             authRepository: MockAuthRepository(),
             vaultRepository: MockVaultRepository(),
             vaultAuthenticator: MockVaultAuthenticator(),
-            vaultSession: MockVaultSession()
+            vaultSession: MockVaultSession(),
+            navigator: navigator
         )
 
-        _ = dependencies.makeLoginViewModel(navigator: navigator)
+        let viewModel = dependencies.makeLoginViewModel()
+        viewModel.registerTapped()
 
-        XCTAssertEqual(navigator.showRegisterCallCount, 0)
+        XCTAssertEqual(navigator.pushedRoutes.count, 1)
+        XCTAssertEqual(navigator.pushedRoutes.first?.base as? AuthRoute, .register)
     }
 }

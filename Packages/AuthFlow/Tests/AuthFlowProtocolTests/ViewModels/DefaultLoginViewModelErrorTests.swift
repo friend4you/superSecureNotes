@@ -63,7 +63,7 @@ final class DefaultLoginViewModelErrorTests: XCTestCase {
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
             vaultSession: MockVaultSession(),
-            navigator: MockLoginNavigator()
+            navigator: MockNavigating()
         )
     }
 }

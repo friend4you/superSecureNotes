@@ -2,17 +2,14 @@ import AuthFlowProtocol
 import AuthRepositoryProtocol
 import CryptoKit
 import Foundation
+import NavigationProtocol
 import VaultRepositoryProtocol
 import VaultSessionProtocol
 
 enum PreviewSupport {
     @MainActor
-    static func makeLoginViewModel(
-        navigator: (any LoginNavigating)? = nil
-    ) -> DefaultLoginViewModel {
-        makeDependencies().makeLoginViewModel(
-            navigator: navigator ?? makeLoginNavigator()
-        )
+    static func makeLoginViewModel() -> DefaultLoginViewModel {
+        makeDependencies().makeLoginViewModel()
     }
 
     @MainActor
@@ -21,24 +18,25 @@ enum PreviewSupport {
     }
 
     @MainActor
-    static func makeDependencies() -> AuthFlowDependencies {
+    static func makeDependencies(navigator: (any Navigating)? = nil) -> AuthFlowDependencies {
         AuthFlowDependencies(
             authRepository: PreviewAuthRepository(),
             vaultRepository: PreviewVaultRepository(),
             vaultAuthenticator: PreviewVaultAuthenticator(),
-            vaultSession: PreviewVaultSession()
+            vaultSession: PreviewVaultSession(),
+            navigator: navigator ?? PreviewNavigator()
         )
-    }
-
-    @MainActor
-    static func makeLoginNavigator() -> LoginNavigating {
-        PreviewLoginNavigator()
     }
 }
 
 @MainActor
-private final class PreviewLoginNavigator: LoginNavigating {
-    func showRegister() {}
+private final class PreviewNavigator: Navigating {
+    func setRoot<R: Route>(_ route: R) {}
+    func push<R: Route>(_ route: R) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func pop() {}
+    func popToRoot() {}
+    func dismissPresentation() {}
 }
 
 private actor PreviewAuthRepository: AuthRepository {
