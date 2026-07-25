@@ -1,8 +1,11 @@
 import AuthFlowRoutes
 import CryptoKit
+import Navigation
 import NavigationProtocol
 import NotesFlow
 import NotesFlowRoutes
+import ShareNote
+import ShareNoteRoutes
 import VaultSession
 import XCTest
 
@@ -25,6 +28,16 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class AppCompositionTests: XCTestCase {
+    override func setUp() {
+        StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
+        super.setUp()
+    }
+
+    override func tearDown() {
+        StubBackendConfiguration.testLaunchArguments = nil
+        super.tearDown()
+    }
+
     func testAppUsesNotesFlowDependencies() {
         let notesDependencies = NotesFlowDependencies(
             authRepository: InMemoryAuthRepository(),
@@ -41,5 +54,27 @@ final class AppCompositionTests: XCTestCase {
         let viewModel = composition.notesDependencies.makeNoteListViewModel()
 
         XCTAssertTrue(viewModel is DefaultNoteListViewModel)
+    }
+
+    func testAppUsesShareNoteDependencies() {
+        let shareNoteDependencies = ShareNoteDependencies(navigator: MockNavigating())
+
+        XCTAssertTrue(shareNoteDependencies is ShareNoteDependencyProviding)
+    }
+
+    func testAppCompositionRegistersShareNoteRoute() {
+        let composition = AppComposition()
+
+        XCTAssertTrue(composition.navigation.registry.isRegistered(ShareNoteRoute.self))
+    }
+
+    func testAppCompositionExposesShareNoteDependencies() {
+        let composition = AppComposition()
+
+        let noteID = UUID()
+        let viewModel = composition.shareNoteDependencies.makeShareNoteViewModel(noteID: noteID)
+
+        XCTAssertTrue(viewModel is DefaultShareNoteViewModel)
+        XCTAssertEqual(viewModel.noteID, noteID)
     }
 }

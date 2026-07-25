@@ -5,6 +5,8 @@ import Navigation
 import NotesFlow
 import NotesFlowRoutes
 import Observation
+import ShareNote
+import ShareNoteRoutes
 
 @Observable
 @MainActor
@@ -12,6 +14,7 @@ final class AppComposition {
     let infrastructure: AppDependencies
     let authDependencies: AuthFlowDependencies
     let notesDependencies: NotesFlowDependencies
+    let shareNoteDependencies: ShareNoteDependencies
     let navigation: NavigationCoordinator
 
     init() {
@@ -30,10 +33,14 @@ final class AppComposition {
             vaultSession: infrastructure.vaultSession,
             navigator: navigation.navigator
         )
+        shareNoteDependencies = ShareNoteDependencies(
+            navigator: navigation.navigator
+        )
         navigation.registry.registerAuthRoutes(deps: authDependencies)
         navigation.registry.registerNotesRoutes(deps: notesDependencies)
+        navigation.registry.registerShareNoteRoutes(deps: shareNoteDependencies)
         #if DEBUG
-        navigation.registry.verifyRegistered([AuthRoute.self, NotesRoute.self])
+        navigation.registry.verifyRegistered([AuthRoute.self, NotesRoute.self, ShareNoteRoute.self])
         #endif
     }
 
