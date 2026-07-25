@@ -16,6 +16,10 @@ public final class RouteRegistry {
         self.assertOnUnregisteredRoutes = assertOnUnregisteredRoutes
     }
 
+    var shouldAssertOnUnregisteredRoutes: Bool {
+        assertOnUnregisteredRoutes
+    }
+
     public func register<R: Route>(
         _ routeType: R.Type,
         builder: @escaping (R) -> AnyView
@@ -48,6 +52,17 @@ public final class RouteRegistry {
 
     public func isRegistered<R: Route>(_ routeType: R.Type) -> Bool {
         builders[ObjectIdentifier(routeType)] != nil
+    }
+
+    public func verifyRegistered(_ routeTypes: [any Route.Type]) {
+        for routeType in routeTypes {
+            guard builders[ObjectIdentifier(routeType)] != nil else {
+                if assertOnUnregisteredRoutes {
+                    assertionFailure("Expected route type \(routeType) not registered")
+                }
+                return
+            }
+        }
     }
 
     public func view(forAny route: AnyHashable, routeType: ObjectIdentifier) -> AnyView {
