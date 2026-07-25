@@ -1,18 +1,20 @@
 import AuthFlowProtocol
+import AuthFlowRoutes
 import XCTest
 
 @MainActor
 final class DefaultLoginViewModelNavigationTests: XCTestCase {
-    func testRegisterTappedShowsRegister() {
-        let navigator = MockLoginNavigator()
+    func testRegisterTappedPushesAuthRouteRegister() {
+        let navigator = MockNavigating()
         let viewModel = makeViewModel(navigator: navigator)
 
         viewModel.registerTapped()
 
-        XCTAssertEqual(navigator.showRegisterCallCount, 1)
+        XCTAssertEqual(navigator.pushedRoutes.count, 1)
+        XCTAssertEqual(navigator.pushedRoutes.first?.base as? AuthRoute, .register)
     }
 
-    private func makeViewModel(navigator: MockLoginNavigator) -> DefaultLoginViewModel {
+    private func makeViewModel(navigator: MockNavigating) -> DefaultLoginViewModel {
         DefaultLoginViewModel(
             authRepository: MockAuthRepository(),
             vaultRepository: MockVaultRepository(),
