@@ -7,22 +7,18 @@ public enum AuthNavigation {
     @ViewBuilder
     public static func view(
         for route: AuthRoute,
-        deps: any AuthFlowDependencyProviding,
-        navigator: any LoginNavigating
+        deps: any AuthFlowDependencyProviding
     ) -> some View {
         switch route {
         case .login:
-            loginView(deps: deps, navigator: navigator)
+            loginView(deps: deps)
         case .register:
             registerView(deps: deps)
         }
     }
 
-    public static func loginView(
-        deps: any AuthFlowDependencyProviding,
-        navigator: any LoginNavigating
-    ) -> LoginView {
-        LoginView(viewModel: deps.makeLoginViewModel(navigator: navigator))
+    public static func loginView(deps: any AuthFlowDependencyProviding) -> LoginView {
+        LoginView(viewModel: deps.makeLoginViewModel())
     }
 
     public static func registerView(deps: any AuthFlowDependencyProviding) -> RegisterView {
