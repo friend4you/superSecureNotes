@@ -4,12 +4,11 @@ import XCTest
 
 @MainActor
 final class NavigationCoordinatorTests: XCTestCase {
-    func testCoordinatorExposesRouterRegistryAndHostModel() {
+    func testCoordinatorExposesNavigatorRegistryAndHostModel() {
         let coordinator = NavigationCoordinator()
 
-        XCTAssertNotNil(coordinator.router)
+        XCTAssertNotNil(coordinator.navigator)
         XCTAssertNotNil(coordinator.registry)
-        XCTAssertIdentical(coordinator.hostModel.router, coordinator.router)
         XCTAssertIdentical(coordinator.hostModel.registry, coordinator.registry)
     }
 
@@ -18,7 +17,7 @@ final class NavigationCoordinatorTests: XCTestCase {
         let registry = RouteRegistry(assertOnUnregisteredRoutes: false)
         let coordinator = NavigationCoordinator(router: router, registry: registry)
 
-        XCTAssertIdentical(coordinator.router, router)
+        XCTAssertIdentical(coordinator.hostModel.router, router)
         XCTAssertIdentical(coordinator.registry, registry)
     }
 }
