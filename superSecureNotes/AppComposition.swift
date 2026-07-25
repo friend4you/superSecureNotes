@@ -1,7 +1,9 @@
+import AuthFlowRoutes
 import AuthFlowProtocol
 import AuthFlowUI
 import Navigation
 import NotesFlow
+import NotesFlowRoutes
 import Observation
 
 @Observable
@@ -11,28 +13,27 @@ final class AppComposition {
     let authDependencies: AuthFlowDependencies
     let notesDependencies: NotesFlowDependencies
     let navigation: NavigationCoordinator
-    private let loginNavigator: AuthLoginNavigator
 
     init() {
         let infrastructure = AppDependencies()
         self.infrastructure = infrastructure
+        navigation = NavigationCoordinator()
         authDependencies = AuthFlowDependencies(
             authRepository: infrastructure.authRepository,
             vaultRepository: infrastructure.vaultRepository,
             vaultAuthenticator: infrastructure.vaultAuthenticator,
-            vaultSession: infrastructure.vaultSession
+            vaultSession: infrastructure.vaultSession,
+            navigator: navigation.navigator
         )
-        notesDependencies = NotesFlowDependencies()
-        navigation = NavigationCoordinator()
-        loginNavigator = AuthLoginNavigator(router: navigation.router)
-        navigation.registry.registerAuthRoutes(
-            deps: authDependencies,
-            navigator: loginNavigator
-        )
+        notesDependencies = NotesFlowDependencies(navigator: navigation.navigator)
+        navigation.registry.registerAuthRoutes(deps: authDependencies)
         navigation.registry.registerNotesRoutes(deps: notesDependencies)
+        #if DEBUG
+        navigation.registry.verifyRegistered([AuthRoute.self, NotesRoute.self])
+        #endif
     }
 
     func syncRootRoute(isVaultActive: Bool) {
-        SessionRootNavigation.apply(isVaultActive: isVaultActive, to: navigation.router)
+        SessionRootNavigation.apply(isVaultActive: isVaultActive, to: navigation.navigator)
     }
 }
