@@ -1,2 +1,4 @@
 @MainActor
-public protocol NotesDependencyProviding: AnyObject {}
+public protocol NotesDependencyProviding: AnyObject {
+    func makeNoteListViewModel() -> DefaultNoteListViewModel
+}

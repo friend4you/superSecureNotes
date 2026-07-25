@@ -27,6 +27,11 @@
 		AA6121393013996E00F15876 /* NavigationProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8330094D0F00F15876 /* NavigationProtocol */; };
 		AA61213A3013996E00F15876 /* AuthFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8530094D1100F15876 /* AuthFlowRoutes */; };
 		AA61213B3013996E00F15876 /* NotesFlowRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA611E8630094D1200F15876 /* NotesFlowRoutes */; };
+		AA61213C3013996E00F15876 /* AuthRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC03014AAAA00F15876 /* AuthRepositoryProtocol */; };
+		AA61213D3013996E00F15876 /* VaultRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC13014AAAA00F15876 /* VaultRepositoryProtocol */; };
+		AA61213E3013996E00F15876 /* AuthRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC03014AAAA00F15876 /* AuthRepositoryProtocol */; };
+		AA61213F3013996E00F15876 /* VaultRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC13014AAAA00F15876 /* VaultRepositoryProtocol */; };
+		AA6121403013996E00F15876 /* VaultSessionProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC23014AAAA00F15876 /* VaultSessionProtocol */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +77,8 @@
 				AA611EBA301109FC00F15876 /* Navigation in Frameworks */,
 				AA611EBC301109FC00F15876 /* AuthFlowRoutes in Frameworks */,
 				AA611EBD301109FC00F15876 /* NotesFlowRoutes in Frameworks */,
+				AA61213E3013996E00F15876 /* AuthRepositoryProtocol in Frameworks */,
+				AA61213F3013996E00F15876 /* VaultRepositoryProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,6 +96,9 @@
 				AA6121383013996E00F15876 /* Navigation in Frameworks */,
 				AA6121373013996E00F15876 /* AuthFlowUI in Frameworks */,
 				AA6121323013996E00F15876 /* SecureCrypto in Frameworks */,
+				AA61213C3013996E00F15876 /* AuthRepositoryProtocol in Frameworks */,
+				AA61213D3013996E00F15876 /* VaultRepositoryProtocol in Frameworks */,
+				AA6121403013996E00F15876 /* VaultSessionProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -143,6 +153,8 @@
 				AA611E8330094D0F00F15876 /* NavigationProtocol */,
 				AA611E8530094D1100F15876 /* AuthFlowRoutes */,
 				AA611E8630094D1200F15876 /* NotesFlowRoutes */,
+				AA611EC03014AAAA00F15876 /* AuthRepositoryProtocol */,
+				AA611EC13014AAAA00F15876 /* VaultRepositoryProtocol */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -176,6 +188,9 @@
 				AA611E8330094D0F00F15876 /* NavigationProtocol */,
 				AA611E8530094D1100F15876 /* AuthFlowRoutes */,
 				AA611E8630094D1200F15876 /* NotesFlowRoutes */,
+				AA611EC03014AAAA00F15876 /* AuthRepositoryProtocol */,
+				AA611EC13014AAAA00F15876 /* VaultRepositoryProtocol */,
+				AA611EC23014AAAA00F15876 /* VaultSessionProtocol */,
 			);
 			productName = superSecureNotesTests;
 			productReference = AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */;
@@ -193,6 +208,10 @@
 				TargetAttributes = {
 					AA611E6730094D0300F15876 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					AA611E8730094D1300F15876 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = AA611E6730094D0300F15876;
 					};
 				};
 			};
@@ -603,6 +622,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA611E7A30094D0A00F15876 /* XCLocalSwiftPackageReference "Packages/NotesFlow" */;
 			productName = NotesFlowRoutes;
+		};
+		AA611EC03014AAAA00F15876 /* AuthRepositoryProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
+			productName = AuthRepositoryProtocol;
+		};
+		AA611EC13014AAAA00F15876 /* VaultRepositoryProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "Packages/VaultRepository" */;
+			productName = VaultRepositoryProtocol;
+		};
+		AA611EC23014AAAA00F15876 /* VaultSessionProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7830094D0900F15876 /* XCLocalSwiftPackageReference "Packages/VaultSession" */;
+			productName = VaultSessionProtocol;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

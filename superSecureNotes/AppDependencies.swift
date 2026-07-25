@@ -1,22 +1,35 @@
 import AuthRepository
 import AuthFlowUI
+import AuthRepositoryProtocol
 import Foundation
 import SecureCrypto
 import VaultRepository
+import VaultRepositoryProtocol
 import VaultSession
 
 @MainActor
 final class AppDependencies {
     static let apiBaseURL = URL(string: "https://api.example.com/v1")!
 
-    let authRepository: NetworkAuthRepository
-    let vaultRepository: NetworkVaultRepository
+    let authRepository: any AuthRepository
+    let vaultRepository: any VaultRepository
     let vaultSession: VaultSession
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
 
     init() {
-        authRepository = NetworkAuthRepository(baseURL: Self.apiBaseURL)
-        let tokenProvider = AuthRepositoryAccessTokenProvider(repository: authRepository)
+        #if DEBUG
+        if StubBackendConfiguration.isEnabled {
+            authRepository = InMemoryAuthRepository()
+            vaultRepository = FileVaultRepository()
+            vaultSession = VaultSession()
+            vaultAuthenticator = SecureCryptoVaultAuthenticator()
+            return
+        }
+        #endif
+
+        let networkAuthRepository = NetworkAuthRepository(baseURL: Self.apiBaseURL)
+        authRepository = networkAuthRepository
+        let tokenProvider = AuthRepositoryAccessTokenProvider(repository: networkAuthRepository)
         vaultRepository = NetworkVaultRepository(
             baseURL: Self.apiBaseURL,
             tokenProvider: tokenProvider

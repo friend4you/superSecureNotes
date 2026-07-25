@@ -25,7 +25,11 @@ final class AppComposition {
             vaultSession: infrastructure.vaultSession,
             navigator: navigation.navigator
         )
-        notesDependencies = NotesFlowDependencies(navigator: navigation.navigator)
+        notesDependencies = NotesFlowDependencies(
+            authRepository: infrastructure.authRepository,
+            vaultSession: infrastructure.vaultSession,
+            navigator: navigation.navigator
+        )
         navigation.registry.registerAuthRoutes(deps: authDependencies)
         navigation.registry.registerNotesRoutes(deps: notesDependencies)
         #if DEBUG

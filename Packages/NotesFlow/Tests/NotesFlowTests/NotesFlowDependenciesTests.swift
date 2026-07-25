@@ -1,5 +1,8 @@
+import AuthRepositoryProtocol
+import CryptoKit
 import NavigationProtocol
 import NotesFlow
+import VaultSessionProtocol
 import XCTest
 
 @MainActor
@@ -16,9 +19,47 @@ private final class MockNavigating: Navigating {
 final class NotesFlowDependenciesTests: XCTestCase {
     func testNotesFlowDependenciesConformsToNotesDependencyProviding() {
         let dependencies: any NotesDependencyProviding = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
             navigator: MockNavigating()
         )
 
         XCTAssertTrue(dependencies is NotesFlowDependencies)
     }
+
+    func testMakeNoteListViewModelReturnsDefaultImplementation() {
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating()
+        )
+
+        let viewModel = dependencies.makeNoteListViewModel()
+
+        XCTAssertTrue(viewModel is DefaultNoteListViewModel)
+    }
+}
+
+private actor MockAuthRepository: AuthRepository {
+    var currentSession: AuthSession? { nil }
+    var currentUser: User? { nil }
+    func register(_ credentials: RegisterCredentials) async throws -> AuthSession {
+        AuthSession(accessToken: "", refreshToken: "", expiresAt: .distantFuture)
+    }
+    func login(_ credentials: LoginCredentials) async throws -> AuthSession {
+        AuthSession(accessToken: "", refreshToken: "", expiresAt: .distantFuture)
+    }
+    func logout() async throws {}
+    func refreshSession() async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+}
+
+private actor MockVaultSession: VaultSessionProtocol {
+    var isActive: Bool { false }
+    nonisolated var changes: AsyncStream<Bool> { AsyncStream { $0.finish() } }
+    func establish(_ keys: VaultSessionKeys) {}
+    func clear() {}
+    func udk() throws -> SymmetricKey { .init(size: .bits256) }
+    func identityPrivateKey() throws -> Data { Data() }
 }

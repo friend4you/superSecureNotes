@@ -12,7 +12,6 @@ public enum NotesNavigation {
     }
 
     public static func listView(deps: any NotesDependencyProviding) -> NoteListView {
-        _ = deps
-        return NoteListView()
+        NoteListView(viewModel: deps.makeNoteListViewModel())
     }
 }

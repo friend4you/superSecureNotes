@@ -20,6 +20,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Navigation"),
+        .package(path: "../AuthFlow"),
+        .package(path: "../VaultSession"),
     ],
     targets: [
         .target(
@@ -27,6 +29,8 @@ let package = Package(
             dependencies: [
                 "NotesFlowRoutes",
                 .product(name: "Navigation", package: "Navigation"),
+                .product(name: "AuthRepositoryProtocol", package: "AuthFlow"),
+                .product(name: "VaultSessionProtocol", package: "VaultSession"),
             ]
         ),
         .target(
