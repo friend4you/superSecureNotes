@@ -1,5 +1,5 @@
 @MainActor
 public protocol AuthFlowDependencyProviding: AnyObject {
-    func makeLoginViewModel(navigator: any LoginNavigating) -> DefaultLoginViewModel
+    func makeLoginViewModel() -> DefaultLoginViewModel
     func makeRegisterViewModel() -> DefaultRegisterViewModel
 }

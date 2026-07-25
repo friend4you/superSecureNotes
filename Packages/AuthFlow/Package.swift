@@ -51,9 +51,11 @@ let package = Package(
         .target(
             name: "AuthFlowProtocol",
             dependencies: [
+                "AuthFlowRoutes",
                 "AuthRepositoryProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
+                .product(name: "NavigationProtocol", package: "Navigation"),
             ]
         ),
         .target(
@@ -84,7 +86,11 @@ let package = Package(
         ),
         .testTarget(
             name: "AuthFlowProtocolTests",
-            dependencies: ["AuthFlowProtocol"]
+            dependencies: [
+                "AuthFlowProtocol",
+                "AuthFlowRoutes",
+                .product(name: "NavigationProtocol", package: "Navigation"),
+            ]
         ),
         .testTarget(
             name: "AuthFlowRoutesTests",

@@ -1,4 +1,6 @@
+import AuthFlowRoutes
 import AuthRepositoryProtocol
+import NavigationProtocol
 import VaultRepositoryProtocol
 import VaultSessionProtocol
 
@@ -8,20 +10,23 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let vaultRepository: any VaultRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
+    private let navigator: any Navigating
 
     public init(
         authRepository: any AuthRepository,
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
-        vaultSession: any VaultSessionProtocol
+        vaultSession: any VaultSessionProtocol,
+        navigator: any Navigating
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
+        self.navigator = navigator
     }
 
-    public func makeLoginViewModel(navigator: any LoginNavigating) -> DefaultLoginViewModel {
+    public func makeLoginViewModel() -> DefaultLoginViewModel {
         DefaultLoginViewModel(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
