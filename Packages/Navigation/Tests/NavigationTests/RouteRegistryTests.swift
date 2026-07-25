@@ -48,4 +48,26 @@ final class RouteRegistryTests: XCTestCase {
 
         XCTAssertFalse(builderCalled)
     }
+
+    func testVerifyRegisteredPassesWhenAllExpectedTypesRegistered() {
+        let registry = RouteRegistry(assertOnUnregisteredRoutes: false)
+        registry.register(NotesRoute.self) { _ in
+            AnyView(Text("Notes List"))
+        }
+
+        registry.verifyRegistered([NotesRoute.self])
+    }
+
+    func testVerifyRegisteredDoesNotInvokeRegisteredBuilder() {
+        var builderCalled = false
+        let registry = RouteRegistry(assertOnUnregisteredRoutes: false)
+        registry.register(NotesRoute.self) { _ in
+            builderCalled = true
+            return AnyView(Text("Notes List"))
+        }
+
+        registry.verifyRegistered([NotesRoute.self])
+
+        XCTAssertFalse(builderCalled)
+    }
 }
