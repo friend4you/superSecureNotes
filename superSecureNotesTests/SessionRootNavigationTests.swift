@@ -6,7 +6,7 @@ import XCTest
 @testable import superSecureNotes
 
 @MainActor
-private final class MockNavigationRouter: NavigationRouting {
+private final class MockNavigating: Navigating {
     private(set) var setRootRoutes: [AnyHashable] = []
 
     func setRoot<R: Route>(_ route: R) {
@@ -20,25 +20,27 @@ private final class MockNavigationRouter: NavigationRouting {
     func pop() {}
 
     func popToRoot() {}
+
+    func dismissPresentation() {}
 }
 
 @MainActor
 final class SessionRootNavigationTests: XCTestCase {
     func testInactiveSessionSetsAuthLoginRoot() {
-        let router = MockNavigationRouter()
+        let navigator = MockNavigating()
 
-        SessionRootNavigation.apply(isVaultActive: false, to: router)
+        SessionRootNavigation.apply(isVaultActive: false, to: navigator)
 
-        XCTAssertEqual(router.setRootRoutes.count, 1)
-        XCTAssertEqual(router.setRootRoutes.first?.base as? AuthRoute, .login)
+        XCTAssertEqual(navigator.setRootRoutes.count, 1)
+        XCTAssertEqual(navigator.setRootRoutes.first?.base as? AuthRoute, .login)
     }
 
     func testActiveSessionSetsNotesListRoot() {
-        let router = MockNavigationRouter()
+        let navigator = MockNavigating()
 
-        SessionRootNavigation.apply(isVaultActive: true, to: router)
+        SessionRootNavigation.apply(isVaultActive: true, to: navigator)
 
-        XCTAssertEqual(router.setRootRoutes.count, 1)
-        XCTAssertEqual(router.setRootRoutes.first?.base as? NotesRoute, .list)
+        XCTAssertEqual(navigator.setRootRoutes.count, 1)
+        XCTAssertEqual(navigator.setRootRoutes.first?.base as? NotesRoute, .list)
     }
 }

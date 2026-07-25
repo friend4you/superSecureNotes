@@ -4,11 +4,11 @@ import NotesFlowRoutes
 
 @MainActor
 enum SessionRootNavigation {
-    static func apply(isVaultActive: Bool, to router: any NavigationRouting) {
+    static func apply(isVaultActive: Bool, to navigator: any Navigating) {
         if isVaultActive {
-            router.setRoot(NotesRoute.list)
+            navigator.setRoot(NotesRoute.list)
         } else {
-            router.setRoot(AuthRoute.login)
+            navigator.setRoot(AuthRoute.login)
         }
     }
 }
