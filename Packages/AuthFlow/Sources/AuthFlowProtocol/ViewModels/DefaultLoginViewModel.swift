@@ -1,5 +1,7 @@
+import AuthFlowRoutes
 import AuthRepositoryProtocol
 import Foundation
+import NavigationProtocol
 import Observation
 import VaultRepositoryProtocol
 import VaultSessionProtocol
@@ -15,14 +17,14 @@ public final class DefaultLoginViewModel: LoginViewModel {
     private let vaultRepository: any VaultRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
-    private let navigator: any LoginNavigating
+    private let navigator: any Navigating
 
     public init(
         authRepository: any AuthRepository,
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
         vaultSession: any VaultSessionProtocol,
-        navigator: any LoginNavigating
+        navigator: any Navigating
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -32,7 +34,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
     }
 
     public func registerTapped() {
-        navigator.showRegister()
+        navigator.push(AuthRoute.register)
     }
 
     public func login() async {
