@@ -1,5 +1,6 @@
 import AuthFlowUI
 import AuthRepository
+import NoteRepository
 import VaultRepository
 import VaultSession
 import XCTest
@@ -19,6 +20,7 @@ final class AppDependenciesTests: XCTestCase {
 
         XCTAssertTrue(dependencies.authRepository is InMemoryAuthRepository)
         XCTAssertTrue(dependencies.vaultRepository is FileVaultRepository)
+        XCTAssertTrue(dependencies.noteRepository is FileNoteRepository)
     }
 
     func testStubModeUsesRealCryptoAndVaultSession() {
@@ -35,5 +37,6 @@ final class AppDependenciesTests: XCTestCase {
 
         XCTAssertTrue(dependencies.authRepository is NetworkAuthRepository)
         XCTAssertTrue(dependencies.vaultRepository is NetworkVaultRepository)
+        XCTAssertTrue(dependencies.noteRepository is NetworkNoteRepository)
     }
 }

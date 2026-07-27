@@ -23,6 +23,7 @@ let package = Package(
         .package(path: "../AuthFlow"),
         .package(path: "../VaultSession"),
         .package(path: "../ShareNote"),
+        .package(path: "../NoteRepository"),
     ],
     targets: [
         .target(
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "AuthFlowRoutes", package: "AuthFlow"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
                 .product(name: "ShareNoteRoutes", package: "ShareNote"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
             ]
         ),
         .target(

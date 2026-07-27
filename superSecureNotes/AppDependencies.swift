@@ -2,6 +2,8 @@ import AuthRepository
 import AuthFlowUI
 import AuthRepositoryProtocol
 import Foundation
+import NoteRepository
+import NoteRepositoryProtocol
 import SecureCrypto
 import VaultRepository
 import VaultRepositoryProtocol
@@ -13,6 +15,7 @@ final class AppDependencies {
 
     let authRepository: any AuthRepository
     let vaultRepository: any VaultRepository
+    let noteRepository: any NoteRepository
     let vaultSession: VaultSession
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
 
@@ -21,6 +24,7 @@ final class AppDependencies {
         if StubBackendConfiguration.isEnabled {
             authRepository = InMemoryAuthRepository()
             vaultRepository = FileVaultRepository()
+            noteRepository = FileNoteRepository()
             vaultSession = VaultSession()
             vaultAuthenticator = SecureCryptoVaultAuthenticator()
             return
@@ -31,6 +35,10 @@ final class AppDependencies {
         authRepository = networkAuthRepository
         let tokenProvider = AuthRepositoryAccessTokenProvider(repository: networkAuthRepository)
         vaultRepository = NetworkVaultRepository(
+            baseURL: Self.apiBaseURL,
+            tokenProvider: tokenProvider
+        )
+        noteRepository = NetworkNoteRepository(
             baseURL: Self.apiBaseURL,
             tokenProvider: tokenProvider
         )

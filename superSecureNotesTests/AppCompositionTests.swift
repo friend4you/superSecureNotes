@@ -2,6 +2,7 @@ import AuthFlowRoutes
 import CryptoKit
 import Navigation
 import NavigationProtocol
+import NoteRepositoryProtocol
 import NotesFlow
 import NotesFlowRoutes
 import ShareNote
@@ -9,6 +10,7 @@ import ShareNoteRoutes
 import VaultSession
 import XCTest
 
+@testable import NotesFlow
 @testable import superSecureNotes
 
 @MainActor
@@ -42,10 +44,24 @@ final class AppCompositionTests: XCTestCase {
         let notesDependencies = NotesFlowDependencies(
             authRepository: InMemoryAuthRepository(),
             vaultSession: VaultSession(),
-            navigator: MockNavigating()
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository()
         )
 
         XCTAssertTrue(notesDependencies is NotesDependencyProviding)
+    }
+
+    func testAppCompositionPassesNoteRepositoryToNotesDependencies() {
+        let composition = AppComposition()
+
+        guard let infrastructureRepository = composition.infrastructure.noteRepository as? FileNoteRepository,
+              let notesRepository = composition.notesDependencies.noteRepository as? FileNoteRepository
+        else {
+            XCTFail("Expected FileNoteRepository instances in stub mode")
+            return
+        }
+
+        XCTAssertTrue(infrastructureRepository === notesRepository)
     }
 
     func testAppCompositionPassesAuthAndVaultSessionToNotesDependencies() {
@@ -77,4 +93,11 @@ final class AppCompositionTests: XCTestCase {
         XCTAssertTrue(viewModel is DefaultShareNoteViewModel)
         XCTAssertEqual(viewModel.noteID, noteID)
     }
+}
+
+private actor MockNoteRepository: NoteRepository {
+    func listNotes() async throws -> [NoteSummary] { [] }
+    func readNote(noteID: UUID) async throws -> Data { Data() }
+    func writeNote(noteID: UUID, data: Data) async throws {}
+    func deleteNote(noteID: UUID) async throws {}
 }

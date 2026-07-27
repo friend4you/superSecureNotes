@@ -31,7 +31,8 @@ final class AppComposition {
         notesDependencies = NotesFlowDependencies(
             authRepository: infrastructure.authRepository,
             vaultSession: infrastructure.vaultSession,
-            navigator: navigation.navigator
+            navigator: navigation.navigator,
+            noteRepository: infrastructure.noteRepository
         )
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator
