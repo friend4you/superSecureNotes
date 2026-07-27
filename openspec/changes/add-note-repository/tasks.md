@@ -16,8 +16,8 @@
 
 ## 4. NoteRepository Protocol
 
-- [ ] 4.1 Write failing tests: `NoteRepository` protocol compiles with `listNotes`, `readNote`, `writeNote`, and `deleteNote`; mock actor type satisfies contract (`NoteRepositoryProtocolTests/NoteRepositoryTests.swift`)
-- [ ] 4.2 Add `NoteRepository` protocol definition to `NoteRepositoryProtocol/NoteRepository.swift`
+- [x] 4.1 Write failing tests: `NoteRepository` protocol compiles with `listNotes`, `readNote`, `writeNote`, and `deleteNote`; mock actor type satisfies contract (`NoteRepositoryProtocolTests/NoteRepositoryTests.swift`)
+- [x] 4.2 Add `NoteRepository` protocol definition to `NoteRepositoryProtocol/NoteRepository.swift`
 
 ## 5. Test Infrastructure — URLProtocol Stub
 
