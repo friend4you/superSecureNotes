@@ -1,7 +1,7 @@
 ## 1. FileNoteRepository stub
 
-- [ ] 1.1 Write failing tests: `FileNoteRepository` write/read roundtrip, `listNotes` from stored files, `deleteNote` removes file, `readNote` throws `noteNotFound` when missing (`superSecureNotesTests/FileNoteRepositoryTests.swift`)
-- [ ] 1.2 Implement `FileNoteRepository` actor in `superSecureNotes/Stub/FileNoteRepository.swift`; make tests pass
+- [x] 1.1 Write failing tests: `FileNoteRepository` write/read roundtrip, `listNotes` from stored files, `deleteNote` removes file, `readNote` throws `noteNotFound` when missing (`superSecureNotesTests/FileNoteRepositoryTests.swift`)
+- [x] 1.2 Implement `FileNoteRepository` actor in `superSecureNotes/Stub/FileNoteRepository.swift`; make tests pass
 
 ## 2. App — note repository wiring
 

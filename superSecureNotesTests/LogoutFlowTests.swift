@@ -27,11 +27,12 @@ private final class MockNavigating: Navigating {
 final class LogoutFlowTests: XCTestCase {
     func testLogoutClearsVaultSessionAndNavigatesToLogin() async {
         let vaultSession = VaultSession()
+        let navigator = MockNavigating()
         let viewModel = DefaultNoteListViewModel(
             authRepository: InMemoryAuthRepository(),
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            navigator: navigator
         )
-        let navigator = MockNavigating()
         await vaultSession.establish(
             VaultSessionKeys(
                 udk: SymmetricKey(size: .bits256),

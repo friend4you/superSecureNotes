@@ -6,6 +6,16 @@ import VaultSessionProtocol
 import XCTest
 
 @MainActor
+private final class MockNavigating: Navigating {
+    func setRoot<R: Route>(_ route: R) {}
+    func push<R: Route>(_ route: R) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func pop() {}
+    func popToRoot() {}
+    func dismissPresentation() {}
+}
+
+@MainActor
 final class DefaultNoteListViewModelTests: XCTestCase {
     func testLogoutClearsAuthAndVaultSession() async throws {
         let authRepository = MockAuthRepository()
@@ -22,7 +32,8 @@ final class DefaultNoteListViewModelTests: XCTestCase {
 
         let viewModel = DefaultNoteListViewModel(
             authRepository: authRepository,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            navigator: MockNavigating()
         )
         await viewModel.logout()
 

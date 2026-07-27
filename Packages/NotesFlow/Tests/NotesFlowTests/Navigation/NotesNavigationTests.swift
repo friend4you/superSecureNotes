@@ -1,5 +1,6 @@
 import AuthRepositoryProtocol
 import CryptoKit
+import NavigationProtocol
 import NotesFlowRoutes
 import VaultSessionProtocol
 import XCTest
@@ -7,11 +8,22 @@ import XCTest
 @testable import NotesFlow
 
 @MainActor
+private final class MockNavigating: Navigating {
+    func setRoot<R: Route>(_ route: R) {}
+    func push<R: Route>(_ route: R) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func pop() {}
+    func popToRoot() {}
+    func dismissPresentation() {}
+}
+
+@MainActor
 private final class MockNotesDependencies: NotesDependencyProviding {
     func makeNoteListViewModel() -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
             authRepository: MockAuthRepository(),
-            vaultSession: MockVaultSession()
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating()
         )
     }
 }
