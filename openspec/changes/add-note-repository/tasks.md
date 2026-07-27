@@ -56,8 +56,8 @@
 
 ## 12. NetworkNoteRepository — Write Note
 
-- [ ] 12.1 Write failing tests: `writeNote` succeeds on `204`; rejects empty `Data` locally; maps `validationError`; propagates token provider failure (`NoteRepositoryTests/NetworkNoteRepositoryWriteNoteTests.swift`)
-- [ ] 12.2 Implement `writeNote` in `NetworkNoteRepository`; make tests pass
+- [x] 12.1 Write failing tests: `writeNote` succeeds on `204`; rejects empty `Data` locally; maps `validationError`; propagates token provider failure (`NoteRepositoryTests/NetworkNoteRepositoryWriteNoteTests.swift`)
+- [x] 12.2 Implement `writeNote` in `NetworkNoteRepository`; make tests pass
 
 ## 13. NetworkNoteRepository — Delete Note
 

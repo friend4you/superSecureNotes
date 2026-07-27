@@ -31,7 +31,12 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func writeNote(noteID: UUID, data: Data) async throws {
-        throw NoteRepositoryError.networkError
+        guard !data.isEmpty else {
+            throw NoteRepositoryError.validationError("Note must not be empty.")
+        }
+
+        let accessToken = try await tokenProvider.accessToken()
+        try await apiClient.writeNote(noteID: noteID, data: data, accessToken: accessToken)
     }
 
     public func deleteNote(noteID: UUID) async throws {
