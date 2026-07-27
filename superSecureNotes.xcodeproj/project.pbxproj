@@ -36,6 +36,10 @@
 		AA61220830150000F15876 /* ShareNoteRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA61220230150000F15876 /* ShareNoteRoutes */; };
 		AA61220930150000F15876 /* ShareNote in Frameworks */ = {isa = PBXBuildFile; productRef = AA61220130150000F15876 /* ShareNote */; };
 		AA61220A30150000F15876 /* ShareNoteRoutes in Frameworks */ = {isa = PBXBuildFile; productRef = AA61220230150000F15876 /* ShareNoteRoutes */; };
+		AA61221330160000F15876 /* NoteRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221130160000F15876 /* NoteRepository */; };
+		AA61221430160000F15876 /* NoteRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221230160000F15876 /* NoteRepositoryProtocol */; };
+		AA61221530160000F15876 /* NoteRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221130160000F15876 /* NoteRepository */; };
+		AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221230160000F15876 /* NoteRepositoryProtocol */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +89,8 @@
 				AA61213F3013996E00F15876 /* VaultRepositoryProtocol in Frameworks */,
 				AA61220730150000F15876 /* ShareNote in Frameworks */,
 				AA61220830150000F15876 /* ShareNoteRoutes in Frameworks */,
+				AA61221330160000F15876 /* NoteRepository in Frameworks */,
+				AA61221430160000F15876 /* NoteRepositoryProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +113,8 @@
 				AA6121403013996E00F15876 /* VaultSessionProtocol in Frameworks */,
 				AA61220930150000F15876 /* ShareNote in Frameworks */,
 				AA61220A30150000F15876 /* ShareNoteRoutes in Frameworks */,
+				AA61221530160000F15876 /* NoteRepository in Frameworks */,
+				AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +173,8 @@
 				AA611EC13014AAAA00F15876 /* VaultRepositoryProtocol */,
 				AA61220130150000F15876 /* ShareNote */,
 				AA61220230150000F15876 /* ShareNoteRoutes */,
+				AA61221130160000F15876 /* NoteRepository */,
+				AA61221230160000F15876 /* NoteRepositoryProtocol */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -203,6 +213,8 @@
 				AA611EC23014AAAA00F15876 /* VaultSessionProtocol */,
 				AA61220130150000F15876 /* ShareNote */,
 				AA61220230150000F15876 /* ShareNoteRoutes */,
+				AA61221130160000F15876 /* NoteRepository */,
+				AA61221230160000F15876 /* NoteRepositoryProtocol */,
 			);
 			productName = superSecureNotesTests;
 			productReference = AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */;
@@ -244,6 +256,7 @@
 				AA611E7E30094D0C00F15876 /* XCLocalSwiftPackageReference "Packages/VaultRepository" */,
 				AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */,
 				AA61220030150000F15876 /* XCLocalSwiftPackageReference "Packages/ShareNote" */,
+				AA61221030160000F15876 /* XCLocalSwiftPackageReference "Packages/NoteRepository" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA611E6930094D0300F15876 /* Products */;
@@ -587,6 +600,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ShareNote;
 		};
+		AA61221030160000F15876 /* XCLocalSwiftPackageReference "Packages/NoteRepository" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/NoteRepository;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -664,6 +681,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA61220030150000F15876 /* XCLocalSwiftPackageReference "Packages/ShareNote" */;
 			productName = ShareNoteRoutes;
+		};
+		AA61221130160000F15876 /* NoteRepository */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA61221030160000F15876 /* XCLocalSwiftPackageReference "Packages/NoteRepository" */;
+			productName = NoteRepository;
+		};
+		AA61221230160000F15876 /* NoteRepositoryProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA61221030160000F15876 /* XCLocalSwiftPackageReference "Packages/NoteRepository" */;
+			productName = NoteRepositoryProtocol;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

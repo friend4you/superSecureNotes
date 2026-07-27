@@ -1,8 +1,8 @@
 ## 1. Package Structure
 
-- [ ] 1.1 Create `Packages/NoteRepository/Package.swift` with `NoteRepositoryProtocol` and `NoteRepository` targets/products, `VaultRepositoryProtocol` dependency on implementation target, and test targets (platforms: iOS 17+, macOS 13+)
-- [ ] 1.2 Scaffold `Sources/NoteRepositoryProtocol/` and `Sources/NoteRepository/` module entry points
-- [ ] 1.3 Add `NoteRepository` package dependency to Xcode project
+- [x] 1.1 Create `Packages/NoteRepository/Package.swift` with `NoteRepositoryProtocol` and `NoteRepository` targets/products, `VaultRepositoryProtocol` dependency on implementation target, and test targets (platforms: iOS 17+, macOS 13+)
+- [x] 1.2 Scaffold `Sources/NoteRepositoryProtocol/` and `Sources/NoteRepository/` module entry points
+- [x] 1.3 Add `NoteRepository` package dependency to Xcode project
 
 ## 2. NoteRepositoryError
 
