@@ -40,6 +40,7 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func deleteNote(noteID: UUID) async throws {
-        throw NoteRepositoryError.networkError
+        let accessToken = try await tokenProvider.accessToken()
+        try await apiClient.deleteNote(noteID: noteID, accessToken: accessToken)
     }
 }

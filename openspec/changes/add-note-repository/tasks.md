@@ -61,8 +61,8 @@
 
 ## 13. NetworkNoteRepository — Delete Note
 
-- [ ] 13.1 Write failing tests: `deleteNote` succeeds on `204`; maps `noteNotFound`; propagates token provider failure (`NoteRepositoryTests/NetworkNoteRepositoryDeleteNoteTests.swift`)
-- [ ] 13.2 Implement `deleteNote` in `NetworkNoteRepository`; make tests pass
+- [x] 13.1 Write failing tests: `deleteNote` succeeds on `204`; maps `noteNotFound`; propagates token provider failure (`NoteRepositoryTests/NetworkNoteRepositoryDeleteNoteTests.swift`)
+- [x] 13.2 Implement `deleteNote` in `NetworkNoteRepository`; make tests pass
 
 ## 14. NetworkNoteRepository — Error Mapping
 
