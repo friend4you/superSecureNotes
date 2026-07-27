@@ -12,7 +12,8 @@ public enum ShareNoteNavigation {
         }
     }
 
-    public static func shareView(noteID: UUID, deps: any ShareNoteDependencyProviding) -> ShareNoteView {
+    public static func shareView(noteID: UUID, deps: any ShareNoteDependencyProviding) -> some View {
         ShareNoteView(viewModel: deps.makeShareNoteViewModel(noteID: noteID))
+            .presentationDetents([.medium])
     }
 }

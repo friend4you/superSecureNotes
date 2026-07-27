@@ -22,7 +22,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     public func makeNoteListViewModel() -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
             authRepository: authRepository,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            navigator: navigator
         )
     }
 }

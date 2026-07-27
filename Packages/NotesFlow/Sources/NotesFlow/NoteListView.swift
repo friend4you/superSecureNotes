@@ -1,4 +1,5 @@
 import SwiftUI
+import NavigationProtocol
 
 public struct NoteListView: View {
     @Bindable private var viewModel: DefaultNoteListViewModel
@@ -18,6 +19,14 @@ public struct NoteListView: View {
                         }
                     }
                 }
+                ToolbarItem(placement: .automatic) {
+                    Button("Share") {
+                        Task {
+                            viewModel.share()
+                        }
+                    }
+                }
+                
             }
             #endif
     }
@@ -27,7 +36,8 @@ public struct NoteListView: View {
     NoteListView(
         viewModel: DefaultNoteListViewModel(
             authRepository: PreviewAuthRepository(),
-            vaultSession: PreviewVaultSession()
+            vaultSession: PreviewVaultSession(),
+            navigator: PreviewNavigator()
         )
     )
 }
@@ -59,5 +69,15 @@ private actor PreviewVaultSession: VaultSessionProtocol {
     func clear() {}
     func udk() throws -> SymmetricKey { .init(size: .bits256) }
     func identityPrivateKey() throws -> Data { Data() }
+}
+
+@MainActor
+private final class PreviewNavigator: Navigating {
+    func setRoot<R: Route>(_ route: R) {}
+    func push<R: Route>(_ route: R) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func pop() {}
+    func popToRoot() {}
+    func dismissPresentation() {}
 }
 #endif
