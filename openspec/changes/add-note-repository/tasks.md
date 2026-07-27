@@ -11,8 +11,8 @@
 
 ## 3. NoteSummary Model
 
-- [ ] 3.1 Write failing tests: `NoteSummary` is `Equatable` and `Sendable`; two values with same fields are equal (`NoteRepositoryProtocolTests/NoteSummaryTests.swift`)
-- [ ] 3.2 Add `NoteSummary` to `NoteRepositoryProtocol/Models/NoteSummary.swift`; make tests pass
+- [x] 3.1 Write failing tests: `NoteSummary` is `Equatable` and `Sendable`; two values with same fields are equal (`NoteRepositoryProtocolTests/NoteSummaryTests.swift`)
+- [x] 3.2 Add `NoteSummary` to `NoteRepositoryProtocol/Models/NoteSummary.swift`; make tests pass
 
 ## 4. NoteRepository Protocol
 
