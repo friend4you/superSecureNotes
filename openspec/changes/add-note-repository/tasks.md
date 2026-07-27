@@ -71,6 +71,6 @@
 
 ## 15. Module Integration
 
-- [ ] 15.1 Add `@_exported import NoteRepositoryProtocol` to `NoteRepository` module entry point
-- [ ] 15.2 Verify all `NoteRepositoryProtocolTests` and `NoteRepositoryTests` pass
-- [ ] 15.3 Add `Packages/NoteRepository/README.md` with module dependency diagram, REST API summary, and import guidance
+- [x] 15.1 Add `@_exported import NoteRepositoryProtocol` to `NoteRepository` module entry point
+- [x] 15.2 Verify all `NoteRepositoryProtocolTests` and `NoteRepositoryTests` pass
+- [x] 15.3 Add `Packages/NoteRepository/README.md` with module dependency diagram, REST API summary, and import guidance
