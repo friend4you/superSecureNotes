@@ -66,8 +66,8 @@
 
 ## 14. NetworkNoteRepository — Error Mapping
 
-- [ ] 14.1 Write failing tests: transport failure throws `networkError`; unhandled status (e.g. `500`) throws `serverError(statusCode:)` (`NoteRepositoryTests/NetworkNoteRepositoryErrorTests.swift`)
-- [ ] 14.2 Implement error mapping in `NoteAPIClient` / `NetworkNoteRepository`; make tests pass
+- [x] 14.1 Write failing tests: transport failure throws `networkError`; unhandled status (e.g. `500`) throws `serverError(statusCode:)` (`NoteRepositoryTests/NetworkNoteRepositoryErrorTests.swift`)
+- [x] 14.2 Implement error mapping in `NoteAPIClient` / `NetworkNoteRepository`; make tests pass
 
 ## 15. Module Integration
 
