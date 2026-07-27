@@ -21,8 +21,8 @@
 
 ## 5. Test Infrastructure — URLProtocol Stub
 
-- [ ] 5.1 Write `URLProtocolStub` test helper and fixture builders for note API responses (`NoteRepositoryTests/Support/URLProtocolStub.swift`, `NoteFixtures.swift`)
-- [ ] 5.2 Verify stub can intercept requests and return configured responses in a smoke test
+- [x] 5.1 Write `URLProtocolStub` test helper and fixture builders for note API responses (`NoteRepositoryTests/Support/URLProtocolStub.swift`, `NoteFixtures.swift`)
+- [x] 5.2 Verify stub can intercept requests and return configured responses in a smoke test
 
 ## 6. Internal API Client — List Notes
 
