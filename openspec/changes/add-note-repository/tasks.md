@@ -46,8 +46,8 @@
 
 ## 10. NetworkNoteRepository — List Notes
 
-- [ ] 10.1 Write failing tests: `listNotes` returns summaries on `200`; returns empty array; propagates token provider failure without network call (`NoteRepositoryTests/NetworkNoteRepositoryListNotesTests.swift`)
-- [ ] 10.2 Implement `listNotes` in `actor NetworkNoteRepository`; make tests pass
+- [x] 10.1 Write failing tests: `listNotes` returns summaries on `200`; returns empty array; propagates token provider failure without network call (`NoteRepositoryTests/NetworkNoteRepositoryListNotesTests.swift`)
+- [x] 10.2 Implement `listNotes` in `actor NetworkNoteRepository`; make tests pass
 
 ## 11. NetworkNoteRepository — Read Note
 
