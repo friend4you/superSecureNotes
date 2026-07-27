@@ -41,8 +41,8 @@
 
 ## 9. Internal API Client — Delete Note
 
-- [ ] 9.1 Write failing tests: internal `NoteAPIClient` sends `DELETE /notes/{noteId}` with Bearer token; succeeds on `204`; maps `404 note_not_found` and `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientDeleteNoteTests.swift`)
-- [ ] 9.2 Implement `deleteNote` in `NoteAPIClient`; make tests pass
+- [x] 9.1 Write failing tests: internal `NoteAPIClient` sends `DELETE /notes/{noteId}` with Bearer token; succeeds on `204`; maps `404 note_not_found` and `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientDeleteNoteTests.swift`)
+- [x] 9.2 Implement `deleteNote` in `NoteAPIClient`; make tests pass
 
 ## 10. NetworkNoteRepository — List Notes
 

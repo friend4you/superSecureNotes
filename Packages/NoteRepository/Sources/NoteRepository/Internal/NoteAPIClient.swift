@@ -48,6 +48,15 @@ struct NoteAPIClient {
         _ = try await perform(request, expectedSuccessCodes: [204])
     }
 
+    func deleteNote(noteID: UUID, accessToken: String) async throws {
+        let request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())",
+            method: "DELETE",
+            accessToken: accessToken
+        )
+        _ = try await perform(request, expectedSuccessCodes: [204])
+    }
+
     private func makeAuthorizedRequest(
         path: String,
         method: String,
