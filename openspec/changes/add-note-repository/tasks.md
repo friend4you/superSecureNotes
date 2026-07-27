@@ -6,8 +6,8 @@
 
 ## 2. NoteRepositoryError
 
-- [ ] 2.1 Write failing tests: `NoteRepositoryError` cases are `Equatable` and `Sendable` (`NoteRepositoryProtocolTests/NoteRepositoryErrorTests.swift`)
-- [ ] 2.2 Add `NoteRepositoryError` to `NoteRepositoryProtocol`; make tests pass
+- [x] 2.1 Write failing tests: `NoteRepositoryError` cases are `Equatable` and `Sendable` (`NoteRepositoryProtocolTests/NoteRepositoryErrorTests.swift`)
+- [x] 2.2 Add `NoteRepositoryError` to `NoteRepositoryProtocol`; make tests pass
 
 ## 3. NoteSummary Model
 
