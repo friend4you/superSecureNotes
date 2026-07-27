@@ -26,7 +26,8 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func readNote(noteID: UUID) async throws -> Data {
-        throw NoteRepositoryError.networkError
+        let accessToken = try await tokenProvider.accessToken()
+        return try await apiClient.readNote(noteID: noteID, accessToken: accessToken)
     }
 
     public func writeNote(noteID: UUID, data: Data) async throws {

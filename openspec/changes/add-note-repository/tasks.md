@@ -51,8 +51,8 @@
 
 ## 11. NetworkNoteRepository — Read Note
 
-- [ ] 11.1 Write failing tests: `readNote` returns body on `200`; maps `noteNotFound`; propagates token provider failure (`NoteRepositoryTests/NetworkNoteRepositoryReadNoteTests.swift`)
-- [ ] 11.2 Implement `readNote` in `NetworkNoteRepository`; make tests pass
+- [x] 11.1 Write failing tests: `readNote` returns body on `200`; maps `noteNotFound`; propagates token provider failure (`NoteRepositoryTests/NetworkNoteRepositoryReadNoteTests.swift`)
+- [x] 11.2 Implement `readNote` in `NetworkNoteRepository`; make tests pass
 
 ## 12. NetworkNoteRepository — Write Note
 
