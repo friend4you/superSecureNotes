@@ -26,8 +26,8 @@
 
 ## 6. Internal API Client — List Notes
 
-- [ ] 6.1 Write failing tests: internal `NoteAPIClient` sends `GET /notes` with Bearer token; parses JSON array on `200`; returns empty array; maps `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientListNotesTests.swift`)
-- [ ] 6.2 Implement `listNotes` in internal `NoteAPIClient` and `NoteResponseDTO`; make tests pass
+- [x] 6.1 Write failing tests: internal `NoteAPIClient` sends `GET /notes` with Bearer token; parses JSON array on `200`; returns empty array; maps `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientListNotesTests.swift`)
+- [x] 6.2 Implement `listNotes` in internal `NoteAPIClient` and `NoteResponseDTO`; make tests pass
 
 ## 7. Internal API Client — Read Note
 
