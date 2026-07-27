@@ -36,8 +36,8 @@
 
 ## 8. Internal API Client — Write Note
 
-- [ ] 8.1 Write failing tests: internal `NoteAPIClient` sends `PUT /notes/{noteId}` with Bearer token and octet-stream body; succeeds on `204`; maps `400 validation_error` and `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientWriteNoteTests.swift`)
-- [ ] 8.2 Implement `writeNote` in `NoteAPIClient`; make tests pass
+- [x] 8.1 Write failing tests: internal `NoteAPIClient` sends `PUT /notes/{noteId}` with Bearer token and octet-stream body; succeeds on `204`; maps `400 validation_error` and `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientWriteNoteTests.swift`)
+- [x] 8.2 Implement `writeNote` in `NoteAPIClient`; make tests pass
 
 ## 9. Internal API Client — Delete Note
 

@@ -37,6 +37,17 @@ struct NoteAPIClient {
         return try await perform(request, expectedSuccessCodes: [200])
     }
 
+    func writeNote(noteID: UUID, data: Data, accessToken: String) async throws {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())",
+            method: "PUT",
+            accessToken: accessToken
+        )
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.httpBody = data
+        _ = try await perform(request, expectedSuccessCodes: [204])
+    }
+
     private func makeAuthorizedRequest(
         path: String,
         method: String,
