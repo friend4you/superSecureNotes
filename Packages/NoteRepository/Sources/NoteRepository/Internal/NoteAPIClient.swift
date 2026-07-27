@@ -28,6 +28,15 @@ struct NoteAPIClient {
         }
     }
 
+    func readNote(noteID: UUID, accessToken: String) async throws -> Data {
+        let request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())",
+            method: "GET",
+            accessToken: accessToken
+        )
+        return try await perform(request, expectedSuccessCodes: [200])
+    }
+
     private func makeAuthorizedRequest(
         path: String,
         method: String,

@@ -31,8 +31,8 @@
 
 ## 7. Internal API Client — Read Note
 
-- [ ] 7.1 Write failing tests: internal `NoteAPIClient` sends `GET /notes/{noteId}` with Bearer token; returns body on `200`; maps `404 note_not_found` and `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientReadNoteTests.swift`)
-- [ ] 7.2 Implement `readNote` in `NoteAPIClient`; make tests pass
+- [x] 7.1 Write failing tests: internal `NoteAPIClient` sends `GET /notes/{noteId}` with Bearer token; returns body on `200`; maps `404 note_not_found` and `401 unauthorized` (`NoteRepositoryTests/NoteAPIClientReadNoteTests.swift`)
+- [x] 7.2 Implement `readNote` in `NoteAPIClient`; make tests pass
 
 ## 8. Internal API Client — Write Note
 
