@@ -28,6 +28,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         DefaultNoteListViewModel(
             authRepository: authRepository,
             vaultSession: vaultSession,
+            noteRepository: noteRepository,
             navigator: navigator
         )
     }

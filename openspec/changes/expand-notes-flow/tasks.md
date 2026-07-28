@@ -29,8 +29,8 @@
 
 ## 6. NoteListViewModel
 
-- [ ] 6.1 Write failing tests: `refresh()` calls `listNotes` and sorts by `updatedAt`; `openDetail` pushes `.detail`; `createNote` pushes `.create`; `share` presents sheet; `deleteNote` calls repository (`NotesFlowTests/DefaultNoteListViewModelTests.swift`)
-- [ ] 6.2 Implement `NoteListViewModel` protocol and expand `DefaultNoteListViewModel` with notes state, loading, error, and navigation methods; make tests pass
+- [x] 6.1 Write failing tests: `refresh()` calls `listNotes` and sorts by `updatedAt`; `openDetail` pushes `.detail`; `createNote` pushes `.create`; `share` presents sheet; `deleteNote` calls repository (`NotesFlowTests/DefaultNoteListViewModelTests.swift`)
+- [x] 6.2 Implement `NoteListViewModel` protocol and expand `DefaultNoteListViewModel` with notes state, loading, error, and navigation methods; make tests pass
 
 ## 7. NoteListView
 

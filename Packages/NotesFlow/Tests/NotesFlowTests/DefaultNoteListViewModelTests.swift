@@ -1,15 +1,25 @@
 import AuthRepositoryProtocol
 import CryptoKit
 import NavigationProtocol
+import NoteRepositoryProtocol
 import NotesFlow
+import NotesFlowRoutes
+import ShareNoteRoutes
 import VaultSessionProtocol
 import XCTest
 
 @MainActor
 private final class MockNavigating: Navigating {
+    private(set) var pushedRoutes: [AnyHashable] = []
+    private(set) var presentedRoutes: [(route: AnyHashable, style: RoutePresentation)] = []
+
     func setRoot<R: Route>(_ route: R) {}
-    func push<R: Route>(_ route: R) {}
-    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func push<R: Route>(_ route: R) {
+        pushedRoutes.append(AnyHashable(route))
+    }
+    func present<R: Route>(_ route: R, style: RoutePresentation) {
+        presentedRoutes.append((AnyHashable(route), style))
+    }
     func pop() {}
     func popToRoot() {}
     func dismissPresentation() {}
@@ -17,6 +27,82 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class DefaultNoteListViewModelTests: XCTestCase {
+    func testRefreshLoadsNotesSortedByUpdatedAtDescending() async {
+        let olderID = UUID()
+        let newerID = UUID()
+        let noteRepository = MockNoteRepository(
+            notes: [
+                NoteSummary(noteID: olderID, title: "Older", updatedAt: 100),
+                NoteSummary(noteID: newerID, title: "Newer", updatedAt: 200),
+            ]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.refresh()
+
+        let listNotesCallCount = await noteRepository.listNotesCallCount
+        XCTAssertEqual(viewModel.notes.map(\.noteID), [newerID, olderID])
+        XCTAssertEqual(listNotesCallCount, 1)
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testOpenDetailPushesDetailRoute() {
+        let noteID = UUID()
+        let navigator = MockNavigating()
+        let viewModel = makeViewModel(navigator: navigator)
+
+        viewModel.openDetail(noteID: noteID)
+
+        XCTAssertEqual(navigator.pushedRoutes.count, 1)
+        XCTAssertEqual(navigator.pushedRoutes.first?.base as? NotesRoute, .detail(noteID: noteID))
+    }
+
+    func testCreateNotePushesCreateRoute() {
+        let navigator = MockNavigating()
+        let viewModel = makeViewModel(navigator: navigator)
+
+        viewModel.createNote()
+
+        XCTAssertEqual(navigator.pushedRoutes.count, 1)
+        XCTAssertEqual(navigator.pushedRoutes.first?.base as? NotesRoute, .create)
+    }
+
+    func testSharePresentsShareSheet() {
+        let noteID = UUID()
+        let navigator = MockNavigating()
+        let viewModel = makeViewModel(navigator: navigator)
+
+        viewModel.share(noteID: noteID)
+
+        XCTAssertEqual(navigator.presentedRoutes.count, 1)
+        XCTAssertEqual(navigator.presentedRoutes.first?.style, .sheet)
+        XCTAssertEqual(
+            navigator.presentedRoutes.first?.route.base as? ShareNoteRoute,
+            .share(noteID: noteID)
+        )
+    }
+
+    func testDeleteNoteCallsRepositoryAndRefreshesList() async {
+        let remainingID = UUID()
+        let deletedID = UUID()
+        let noteRepository = MockNoteRepository(
+            notes: [
+                NoteSummary(noteID: deletedID, title: "Delete me", updatedAt: 100),
+                NoteSummary(noteID: remainingID, title: "Keep", updatedAt: 200),
+            ]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.deleteNote(noteID: deletedID)
+
+        let deletedNoteIDs = await noteRepository.deletedNoteIDs
+        let listNotesCallCount = await noteRepository.listNotesCallCount
+        XCTAssertEqual(deletedNoteIDs, [deletedID])
+        XCTAssertEqual(listNotesCallCount, 1)
+        XCTAssertEqual(viewModel.notes.map(\.noteID), [remainingID])
+    }
+
     func testLogoutClearsAuthAndVaultSession() async throws {
         let authRepository = MockAuthRepository()
         let vaultSession = MockVaultSession()
@@ -30,10 +116,9 @@ final class DefaultNoteListViewModelTests: XCTestCase {
             )
         )
 
-        let viewModel = DefaultNoteListViewModel(
+        let viewModel = makeViewModel(
             authRepository: authRepository,
-            vaultSession: vaultSession,
-            navigator: MockNavigating()
+            vaultSession: vaultSession
         )
         await viewModel.logout()
 
@@ -41,6 +126,45 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         let isActive = await vaultSession.isActive
         XCTAssertNil(currentSession)
         XCTAssertFalse(isActive)
+    }
+
+    @MainActor
+    private func makeViewModel(
+        authRepository: MockAuthRepository = MockAuthRepository(),
+        vaultSession: MockVaultSession = MockVaultSession(),
+        noteRepository: MockNoteRepository = MockNoteRepository(),
+        navigator: MockNavigating? = nil
+    ) -> DefaultNoteListViewModel {
+        DefaultNoteListViewModel(
+            authRepository: authRepository,
+            vaultSession: vaultSession,
+            noteRepository: noteRepository,
+            navigator: navigator ?? MockNavigating()
+        )
+    }
+}
+
+private actor MockNoteRepository: NoteRepository {
+    private var notes: [NoteSummary]
+    private(set) var listNotesCallCount = 0
+    private(set) var deletedNoteIDs: [UUID] = []
+
+    init(notes: [NoteSummary] = []) {
+        self.notes = notes
+    }
+
+    func listNotes() async throws -> [NoteSummary] {
+        listNotesCallCount += 1
+        return notes
+    }
+
+    func readNote(noteID: UUID) async throws -> Data { Data() }
+
+    func writeNote(noteID: UUID, data: Data) async throws {}
+
+    func deleteNote(noteID: UUID) async throws {
+        deletedNoteIDs.append(noteID)
+        notes.removeAll { $0.noteID == noteID }
     }
 }
 

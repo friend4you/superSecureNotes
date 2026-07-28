@@ -1,6 +1,7 @@
 import AuthFlowRoutes
 import CryptoKit
 import NavigationProtocol
+import NoteRepositoryProtocol
 import NotesFlow
 import NotesFlowRoutes
 import VaultSession
@@ -31,6 +32,7 @@ final class LogoutFlowTests: XCTestCase {
         let viewModel = DefaultNoteListViewModel(
             authRepository: InMemoryAuthRepository(),
             vaultSession: vaultSession,
+            noteRepository: MockNoteRepository(),
             navigator: navigator
         )
         await vaultSession.establish(
@@ -48,4 +50,11 @@ final class LogoutFlowTests: XCTestCase {
         XCTAssertFalse(isActive)
         XCTAssertEqual(navigator.setRootRoutes.last?.base as? AuthRoute, .login)
     }
+}
+
+private actor MockNoteRepository: NoteRepository {
+    func listNotes() async throws -> [NoteSummary] { [] }
+    func readNote(noteID: UUID) async throws -> Data { Data() }
+    func writeNote(noteID: UUID, data: Data) async throws {}
+    func deleteNote(noteID: UUID) async throws {}
 }

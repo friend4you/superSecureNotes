@@ -1,6 +1,7 @@
 import AuthRepositoryProtocol
 import CryptoKit
 import NavigationProtocol
+import NoteRepositoryProtocol
 import NotesFlow
 import VaultSessionProtocol
 import XCTest
@@ -21,6 +22,7 @@ final class NoteListViewTests: XCTestCase {
         let viewModel = DefaultNoteListViewModel(
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
+            noteRepository: MockNoteRepository(),
             navigator: MockNavigating()
         )
 
@@ -50,4 +52,11 @@ private actor MockVaultSession: VaultSessionProtocol {
     func clear() {}
     func udk() throws -> SymmetricKey { .init(size: .bits256) }
     func identityPrivateKey() throws -> Data { Data() }
+}
+
+private actor MockNoteRepository: NoteRepository {
+    func listNotes() async throws -> [NoteSummary] { [] }
+    func readNote(noteID: UUID) async throws -> Data { Data() }
+    func writeNote(noteID: UUID, data: Data) async throws {}
+    func deleteNote(noteID: UUID) async throws {}
 }

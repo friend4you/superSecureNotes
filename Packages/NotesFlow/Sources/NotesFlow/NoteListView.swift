@@ -21,9 +21,7 @@ public struct NoteListView: View {
                 }
                 ToolbarItem(placement: .automatic) {
                     Button("Share") {
-                        Task {
-                            viewModel.share()
-                        }
+                        viewModel.share(noteID: UUID())
                     }
                 }
                 
@@ -37,6 +35,7 @@ public struct NoteListView: View {
         viewModel: DefaultNoteListViewModel(
             authRepository: PreviewAuthRepository(),
             vaultSession: PreviewVaultSession(),
+            noteRepository: PreviewNoteRepository(),
             navigator: PreviewNavigator()
         )
     )
@@ -45,6 +44,7 @@ public struct NoteListView: View {
 #if DEBUG
 import AuthRepositoryProtocol
 import CryptoKit
+import NoteRepositoryProtocol
 import VaultSessionProtocol
 
 private actor PreviewAuthRepository: AuthRepository {
@@ -69,6 +69,13 @@ private actor PreviewVaultSession: VaultSessionProtocol {
     func clear() {}
     func udk() throws -> SymmetricKey { .init(size: .bits256) }
     func identityPrivateKey() throws -> Data { Data() }
+}
+
+private actor PreviewNoteRepository: NoteRepository {
+    func listNotes() async throws -> [NoteSummary] { [] }
+    func readNote(noteID: UUID) async throws -> Data { Data() }
+    func writeNote(noteID: UUID, data: Data) async throws {}
+    func deleteNote(noteID: UUID) async throws {}
 }
 
 @MainActor

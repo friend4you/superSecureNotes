@@ -26,6 +26,7 @@ private final class MockNotesDependencies: NotesDependencyProviding {
         DefaultNoteListViewModel(
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
+            noteRepository: noteRepository,
             navigator: MockNavigating()
         )
     }
