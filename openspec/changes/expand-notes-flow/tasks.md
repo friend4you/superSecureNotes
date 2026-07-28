@@ -45,8 +45,8 @@
 
 ## 9. NoteDetailView
 
-- [ ] 9.1 Write failing tests: Save disabled when `!canSave`; Share calls view model; Delete shows confirmation (`NotesFlowTests/NoteDetailViewTests.swift` — VM seam tests acceptable per development-practices)
-- [ ] 9.2 Implement `NoteDetailView` with title field, body editor, attachment list, Save/Share/Delete UI, inline loading/error; localized strings; make tests pass
+- [x] 9.1 Write failing tests: Save disabled when `!canSave`; Share calls view model; Delete shows confirmation (`NotesFlowTests/NoteDetailViewTests.swift` — VM seam tests acceptable per development-practices)
+- [x] 9.2 Implement `NoteDetailView` with title field, body editor, attachment list, Save/Share/Delete UI, inline loading/error; localized strings; make tests pass
 
 ## 10. CreateNoteViewModel
 
