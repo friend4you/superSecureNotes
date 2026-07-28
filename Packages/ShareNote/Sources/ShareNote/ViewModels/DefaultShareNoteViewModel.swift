@@ -20,6 +20,6 @@ public final class DefaultShareNoteViewModel: ShareNoteViewModel {
     }
 
     public func dismiss() {
-        navigator.pop()
+        navigator.dismissPresentation()
     }
 }

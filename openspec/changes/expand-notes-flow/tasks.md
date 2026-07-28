@@ -65,8 +65,8 @@
 
 ## 13. ShareNote dismiss fix
 
-- [ ] 13.1 Write failing test: `DefaultShareNoteViewModel.dismiss()` calls `dismissPresentation()` instead of `pop()` (`ShareNoteTests/ShareNoteTests.swift`)
-- [ ] 13.2 Update `DefaultShareNoteViewModel.dismiss()`; make test pass
+- [x] 13.1 Write failing test: `DefaultShareNoteViewModel.dismiss()` calls `dismissPresentation()` instead of `pop()` (`ShareNoteTests/ShareNoteTests.swift`)
+- [x] 13.2 Update `DefaultShareNoteViewModel.dismiss()`; make test pass
 
 ## 14. Integration and verification
 

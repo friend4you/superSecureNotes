@@ -7,13 +7,14 @@ import XCTest
 @MainActor
 private final class MockNavigating: Navigating {
     private(set) var popCallCount = 0
+    private(set) var dismissPresentationCallCount = 0
 
     func setRoot<R: Route>(_ route: R) {}
     func push<R: Route>(_ route: R) {}
     func present<R: Route>(_ route: R, style: RoutePresentation) {}
     func pop() { popCallCount += 1 }
     func popToRoot() {}
-    func dismissPresentation() {}
+    func dismissPresentation() { dismissPresentationCallCount += 1 }
 }
 
 @MainActor
@@ -41,7 +42,7 @@ final class DefaultShareNoteViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.noteID, noteID)
     }
 
-    func testDismissCallsNavigatorPop() {
+    func testDismissCallsDismissPresentation() {
         let navigator = MockNavigating()
         let viewModel = DefaultShareNoteViewModel(
             noteID: UUID(),
@@ -50,7 +51,8 @@ final class DefaultShareNoteViewModelTests: XCTestCase {
 
         viewModel.dismiss()
 
-        XCTAssertEqual(navigator.popCallCount, 1)
+        XCTAssertEqual(navigator.dismissPresentationCallCount, 1)
+        XCTAssertEqual(navigator.popCallCount, 0)
     }
 }
 
