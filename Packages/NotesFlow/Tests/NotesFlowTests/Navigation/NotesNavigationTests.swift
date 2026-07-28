@@ -22,8 +22,14 @@ private final class MockNavigating: Navigating {
 private final class MockNotesDependencies: NotesDependencyProviding {
     private let noteRepository = MockNoteRepository()
 
+    private(set) var makeNoteListViewModelCallCount = 0
+    private(set) var makeNoteDetailViewModelCallCount = 0
+    private(set) var makeCreateNoteViewModelCallCount = 0
+    private(set) var lastNoteDetailViewModelNoteID: UUID?
+
     func makeNoteListViewModel() -> DefaultNoteListViewModel {
-        DefaultNoteListViewModel(
+        makeNoteListViewModelCallCount += 1
+        return DefaultNoteListViewModel(
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             noteRepository: noteRepository,
@@ -32,7 +38,9 @@ private final class MockNotesDependencies: NotesDependencyProviding {
     }
 
     func makeNoteDetailViewModel(noteID: UUID) -> DefaultNoteDetailViewModel {
-        DefaultNoteDetailViewModel(
+        makeNoteDetailViewModelCallCount += 1
+        lastNoteDetailViewModelNoteID = noteID
+        return DefaultNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: MockVaultSession(),
@@ -41,7 +49,8 @@ private final class MockNotesDependencies: NotesDependencyProviding {
     }
 
     func makeCreateNoteViewModel() -> DefaultCreateNoteViewModel {
-        DefaultCreateNoteViewModel(
+        makeCreateNoteViewModelCallCount += 1
+        return DefaultCreateNoteViewModel(
             noteRepository: noteRepository,
             vaultSession: MockVaultSession(),
             navigator: MockNavigating()
@@ -86,11 +95,55 @@ final class NotesNavigationTests: XCTestCase {
         let deps = MockNotesDependencies()
 
         _ = NotesNavigation.listView(deps: deps)
+
+        XCTAssertEqual(deps.makeNoteListViewModelCallCount, 1)
+        XCTAssertEqual(deps.makeNoteDetailViewModelCallCount, 0)
+        XCTAssertEqual(deps.makeCreateNoteViewModelCallCount, 0)
     }
 
     func testViewForListUsesDependencyProviding() {
         let deps = MockNotesDependencies()
 
         _ = NotesNavigation.view(for: .list, deps: deps)
+
+        XCTAssertEqual(deps.makeNoteListViewModelCallCount, 1)
+    }
+
+    func testDetailViewBuildsNoteDetailView() {
+        let noteID = UUID()
+        let deps = MockNotesDependencies()
+
+        _ = NotesNavigation.detailView(noteID: noteID, deps: deps)
+
+        XCTAssertEqual(deps.makeNoteDetailViewModelCallCount, 1)
+        XCTAssertEqual(deps.lastNoteDetailViewModelNoteID, noteID)
+        XCTAssertEqual(deps.makeCreateNoteViewModelCallCount, 0)
+    }
+
+    func testCreateViewBuildsCreateNoteView() {
+        let deps = MockNotesDependencies()
+
+        _ = NotesNavigation.createView(deps: deps)
+
+        XCTAssertEqual(deps.makeCreateNoteViewModelCallCount, 1)
+        XCTAssertEqual(deps.makeNoteDetailViewModelCallCount, 0)
+    }
+
+    func testViewForDetailUsesDependencyProviding() {
+        let noteID = UUID()
+        let deps = MockNotesDependencies()
+
+        _ = NotesNavigation.view(for: .detail(noteID: noteID), deps: deps)
+
+        XCTAssertEqual(deps.makeNoteDetailViewModelCallCount, 1)
+        XCTAssertEqual(deps.lastNoteDetailViewModelNoteID, noteID)
+    }
+
+    func testViewForCreateUsesDependencyProviding() {
+        let deps = MockNotesDependencies()
+
+        _ = NotesNavigation.view(for: .create, deps: deps)
+
+        XCTAssertEqual(deps.makeCreateNoteViewModelCallCount, 1)
     }
 }

@@ -60,8 +60,8 @@
 
 ## 12. NotesNavigation
 
-- [ ] 12.1 Write failing tests: `view(for: .detail(noteID:), deps:)` returns `NoteDetailView`; `view(for: .create, deps:)` returns `CreateNoteView` (`NotesFlowTests/Navigation/NotesNavigationTests.swift`)
-- [ ] 12.2 Extend `NotesNavigation.view(for:deps:)` for detail and create routes; make tests pass
+- [x] 12.1 Write failing tests: `view(for: .detail(noteID:), deps:)` returns `NoteDetailView`; `view(for: .create, deps:)` returns `CreateNoteView` (`NotesFlowTests/Navigation/NotesNavigationTests.swift`)
+- [x] 12.2 Extend `NotesNavigation.view(for:deps:)` for detail and create routes; make tests pass
 
 ## 13. ShareNote dismiss fix
 
