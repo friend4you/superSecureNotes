@@ -50,8 +50,8 @@
 
 ## 10. CreateNoteViewModel
 
-- [ ] 10.1 Write failing tests: `canSave` requires non-empty title and changes; `addAttachment`/`removeAttachment`; `save()` writes new note and pops (`NotesFlowTests/DefaultCreateNoteViewModelTests.swift`)
-- [ ] 10.2 Implement `CreateNoteViewModel` and `DefaultCreateNoteViewModel` with crypto orchestration for new notes; make tests pass
+- [x] 10.1 Write failing tests: `canSave` requires non-empty title and changes; `addAttachment`/`removeAttachment`; `save()` writes new note and pops (`NotesFlowTests/DefaultCreateNoteViewModelTests.swift`)
+- [x] 10.2 Implement `CreateNoteViewModel` and `DefaultCreateNoteViewModel` with crypto orchestration for new notes; make tests pass
 
 ## 11. CreateNoteView
 
