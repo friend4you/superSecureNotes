@@ -7,9 +7,11 @@ import NotesFlow
 import NotesFlowRoutes
 import ShareNote
 import ShareNoteRoutes
+import SwiftUI
 import VaultSession
 import XCTest
 
+@testable import Navigation
 @testable import NotesFlow
 @testable import superSecureNotes
 
@@ -82,6 +84,37 @@ final class AppCompositionTests: XCTestCase {
         let composition = AppComposition()
 
         XCTAssertTrue(composition.navigation.registry.isRegistered(ShareNoteRoute.self))
+    }
+
+    func testAppCompositionRegistersNotesRoute() {
+        let composition = AppComposition()
+
+        XCTAssertTrue(composition.navigation.registry.isRegistered(NotesRoute.self))
+    }
+
+    func testNotesListToDetailNavigationViaRegistry() {
+        let composition = AppComposition()
+        let navigator = composition.navigation.navigator
+        let registry = composition.navigation.registry
+        let router = composition.navigation.hostModel.router
+
+        navigator.setRoot(NotesRoute.list)
+        XCTAssertEqual(router.rootRoute?.route.base as? NotesRoute, .list)
+        _ = registry.view(for: NotesRoute.list)
+
+        let noteID = UUID()
+        navigator.push(NotesRoute.detail(noteID: noteID))
+
+        var expectedPath = NavigationPath()
+        expectedPath.append(NotesRoute.detail(noteID: noteID))
+        XCTAssertEqual(router.path, expectedPath)
+        _ = registry.view(for: NotesRoute.detail(noteID: noteID))
+    }
+
+    func testAppCompositionNotesRouteRegistryResolvesCreateRoute() {
+        let composition = AppComposition()
+
+        _ = composition.navigation.registry.view(for: NotesRoute.create)
     }
 
     func testAppCompositionExposesShareNoteDependencies() {

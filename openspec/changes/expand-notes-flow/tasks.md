@@ -5,10 +5,10 @@
 
 ## 2. App — note repository wiring
 
-- [ ] 2.1 Write failing tests: stub mode selects `FileNoteRepository`, network mode selects `NetworkNoteRepository` (`superSecureNotesTests/AppDependenciesTests.swift`)
-- [ ] 2.2 Add `noteRepository` to `AppDependencies` with conditional construction; make tests pass
-- [ ] 2.3 Write failing test: `AppComposition` passes `noteRepository` to `NotesFlowDependencies` (`superSecureNotesTests/AppCompositionTests.swift`)
-- [ ] 2.4 Wire `noteRepository` in `AppComposition`; link `NoteRepository` product if needed; make test pass
+- [x] 2.1 Write failing tests: stub mode selects `FileNoteRepository`, network mode selects `NetworkNoteRepository` (`superSecureNotesTests/AppDependenciesTests.swift`)
+- [x] 2.2 Add `noteRepository` to `AppDependencies` with conditional construction; make tests pass
+- [x] 2.3 Write failing test: `AppComposition` passes `noteRepository` to `NotesFlowDependencies` (`superSecureNotesTests/AppCompositionTests.swift`)
+- [x] 2.4 Wire `noteRepository` in `AppComposition`; link `NoteRepository` product if needed; make test pass
 
 ## 3. NotesFlowRoutes — new route cases
 
@@ -70,7 +70,7 @@
 
 ## 14. Integration and verification
 
-- [ ] 14.1 Write failing integration test: list → detail navigation via registry (`superSecureNotesTests/AppCompositionTests.swift` or `NotesNavigationTests`)
-- [ ] 14.2 Verify route registry resolves new `NotesRoute` cases; make test pass
-- [ ] 14.3 Run full test suite; fix regressions
-- [ ] 14.4 Manual smoke with `-UseStubBackend`: create note → appears in list → open detail → edit save → share sheet → delete from detail and list
+- [x] 14.1 Write failing integration test: list → detail navigation via registry (`superSecureNotesTests/AppCompositionTests.swift` or `NotesNavigationTests`)
+- [x] 14.2 Verify route registry resolves new `NotesRoute` cases; make test pass
+- [x] 14.3 Run full test suite; fix regressions
+- [x] 14.4 Manual smoke with `-UseStubBackend`: create note → appears in list → open detail → edit save → share sheet → delete from detail and list

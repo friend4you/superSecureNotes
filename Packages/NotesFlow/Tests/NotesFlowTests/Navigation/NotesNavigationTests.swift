@@ -1,5 +1,6 @@
 import AuthRepositoryProtocol
 import CryptoKit
+import Navigation
 import NavigationProtocol
 import NoteRepositoryProtocol
 import NotesFlowRoutes
@@ -144,6 +145,23 @@ final class NotesNavigationTests: XCTestCase {
 
         _ = NotesNavigation.view(for: .create, deps: deps)
 
+        XCTAssertEqual(deps.makeCreateNoteViewModelCallCount, 1)
+    }
+
+    func testRegisterNotesRoutesResolvesAllRouteCases() {
+        let deps = MockNotesDependencies()
+        let registry = RouteRegistry(assertOnUnregisteredRoutes: false)
+        registry.registerNotesRoutes(deps: deps)
+
+        let noteID = UUID()
+        _ = registry.view(for: NotesRoute.list)
+        _ = registry.view(for: NotesRoute.detail(noteID: noteID))
+        _ = registry.view(for: NotesRoute.create)
+
+        XCTAssertTrue(registry.isRegistered(NotesRoute.self))
+        XCTAssertEqual(deps.makeNoteListViewModelCallCount, 1)
+        XCTAssertEqual(deps.makeNoteDetailViewModelCallCount, 1)
+        XCTAssertEqual(deps.lastNoteDetailViewModelNoteID, noteID)
         XCTAssertEqual(deps.makeCreateNoteViewModelCallCount, 1)
     }
 }
