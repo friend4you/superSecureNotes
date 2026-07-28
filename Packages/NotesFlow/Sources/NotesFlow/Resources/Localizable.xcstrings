@@ -62,6 +62,26 @@
         }
       }
     },
+    "notes.create.addPhoto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Photo"
+          }
+        }
+      }
+    },
+    "notes.create.addFile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add File"
+          }
+        }
+      }
+    },
     "notes.delete.confirmation" : {
       "localizations" : {
         "en" : {

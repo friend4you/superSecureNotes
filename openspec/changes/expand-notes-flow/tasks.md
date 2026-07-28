@@ -55,8 +55,8 @@
 
 ## 11. CreateNoteView
 
-- [ ] 11.1 Write failing tests: Save gated by `canSave`; photo and file selection add attachments (`NotesFlowTests/CreateNoteViewTests.swift` — VM seam tests)
-- [ ] 11.2 Implement `CreateNoteView` with `PhotosPicker`, `fileImporter`, attachment list, Save button, inline loading/error; localized strings; make tests pass
+- [x] 11.1 Write failing tests: Save gated by `canSave`; photo and file selection add attachments (`NotesFlowTests/CreateNoteViewTests.swift` — VM seam tests)
+- [x] 11.2 Implement `CreateNoteView` with `PhotosPicker`, `fileImporter`, attachment list, Save button, inline loading/error; localized strings; make tests pass
 
 ## 12. NotesNavigation
 

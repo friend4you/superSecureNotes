@@ -17,6 +17,7 @@ public protocol CreateNoteViewModel: Observable {
 
     func addAttachment(_ attachment: NotePayload.Attachment)
     func removeAttachment(id: String)
+    func reportError(_ message: String)
     func save() async
 }
 
@@ -58,6 +59,10 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
     public func removeAttachment(id: String) {
         attachments.removeAll { $0.id == id }
         attachmentFilenames = attachments.map(\.filename)
+    }
+
+    public func reportError(_ message: String) {
+        errorMessage = message
     }
 
     public func save() async {
