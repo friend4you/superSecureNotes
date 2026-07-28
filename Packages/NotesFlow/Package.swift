@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "NotesFlow",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17),
         .macOS(.v14),
@@ -24,6 +25,7 @@ let package = Package(
         .package(path: "../VaultSession"),
         .package(path: "../ShareNote"),
         .package(path: "../NoteRepository"),
+        .package(path: "../SecureCrypto"),
     ],
     targets: [
         .target(
@@ -36,6 +38,10 @@ let package = Package(
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
                 .product(name: "ShareNoteRoutes", package: "ShareNote"),
                 .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
+            ],
+            resources: [
+                .process("Resources"),
             ]
         ),
         .target(

@@ -17,10 +17,10 @@
 
 ## 4. NotesFlow — package dependencies and localization
 
-- [ ] 4.1 Add `NoteRepository`, `SecureCrypto`, and `ShareNoteRoutes` package dependencies to `NotesFlow/Package.swift`; add `NoteRepositoryProtocol`, `SecureCrypto`, `ShareNoteRoutes` to `NotesFlow` target; set `defaultLocalization: "en"`
-- [ ] 4.2 Add `Resources/Localizable.xcstrings`, `NotesFlowUILocalization.swift`, and `NotesFlowUIBundleTesting.swift`
-- [ ] 4.3 Write failing test: string catalog is bundled (`NotesFlowTests/Localization/LocalizationTests.swift`)
-- [ ] 4.4 Verify localization helper and catalog; make test pass
+- [x] 4.1 Add `NoteRepository`, `SecureCrypto`, and `ShareNoteRoutes` package dependencies to `NotesFlow/Package.swift`; add `NoteRepositoryProtocol`, `SecureCrypto`, `ShareNoteRoutes` to `NotesFlow` target; set `defaultLocalization: "en"`
+- [x] 4.2 Add `Resources/Localizable.xcstrings`, `NotesFlowUILocalization.swift`, and `NotesFlowUIBundleTesting.swift`
+- [x] 4.3 Write failing test: string catalog is bundled (`NotesFlowTests/Localization/LocalizationTests.swift`)
+- [x] 4.4 Verify localization helper and catalog; make test pass
 
 ## 5. NotesFlow — dependency injection
 
