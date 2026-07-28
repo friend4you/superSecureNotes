@@ -41,6 +41,34 @@ final class NotesFlowDependenciesTests: XCTestCase {
 
         XCTAssertTrue(viewModel is DefaultNoteListViewModel)
     }
+
+    func testMakeNoteDetailViewModelReturnsDefaultImplementationBoundToNoteID() {
+        let noteID = UUID()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository()
+        )
+
+        let viewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
+
+        XCTAssertTrue(viewModel is DefaultNoteDetailViewModel)
+        XCTAssertEqual(viewModel.noteID, noteID)
+    }
+
+    func testMakeCreateNoteViewModelReturnsDefaultImplementation() {
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository()
+        )
+
+        let viewModel = dependencies.makeCreateNoteViewModel()
+
+        XCTAssertTrue(viewModel is DefaultCreateNoteViewModel)
+    }
 }
 
 private actor MockAuthRepository: AuthRepository {

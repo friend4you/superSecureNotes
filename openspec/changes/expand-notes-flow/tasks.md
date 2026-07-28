@@ -24,8 +24,8 @@
 
 ## 5. NotesFlow — dependency injection
 
-- [ ] 5.1 Write failing tests: `NotesFlowDependencies` accepts `noteRepository`; `makeNoteDetailViewModel(noteID:)` and `makeCreateNoteViewModel()` return expected types (`NotesFlowTests/NotesFlowDependenciesTests.swift`)
-- [ ] 5.2 Extend `NotesDependencyProviding` and `NotesFlowDependencies` with `noteRepository` and new factory methods; make tests pass
+- [x] 5.1 Write failing tests: `NotesFlowDependencies` accepts `noteRepository`; `makeNoteDetailViewModel(noteID:)` and `makeCreateNoteViewModel()` return expected types (`NotesFlowTests/NotesFlowDependenciesTests.swift`)
+- [x] 5.2 Extend `NotesDependencyProviding` and `NotesFlowDependencies` with `noteRepository` and new factory methods; make tests pass
 
 ## 6. NoteListViewModel
 

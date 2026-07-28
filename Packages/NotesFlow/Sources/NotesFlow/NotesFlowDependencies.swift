@@ -1,4 +1,5 @@
 import AuthRepositoryProtocol
+import Foundation
 import NavigationProtocol
 import NoteRepositoryProtocol
 import NotesFlowRoutes
@@ -26,6 +27,23 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     public func makeNoteListViewModel() -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
             authRepository: authRepository,
+            vaultSession: vaultSession,
+            navigator: navigator
+        )
+    }
+
+    public func makeNoteDetailViewModel(noteID: UUID) -> DefaultNoteDetailViewModel {
+        DefaultNoteDetailViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: vaultSession,
+            navigator: navigator
+        )
+    }
+
+    public func makeCreateNoteViewModel() -> DefaultCreateNoteViewModel {
+        DefaultCreateNoteViewModel(
+            noteRepository: noteRepository,
             vaultSession: vaultSession,
             navigator: navigator
         )
