@@ -34,9 +34,9 @@
 
 ## 7. NoteListView
 
-- [ ] 7.1 Write failing tests: list renders titles from view model; pull-to-refresh calls `refresh`; context menu Share/Delete; delete confirmation; settings button has no side effects (`NotesFlowTests/NoteListViewTests.swift` or ViewInspector-style VM tests where layout tests are impractical — prefer VM tests for delete/share callbacks)
-- [ ] 7.2 Implement `NoteListView` with `List`, refreshable, context menu, alerts, create/settings/logout toolbar items, inline loading/error; localized strings; make tests pass
-- [ ] 7.3 Update `NotesNavigation.listView(deps:)` if needed
+- [x] 7.1 Write failing tests: list renders titles from view model; pull-to-refresh calls `refresh`; context menu Share/Delete; delete confirmation; settings button has no side effects (`NotesFlowTests/NoteListViewTests.swift` or ViewInspector-style VM tests where layout tests are impractical — prefer VM tests for delete/share callbacks)
+- [x] 7.2 Implement `NoteListView` with `List`, refreshable, context menu, alerts, create/settings/logout toolbar items, inline loading/error; localized strings; make tests pass
+- [x] 7.3 Update `NotesNavigation.listView(deps:)` if needed
 
 ## 8. NoteDetailViewModel
 

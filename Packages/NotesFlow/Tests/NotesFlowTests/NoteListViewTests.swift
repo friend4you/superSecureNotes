@@ -8,9 +8,16 @@ import XCTest
 
 @MainActor
 private final class MockNavigating: Navigating {
+    private(set) var pushedRoutes: [AnyHashable] = []
+    private(set) var presentedRoutes: [(route: AnyHashable, style: RoutePresentation)] = []
+
     func setRoot<R: Route>(_ route: R) {}
-    func push<R: Route>(_ route: R) {}
-    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func push<R: Route>(_ route: R) {
+        pushedRoutes.append(AnyHashable(route))
+    }
+    func present<R: Route>(_ route: R, style: RoutePresentation) {
+        presentedRoutes.append((AnyHashable(route), style))
+    }
     func pop() {}
     func popToRoot() {}
     func dismissPresentation() {}
@@ -19,14 +26,150 @@ private final class MockNavigating: Navigating {
 @MainActor
 final class NoteListViewTests: XCTestCase {
     func testNoteListViewAcceptsViewModel() {
-        let viewModel = DefaultNoteListViewModel(
-            authRepository: MockAuthRepository(),
-            vaultSession: MockVaultSession(),
-            noteRepository: MockNoteRepository(),
-            navigator: MockNavigating()
-        )
+        let viewModel = makeViewModel()
 
         _ = NoteListView(viewModel: viewModel)
+    }
+
+    func testViewModelNotesAreAvailableForListDisplay() async {
+        let noteID = UUID()
+        let noteRepository = MockNoteRepository(
+            notes: [NoteSummary(noteID: noteID, title: "Meeting notes", updatedAt: 100)]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.refresh()
+
+        XCTAssertEqual(viewModel.notes.map(\.title), ["Meeting notes"])
+    }
+
+    func testPullToRefreshCallsViewModelRefresh() async {
+        let noteRepository = MockNoteRepository()
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.refresh()
+
+        let listNotesCallCount = await noteRepository.listNotesCallCount
+        XCTAssertEqual(listNotesCallCount, 1)
+    }
+
+    func testShareFromContextMenuUsesViewModelShare() {
+        let noteID = UUID()
+        let navigator = MockNavigating()
+        let viewModel = makeViewModel(navigator: navigator)
+
+        viewModel.share(noteID: noteID)
+
+        XCTAssertEqual(navigator.presentedRoutes.count, 1)
+    }
+
+    func testDeleteConfirmationUsesViewModelDeleteNote() async {
+        let noteID = UUID()
+        let noteRepository = MockNoteRepository(
+            notes: [NoteSummary(noteID: noteID, title: "Delete me", updatedAt: 100)]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.deleteNote(noteID: noteID)
+
+        let deletedNoteIDs = await noteRepository.deletedNoteIDs
+        XCTAssertEqual(deletedNoteIDs, [noteID])
+    }
+
+    func testNoteListViewSourceRendersTitlesFromViewModel() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("ForEach(viewModel.notes"))
+        XCTAssertTrue(source.contains("Text(note.title)"))
+    }
+
+    func testNoteListViewSourceUsesRefreshable() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains(".refreshable"))
+        XCTAssertTrue(source.contains("await viewModel.refresh()"))
+    }
+
+    func testNoteListViewSourceContextMenuOffersShareAndDelete() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains(".contextMenu"))
+        XCTAssertTrue(source.contains("viewModel.share(noteID: note.noteID)"))
+        XCTAssertTrue(source.contains("pendingDeleteNoteID = note.noteID"))
+    }
+
+    func testNoteListViewSourceShowsDeleteConfirmation() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains(".alert("))
+        XCTAssertTrue(source.contains("notes.delete.confirmation"))
+        XCTAssertTrue(source.contains("await viewModel.deleteNote(noteID: noteID)"))
+    }
+
+    func testNoteListViewSourceSettingsButtonHasNoNavigationSideEffects() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("notes.list.settings"))
+        XCTAssertTrue(source.contains("// TODO: Implement settings navigation"))
+        XCTAssertFalse(source.contains("navigator."))
+    }
+
+    func testNoteListViewSourceDoesNotShowPlaceholderText() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertFalse(source.contains("Text(\"Note list\")"))
+    }
+
+    func testNoteListViewSourceUsesLocalizedNavigationTitle() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("notes.list.title"))
+        XCTAssertTrue(source.contains("NotesFlowUILocalization.localized"))
+    }
+
+    @MainActor
+    private func makeViewModel(
+        noteRepository: MockNoteRepository = MockNoteRepository(),
+        navigator: MockNavigating? = nil
+    ) -> DefaultNoteListViewModel {
+        DefaultNoteListViewModel(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            noteRepository: noteRepository,
+            navigator: navigator ?? MockNavigating()
+        )
+    }
+
+    private static func noteListViewSource() throws -> String {
+        let packageRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sourceURL = packageRoot
+            .appendingPathComponent("Sources/NotesFlow/NoteListView.swift")
+        return try String(contentsOf: sourceURL, encoding: .utf8)
+    }
+}
+
+private actor MockNoteRepository: NoteRepository {
+    private var notes: [NoteSummary]
+    private(set) var listNotesCallCount = 0
+    private(set) var deletedNoteIDs: [UUID] = []
+
+    init(notes: [NoteSummary] = []) {
+        self.notes = notes
+    }
+
+    func listNotes() async throws -> [NoteSummary] {
+        listNotesCallCount += 1
+        return notes
+    }
+
+    func readNote(noteID: UUID) async throws -> Data { Data() }
+    func writeNote(noteID: UUID, data: Data) async throws {}
+    func deleteNote(noteID: UUID) async throws {
+        deletedNoteIDs.append(noteID)
+        notes.removeAll { $0.noteID == noteID }
     }
 }
 
@@ -52,11 +195,4 @@ private actor MockVaultSession: VaultSessionProtocol {
     func clear() {}
     func udk() throws -> SymmetricKey { .init(size: .bits256) }
     func identityPrivateKey() throws -> Data { Data() }
-}
-
-private actor MockNoteRepository: NoteRepository {
-    func listNotes() async throws -> [NoteSummary] { [] }
-    func readNote(noteID: UUID) async throws -> Data { Data() }
-    func writeNote(noteID: UUID, data: Data) async throws {}
-    func deleteNote(noteID: UUID) async throws {}
 }

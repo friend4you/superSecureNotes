@@ -1,51 +1,123 @@
 import SwiftUI
-import NavigationProtocol
 
 public struct NoteListView: View {
     @Bindable private var viewModel: DefaultNoteListViewModel
+    @State private var pendingDeleteNoteID: UUID?
 
     public init(viewModel: DefaultNoteListViewModel) {
         self.viewModel = viewModel
     }
 
     public var body: some View {
-        Text("Note list")
-            #if DEBUG
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button("Logout") {
-                        Task {
-                            await viewModel.logout()
+        List {
+            if viewModel.isLoading {
+                HStack {
+                    Spacer()
+                    ProgressView(NotesFlowUILocalization.localized("common.loading"))
+                    Spacer()
+                }
+            }
+
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+            }
+
+            ForEach(viewModel.notes, id: \.noteID) { note in
+                Text(note.title)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.openDetail(noteID: note.noteID)
+                    }
+                    .contextMenu {
+                        Button(NotesFlowUILocalization.localized("common.share")) {
+                            viewModel.share(noteID: note.noteID)
+                        }
+                        Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                            pendingDeleteNoteID = note.noteID
                         }
                     }
+            }
+        }
+        .navigationTitle(NotesFlowUILocalization.localized("notes.list.title"))
+        .refreshable {
+            await viewModel.refresh()
+        }
+        .task {
+            await viewModel.refresh()
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    viewModel.createNote()
+                } label: {
+                    Image(systemName: "plus")
                 }
-                ToolbarItem(placement: .automatic) {
-                    Button("Share") {
-                        viewModel.share(noteID: UUID())
+                .accessibilityLabel(NotesFlowUILocalization.localized("notes.create.title"))
+            }
+
+            ToolbarItem(placement: .automatic) {
+                Button(NotesFlowUILocalization.localized("notes.list.settings")) {
+                    // TODO: Implement settings navigation
+                }
+            }
+
+            #if DEBUG
+            ToolbarItem(placement: .automatic) {
+                Button(NotesFlowUILocalization.localized("notes.list.logout")) {
+                    Task {
+                        await viewModel.logout()
                     }
                 }
-                
             }
             #endif
+        }
+        .alert(
+            NotesFlowUILocalization.localized("common.delete"),
+            isPresented: Binding(
+                get: { pendingDeleteNoteID != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        pendingDeleteNoteID = nil
+                    }
+                }
+            ),
+            presenting: pendingDeleteNoteID
+        ) { noteID in
+            Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                Task {
+                    await viewModel.deleteNote(noteID: noteID)
+                    pendingDeleteNoteID = nil
+                }
+            }
+            Button(NotesFlowUILocalization.localized("common.cancel"), role: .cancel) {
+                pendingDeleteNoteID = nil
+            }
+        } message: { _ in
+            Text(NotesFlowUILocalization.localized("notes.delete.confirmation"))
+        }
     }
 }
 
 #Preview {
-    NoteListView(
-        viewModel: DefaultNoteListViewModel(
-            authRepository: PreviewAuthRepository(),
-            vaultSession: PreviewVaultSession(),
-            noteRepository: PreviewNoteRepository(),
-            navigator: PreviewNavigator()
+    NavigationStack {
+        NoteListView(
+            viewModel: DefaultNoteListViewModel(
+                authRepository: PreviewAuthRepository(),
+                vaultSession: PreviewVaultSession(),
+                noteRepository: PreviewNoteRepository(),
+                navigator: PreviewNavigator()
+            )
         )
-    )
+    }
 }
 
 #if DEBUG
 import AuthRepositoryProtocol
 import CryptoKit
-import NoteRepositoryProtocol
+import NavigationProtocol
 import VaultSessionProtocol
+import NoteRepositoryProtocol
 
 private actor PreviewAuthRepository: AuthRepository {
     var currentSession: AuthSession? { nil }
