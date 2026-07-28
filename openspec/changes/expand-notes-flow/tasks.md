@@ -12,8 +12,8 @@
 
 ## 3. NotesFlowRoutes — new route cases
 
-- [ ] 3.1 Write failing tests: `NotesRoute` includes `.detail(noteID: UUID)` and `.create`; both are `Hashable` and `Sendable` (`NotesFlowRoutesTests/NotesRouteTests.swift`)
-- [ ] 3.2 Add route cases to `NotesRoute.swift`; make tests pass
+- [x] 3.1 Write failing tests: `NotesRoute` includes `.detail(noteID: UUID)` and `.create`; both are `Hashable` and `Sendable` (`NotesFlowRoutesTests/NotesRouteTests.swift`)
+- [x] 3.2 Add route cases to `NotesRoute.swift`; make tests pass
 
 ## 4. NotesFlow — package dependencies and localization
 

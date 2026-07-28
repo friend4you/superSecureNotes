@@ -8,6 +8,10 @@ public enum NotesNavigation {
         switch route {
         case .list:
             listView(deps: deps)
+        case .detail:
+            EmptyView()
+        case .create:
+            EmptyView()
         }
     }
 
