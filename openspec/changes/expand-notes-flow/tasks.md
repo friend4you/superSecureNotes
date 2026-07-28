@@ -40,8 +40,8 @@
 
 ## 8. NoteDetailViewModel
 
-- [ ] 8.1 Write failing tests: `load()` decrypts note; `save()` writes blob; `canSave` gating; `share()` presents sheet; `delete()` calls repository and pops (`NotesFlowTests/DefaultNoteDetailViewModelTests.swift`)
-- [ ] 8.2 Implement `NoteDetailViewModel` and `DefaultNoteDetailViewModel` with SecureCrypto orchestration; make tests pass
+- [x] 8.1 Write failing tests: `load()` decrypts note; `save()` writes blob; `canSave` gating; `share()` presents sheet; `delete()` calls repository and pops (`NotesFlowTests/DefaultNoteDetailViewModelTests.swift`)
+- [x] 8.2 Implement `NoteDetailViewModel` and `DefaultNoteDetailViewModel` with SecureCrypto orchestration; make tests pass
 
 ## 9. NoteDetailView
 
