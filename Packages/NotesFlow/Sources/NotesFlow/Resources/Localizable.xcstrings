@@ -32,7 +32,6 @@
       }
     },
     "common.save" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -52,12 +51,12 @@
         }
       }
     },
-    "notes.create.title" : {
+    "notes.create.addFile" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New Note"
+            "value" : "Add File"
           }
         }
       }
@@ -72,12 +71,12 @@
         }
       }
     },
-    "notes.create.addFile" : {
+    "notes.create.title" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add File"
+            "value" : "New Note"
           }
         }
       }
@@ -92,8 +91,17 @@
         }
       }
     },
+    "notes.detail.attachments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attachments"
+          }
+        }
+      }
+    },
     "notes.detail.title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -109,16 +117,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Title"
-          }
-        }
-      }
-    },
-    "notes.detail.attachments" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attachments"
           }
         }
       }
