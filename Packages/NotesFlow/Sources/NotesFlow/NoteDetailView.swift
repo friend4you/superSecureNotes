@@ -1,8 +1,12 @@
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 public struct NoteDetailView: View {
     @Bindable private var viewModel: DefaultNoteDetailViewModel
     @State private var showsDeleteConfirmation = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showsFileImporter = false
 
     public init(viewModel: DefaultNoteDetailViewModel) {
         self.viewModel = viewModel
@@ -39,13 +43,39 @@ public struct NoteDetailView: View {
                     .frame(minHeight: 200)
             }
 
-            if !viewModel.attachmentFilenames.isEmpty {
-                Section(NotesFlowUILocalization.localized("notes.detail.attachments")) {
-                    ForEach(viewModel.attachmentFilenames, id: \.self) { filename in
-                        Text(filename)
+            Section {
+                PhotosPicker(
+                    selection: $selectedPhotoItem,
+                    matching: .images
+                ) {
+                    Label(
+                        NotesFlowUILocalization.localized("notes.create.addPhoto"),
+                        systemImage: "photo"
+                    )
+                }
+                .onChange(of: selectedPhotoItem) { _, newValue in
+                    guard let newValue else { return }
+                    Task {
+                        await importPhoto(from: newValue)
+                        selectedPhotoItem = nil
                     }
                 }
+
+                Button {
+                    showsFileImporter = true
+                } label: {
+                    Label(
+                        NotesFlowUILocalization.localized("notes.create.addFile"),
+                        systemImage: "doc"
+                    )
+                }
             }
+
+            NoteAttachmentsSection(
+                items: viewModel.attachmentItems,
+                dataForPreview: viewModel.attachmentData(for:),
+                onRemove: viewModel.removeAttachment(id:)
+            )
         }
         .navigationTitle(NotesFlowUILocalization.localized("notes.detail.title"))
         .toolbar {
@@ -83,9 +113,38 @@ public struct NoteDetailView: View {
         } message: {
             Text(NotesFlowUILocalization.localized("notes.delete.confirmation"))
         }
+        .fileImporter(
+            isPresented: $showsFileImporter,
+            allowedContentTypes: [.image, .pdf, .plainText],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                do {
+                    try importFile(from: url)
+                } catch {
+                    viewModel.reportError(error.localizedDescription)
+                }
+            case .failure(let error):
+                viewModel.reportError(error.localizedDescription)
+            }
+        }
         .task {
             await viewModel.load()
         }
+    }
+
+    private func importPhoto(from item: PhotosPickerItem) async {
+        guard let attachment = await NoteAttachmentImportSupport.attachment(from: item) else {
+            return
+        }
+
+        viewModel.addAttachment(attachment)
+    }
+
+    private func importFile(from url: URL) throws {
+        viewModel.addAttachment(try NoteAttachmentImportSupport.attachment(from: url))
     }
 }
 

@@ -10,13 +10,14 @@ import VaultSessionProtocol
 public protocol CreateNoteViewModel: Observable {
     var title: String { get set }
     var body: String { get set }
-    var attachmentFilenames: [String] { get }
+    var attachmentItems: [NoteAttachmentItem] { get }
     var canSave: Bool { get }
     var isLoading: Bool { get }
     var errorMessage: String? { get }
 
     func addAttachment(_ attachment: NotePayload.Attachment)
     func removeAttachment(id: String)
+    func attachmentData(for id: String) -> Data?
     func reportError(_ message: String)
     func save() async
 }
@@ -26,7 +27,7 @@ public protocol CreateNoteViewModel: Observable {
 public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
     public var title = ""
     public var body = ""
-    public private(set) var attachmentFilenames: [String] = []
+    public private(set) var attachmentItems: [NoteAttachmentItem] = []
     public private(set) var isLoading = false
     public private(set) var errorMessage: String?
 
@@ -53,12 +54,16 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
 
     public func addAttachment(_ attachment: NotePayload.Attachment) {
         attachments.append(attachment)
-        attachmentFilenames = attachments.map(\.filename)
+        syncAttachmentItems()
     }
 
     public func removeAttachment(id: String) {
         attachments.removeAll { $0.id == id }
-        attachmentFilenames = attachments.map(\.filename)
+        syncAttachmentItems()
+    }
+
+    public func attachmentData(for id: String) -> Data? {
+        attachments.first { $0.id == id }?.data
     }
 
     public func reportError(_ message: String) {
@@ -99,5 +104,9 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
         }
 
         isLoading = false
+    }
+
+    private func syncAttachmentItems() {
+        attachmentItems = attachments.map(\.attachmentItem)
     }
 }

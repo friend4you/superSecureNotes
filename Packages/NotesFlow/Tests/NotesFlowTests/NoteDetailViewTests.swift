@@ -125,7 +125,17 @@ final class NoteDetailViewTests: XCTestCase {
 
         XCTAssertTrue(source.contains("TextField("))
         XCTAssertTrue(source.contains("TextEditor(text: $viewModel.body)"))
-        XCTAssertTrue(source.contains("viewModel.attachmentFilenames"))
+        XCTAssertTrue(source.contains("NoteAttachmentsSection("))
+        XCTAssertTrue(source.contains("viewModel.attachmentItems"))
+        XCTAssertTrue(source.contains("viewModel.removeAttachment(id:)"))
+    }
+
+    func testNoteDetailViewSourceIncludesAttachmentPickers() throws {
+        let source = try Self.noteDetailViewSource()
+
+        XCTAssertTrue(source.contains("PhotosPicker("))
+        XCTAssertTrue(source.contains(".fileImporter("))
+        XCTAssertTrue(source.contains("NoteAttachmentImportSupport"))
     }
 
     func testNoteDetailViewSourceUsesLocalizedStrings() throws {

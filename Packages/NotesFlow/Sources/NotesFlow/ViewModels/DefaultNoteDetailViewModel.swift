@@ -12,13 +12,17 @@ public protocol NoteDetailViewModel: Observable {
     var noteID: UUID { get }
     var title: String { get set }
     var body: String { get set }
-    var attachmentFilenames: [String] { get }
+    var attachmentItems: [NoteAttachmentItem] { get }
     var hasChanges: Bool { get }
     var canSave: Bool { get }
     var isLoading: Bool { get }
     var errorMessage: String? { get }
 
     func load() async
+    func addAttachment(_ attachment: NotePayload.Attachment)
+    func removeAttachment(id: String)
+    func attachmentData(for id: String) -> Data?
+    func reportError(_ message: String)
     func save() async
     func share()
     func delete() async
@@ -30,12 +34,14 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     public let noteID: UUID
     public var title = ""
     public var body = ""
-    public private(set) var attachmentFilenames: [String] = []
+    public private(set) var attachmentItems: [NoteAttachmentItem] = []
     public private(set) var isLoading = false
     public private(set) var errorMessage: String?
 
     public var hasChanges: Bool {
-        title != loadedTitle || body != loadedBody
+        title != loadedTitle
+            || body != loadedBody
+            || attachmentsDifferFromLoaded
     }
 
     public var canSave: Bool {
@@ -48,6 +54,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     private var loadedTitle = ""
     private var loadedBody = ""
     private var attachments: [NotePayload.Attachment] = []
+    private var loadedAttachments: [NotePayload.Attachment] = []
     private var createdAt: UInt64 = 0
     private var fek: SymmetricKey?
 
@@ -79,7 +86,8 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
             title = sections.metadata.title
             body = String(data: payload.body, encoding: .utf8) ?? ""
             attachments = payload.attachments
-            attachmentFilenames = payload.attachments.map(\.filename)
+            loadedAttachments = payload.attachments
+            syncAttachmentItems()
             loadedTitle = title
             loadedBody = body
         } catch {
@@ -87,6 +95,24 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         }
 
         isLoading = false
+    }
+
+    public func addAttachment(_ attachment: NotePayload.Attachment) {
+        attachments.append(attachment)
+        syncAttachmentItems()
+    }
+
+    public func removeAttachment(id: String) {
+        attachments.removeAll { $0.id == id }
+        syncAttachmentItems()
+    }
+
+    public func attachmentData(for id: String) -> Data? {
+        attachments.first { $0.id == id }?.data
+    }
+
+    public func reportError(_ message: String) {
+        errorMessage = message
     }
 
     public func save() async {
@@ -118,7 +144,8 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
 
             loadedTitle = title
             loadedBody = body
-            attachmentFilenames = attachments.map(\.filename)
+            loadedAttachments = attachments
+            syncAttachmentItems()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -142,5 +169,24 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         }
 
         isLoading = false
+    }
+
+    private var attachmentsDifferFromLoaded: Bool {
+        guard attachments.count == loadedAttachments.count else { return true }
+
+        for (current, loaded) in zip(attachments, loadedAttachments) {
+            if current.id != loaded.id
+                || current.filename != loaded.filename
+                || current.mime != loaded.mime
+                || current.data != loaded.data {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private func syncAttachmentItems() {
+        attachmentItems = attachments.map(\.attachmentItem)
     }
 }

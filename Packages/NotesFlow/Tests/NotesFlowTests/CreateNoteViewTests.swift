@@ -51,7 +51,7 @@ final class CreateNoteViewTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(viewModel.attachmentFilenames, ["photo.jpg"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.filename), ["photo.jpg"])
         XCTAssertTrue(viewModel.canSave)
     }
 
@@ -67,7 +67,7 @@ final class CreateNoteViewTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(viewModel.attachmentFilenames, ["document.pdf"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.filename), ["document.pdf"])
         XCTAssertTrue(viewModel.canSave)
     }
 
@@ -95,10 +95,18 @@ final class CreateNoteViewTests: XCTestCase {
         XCTAssertTrue(source.contains(".pdf"))
     }
 
-    func testCreateNoteViewSourceShowsAttachmentListAndInlineStates() throws {
+    func testCreateNoteViewSourceUsesSharedAttachmentsSection() throws {
         let source = try Self.createNoteViewSource()
 
-        XCTAssertTrue(source.contains("viewModel.attachmentFilenames"))
+        XCTAssertTrue(source.contains("NoteAttachmentsSection("))
+        XCTAssertTrue(source.contains("viewModel.attachmentItems"))
+        XCTAssertTrue(source.contains("viewModel.removeAttachment(id:)"))
+        XCTAssertTrue(source.contains("viewModel.attachmentData(for:)"))
+    }
+
+    func testCreateNoteViewSourceShowsInlineStates() throws {
+        let source = try Self.createNoteViewSource()
+
         XCTAssertTrue(source.contains("viewModel.isLoading"))
         XCTAssertTrue(source.contains("viewModel.errorMessage"))
     }

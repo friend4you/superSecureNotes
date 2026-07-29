@@ -58,10 +58,135 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.title, "Shopping list")
         XCTAssertEqual(viewModel.body, "Milk and eggs")
-        XCTAssertEqual(viewModel.attachmentFilenames, ["receipt.pdf"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.filename), ["receipt.pdf"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.id), ["attachment-1"])
         XCTAssertFalse(viewModel.hasChanges)
         XCTAssertFalse(viewModel.canSave)
         XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testAddAttachmentMarksDetailDirty() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try makeEncryptedNoteFile(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk
+        )
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
+            vaultSession: MockVaultSession(udk: udk)
+        )
+        await viewModel.load()
+
+        viewModel.addAttachment(
+            NotePayload.Attachment(
+                id: "new-attachment",
+                filename: "new.txt",
+                mime: "text/plain",
+                data: Data("hello".utf8)
+            )
+        )
+
+        XCTAssertEqual(viewModel.attachmentItems.map(\.id), ["new-attachment"])
+        XCTAssertTrue(viewModel.hasChanges)
+        XCTAssertTrue(viewModel.canSave)
+    }
+
+    func testRemoveAttachmentMarksDetailDirty() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try makeEncryptedNoteFile(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            attachments: [
+                NotePayload.Attachment(
+                    id: "attachment-1",
+                    filename: "receipt.pdf",
+                    mime: "application/pdf",
+                    data: Data([0x01])
+                ),
+            ]
+        )
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
+            vaultSession: MockVaultSession(udk: udk)
+        )
+        await viewModel.load()
+
+        viewModel.removeAttachment(id: "attachment-1")
+
+        XCTAssertTrue(viewModel.attachmentItems.isEmpty)
+        XCTAssertTrue(viewModel.hasChanges)
+        XCTAssertTrue(viewModel.canSave)
+    }
+
+    func testSavePersistsAttachmentChanges() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try makeEncryptedNoteFile(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk
+        )
+        let noteRepository = MockNoteRepository(notes: [noteID: noteData])
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: MockVaultSession(udk: udk)
+        )
+        await viewModel.load()
+        viewModel.addAttachment(
+            NotePayload.Attachment(
+                id: "saved-attachment",
+                filename: "saved.txt",
+                mime: "text/plain",
+                data: Data("saved".utf8)
+            )
+        )
+
+        await viewModel.save()
+
+        let savedData = try await noteRepository.noteData(noteID: noteID)
+        let sections = try parseNoteFile(savedData)
+        let fek = try unwrapFEK(sections.wrappedFEK, with: udk)
+        let payload = try decryptPayload(sections.encryptedPayload, with: fek)
+        XCTAssertEqual(payload.attachments.map(\.filename), ["saved.txt"])
+        XCTAssertFalse(viewModel.hasChanges)
+    }
+
+    func testAttachmentDataReturnsBytesForValidID() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try makeEncryptedNoteFile(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            attachments: [
+                NotePayload.Attachment(
+                    id: "attachment-1",
+                    filename: "receipt.pdf",
+                    mime: "application/pdf",
+                    data: Data([0x01, 0x02])
+                ),
+            ]
+        )
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
+            vaultSession: MockVaultSession(udk: udk)
+        )
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.attachmentData(for: "attachment-1"), Data([0x01, 0x02]))
+        XCTAssertNil(viewModel.attachmentData(for: "missing"))
     }
 
     func testSaveWritesEncryptedBlob() async throws {

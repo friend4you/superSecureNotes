@@ -91,6 +91,26 @@
         }
       }
     },
+    "notes.attachments.preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview Attachment"
+          }
+        }
+      }
+    },
+    "notes.attachments.remove" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Attachment"
+          }
+        }
+      }
+    },
     "notes.detail.attachments" : {
       "localizations" : {
         "en" : {

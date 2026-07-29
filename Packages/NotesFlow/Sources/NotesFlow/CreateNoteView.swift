@@ -1,5 +1,4 @@
 import PhotosUI
-import SecureCrypto
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -71,13 +70,11 @@ public struct CreateNoteView: View {
                 }
             }
 
-            if !viewModel.attachmentFilenames.isEmpty {
-                Section(NotesFlowUILocalization.localized("notes.detail.attachments")) {
-                    ForEach(viewModel.attachmentFilenames, id: \.self) { filename in
-                        Text(filename)
-                    }
-                }
-            }
+            NoteAttachmentsSection(
+                items: viewModel.attachmentItems,
+                dataForPreview: viewModel.attachmentData(for:),
+                onRemove: viewModel.removeAttachment(id:)
+            )
         }
         .navigationTitle(NotesFlowUILocalization.localized("notes.create.title"))
         .toolbar {
@@ -110,54 +107,15 @@ public struct CreateNoteView: View {
     }
 
     private func importPhoto(from item: PhotosPickerItem) async {
-        guard let photoData = try? await item.loadTransferable(type: PhotoPickerData.self) else {
+        guard let attachment = await NoteAttachmentImportSupport.attachment(from: item) else {
             return
         }
 
-        viewModel.addAttachment(
-            NotePayload.Attachment(
-                id: UUID().uuidString,
-                filename: photoData.filename,
-                mime: photoData.mimeType,
-                data: photoData.data
-            )
-        )
+        viewModel.addAttachment(attachment)
     }
 
     private func importFile(from url: URL) throws {
-        let accessed = url.startAccessingSecurityScopedResource()
-        defer {
-            if accessed {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-
-        let data = try Data(contentsOf: url)
-        let contentType = UTType(filenameExtension: url.pathExtension) ?? .data
-        viewModel.addAttachment(
-            NotePayload.Attachment(
-                id: UUID().uuidString,
-                filename: url.lastPathComponent,
-                mime: contentType.preferredMIMEType ?? "application/octet-stream",
-                data: data
-            )
-        )
-    }
-}
-
-private struct PhotoPickerData: Transferable {
-    let data: Data
-    let filename: String
-    let mimeType: String
-
-    static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(importedContentType: .image) { data in
-            PhotoPickerData(
-                data: data,
-                filename: "photo.jpg",
-                mimeType: UTType.image.preferredMIMEType ?? "image/jpeg"
-            )
-        }
+        viewModel.addAttachment(try NoteAttachmentImportSupport.attachment(from: url))
     }
 }
 

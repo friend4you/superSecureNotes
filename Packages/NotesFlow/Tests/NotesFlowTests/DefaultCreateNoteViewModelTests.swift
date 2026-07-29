@@ -60,13 +60,15 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.canSave)
     }
 
-    func testAddAttachmentAppendsFilename() {
+    func testAddAttachmentPublishesAttachmentItems() {
         let viewModel = makeViewModel()
 
-        viewModel.addAttachment(sampleAttachment(id: "1", filename: "photo.png"))
-        viewModel.addAttachment(sampleAttachment(id: "2", filename: "notes.pdf"))
+        viewModel.addAttachment(sampleAttachment(id: "1", filename: "photo.png", mime: "image/png"))
+        viewModel.addAttachment(sampleAttachment(id: "2", filename: "notes.pdf", mime: "application/pdf"))
 
-        XCTAssertEqual(viewModel.attachmentFilenames, ["photo.png", "notes.pdf"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.id), ["1", "2"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.filename), ["photo.png", "notes.pdf"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.mime), ["image/png", "application/pdf"])
     }
 
     func testRemoveAttachmentRemovesByID() {
@@ -76,7 +78,16 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
 
         viewModel.removeAttachment(id: "remove")
 
-        XCTAssertEqual(viewModel.attachmentFilenames, ["keep.txt"])
+        XCTAssertEqual(viewModel.attachmentItems.map(\.filename), ["keep.txt"])
+    }
+
+    func testAttachmentDataReturnsBytesForValidID() {
+        let viewModel = makeViewModel()
+        let attachment = sampleAttachment(id: "data-id", filename: "file.bin", data: Data([0xAB, 0xCD]))
+        viewModel.addAttachment(attachment)
+
+        XCTAssertEqual(viewModel.attachmentData(for: "data-id"), Data([0xAB, 0xCD]))
+        XCTAssertNil(viewModel.attachmentData(for: "missing"))
     }
 
     func testSaveWritesNewNoteAndPops() async throws {
@@ -139,13 +150,15 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
 
     private func sampleAttachment(
         id: String = UUID().uuidString,
-        filename: String
+        filename: String,
+        mime: String = "application/octet-stream",
+        data: Data = Data([0x01])
     ) -> NotePayload.Attachment {
         NotePayload.Attachment(
             id: id,
             filename: filename,
-            mime: "application/octet-stream",
-            data: Data([0x01])
+            mime: mime,
+            data: data
         )
     }
 }
