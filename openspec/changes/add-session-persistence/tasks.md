@@ -56,8 +56,8 @@
 
 ## 12. DefaultUnlockViewModel — Online Session Restore
 
-- [ ] 12.1 Write failing tests: after presence check when online, calls `refreshSession()`; on success proceeds to vault unlock; on failure shows soft error (`AuthFlowProtocolTests/DefaultUnlockViewModelRefreshTests.swift` — scenarios: Successful refresh restores in-memory session, Failed refresh shows soft error, Refresh retried with entered password on soft failure, Offline skips refresh)
-- [ ] 12.2 Implement online refresh orchestration in `DefaultUnlockViewModel`; make tests pass
+- [x] 12.1 Write failing tests: after presence check when online, calls `refreshSession()`; on success proceeds to vault unlock; on failure shows soft error (`AuthFlowProtocolTests/DefaultUnlockViewModelRefreshTests.swift` — scenarios: Successful refresh restores in-memory session, Failed refresh shows soft error, Refresh retried with entered password on soft failure, Offline skips refresh)
+- [x] 12.2 Implement online refresh orchestration in `DefaultUnlockViewModel`; make tests pass
 
 ## 13. DefaultUnlockViewModel — Vault Unlock
 

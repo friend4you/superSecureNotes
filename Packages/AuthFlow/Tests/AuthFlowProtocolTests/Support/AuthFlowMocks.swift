@@ -97,6 +97,7 @@ actor MockAuthRepository: AuthRepository {
     var loginError: AuthRepositoryError?
     var registerError: AuthRepositoryError?
     var restoreError: AuthRepositoryError?
+    private(set) var restoreSessionCallCount = 0
     var shouldSuspendOnLogin = false
     var shouldSuspendOnRegister = false
 
@@ -177,6 +178,7 @@ actor MockAuthRepository: AuthRepository {
     }
 
     func restoreSession(refreshToken: String) async throws -> AuthSession {
+        restoreSessionCallCount += 1
         if let restoreError {
             throw restoreError
         }
