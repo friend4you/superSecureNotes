@@ -1,3 +1,4 @@
+import AuthFlowProtocol
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation
@@ -84,8 +85,10 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     }
 
     public func logout() async {
-        try? await authRepository.logout()
-        await vaultSession.clear()
-        try? credentialStore.clearAll()
+        await LogoutReset.perform(
+            authRepository: authRepository,
+            vaultSession: vaultSession,
+            credentialStore: credentialStore
+        )
     }
 }

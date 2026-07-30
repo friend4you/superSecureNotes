@@ -1,4 +1,5 @@
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import CryptoKit
 import NavigationProtocol
 import NoteRepositoryProtocol
@@ -106,6 +107,12 @@ final class DefaultNoteListViewModelTests: XCTestCase {
     func testLogoutClearsAuthAndVaultSession() async throws {
         let authRepository = MockAuthRepository()
         let vaultSession = MockVaultSession()
+        let credentialStore = NotesFlowTestMocks.credentialStore()
+        try credentialStore.saveSetup(
+            email: "user@example.com",
+            refreshToken: "refresh-token",
+            vaultHeader: Data([0x01])
+        )
         _ = try await authRepository.login(
             LoginCredentials(email: "user@example.com", password: "secret")
         )
@@ -118,7 +125,8 @@ final class DefaultNoteListViewModelTests: XCTestCase {
 
         let viewModel = makeViewModel(
             authRepository: authRepository,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            credentialStore: credentialStore
         )
         await viewModel.logout()
 
@@ -126,6 +134,7 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         let isActive = await vaultSession.isActive
         XCTAssertNil(currentSession)
         XCTAssertFalse(isActive)
+        XCTAssertFalse(credentialStore.hasLocalSetup)
     }
 
     @MainActor
@@ -133,14 +142,15 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         authRepository: MockAuthRepository = MockAuthRepository(),
         vaultSession: MockVaultSession = MockVaultSession(),
         noteRepository: MockNoteRepository = MockNoteRepository(),
-        navigator: MockNavigating? = nil
+        navigator: MockNavigating? = nil,
+        credentialStore: MockCredentialStore = NotesFlowTestMocks.credentialStore()
     ) -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
             authRepository: authRepository,
             vaultSession: vaultSession,
             noteRepository: noteRepository,
             navigator: navigator ?? MockNavigating(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: credentialStore
         )
     }
 }

@@ -21,6 +21,8 @@ final class MockCredentialStore: CredentialStore, @unchecked Sendable {
     func setBioEnabled(_ enabled: Bool) throws {}
     func savePassword(_ password: String) throws {}
     func loadPasswordWithBiometrics() throws -> String { throw CredentialStoreError.itemNotFound }
-    func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {}
+    func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {
+        hasLocalSetup = true
+    }
     func clearAll() throws { hasLocalSetup = false }
 }

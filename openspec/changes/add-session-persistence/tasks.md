@@ -93,8 +93,8 @@
 
 ## 19. Logout Full Reset
 
-- [ ] 19.1 Write failing tests: logout calls `credentialStore.clearAll()`, `vaultSession.clear()`, clears auth memory (`AuthFlowProtocolTests/LogoutResetTests.swift` — scenarios: Logout wipes all persisted state, Logout returns to first-launch login)
-- [ ] 19.2 Update `DefaultNoteListViewModel` logout to full reset; make tests pass
+- [x] 19.1 Write failing tests: logout calls `credentialStore.clearAll()`, `vaultSession.clear()`, clears auth memory (`AuthFlowProtocolTests/LogoutResetTests.swift` — scenarios: Logout wipes all persisted state, Logout returns to first-launch login)
+- [x] 19.2 Update `DefaultNoteListViewModel` logout to full reset; make tests pass
 
 ## 20. LockCoordinator
 
