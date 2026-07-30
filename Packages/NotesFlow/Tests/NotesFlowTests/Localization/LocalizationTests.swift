@@ -15,6 +15,7 @@ final class LocalizationTests: XCTestCase {
             "notes.attachments.remove",
             "notes.attachments.preview",
             "notes.detail.attachments",
+            "common.close",
         ]
 
         for key in keys {

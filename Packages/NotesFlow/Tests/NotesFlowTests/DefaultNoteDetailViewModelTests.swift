@@ -189,6 +189,37 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.attachmentData(for: "missing"))
     }
 
+    func testLoadOnlyRunsOncePerViewModel() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try makeEncryptedNoteFile(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk
+        )
+        let noteRepository = MockNoteRepository(notes: [noteID: noteData])
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: MockVaultSession(udk: udk)
+        )
+
+        await viewModel.load()
+        viewModel.addAttachment(
+            NotePayload.Attachment(
+                id: "new-attachment",
+                filename: "new.txt",
+                mime: "text/plain",
+                data: Data("hello".utf8)
+            )
+        )
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.attachmentItems.map(\.id), ["new-attachment"])
+    }
+
     func testSaveWritesEncryptedBlob() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)

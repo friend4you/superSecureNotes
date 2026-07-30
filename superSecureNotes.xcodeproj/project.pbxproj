@@ -55,8 +55,17 @@
 /* Begin PBXFileReference section */
 		AA611E6830094D0300F15876 /* superSecureNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = superSecureNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = superSecureNotesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA67A47A301B2A5900DC213C /* superSecureNotes.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = superSecureNotes.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA67A47B301B2FFB00DC213C /* Exceptions for "superSecureNotesTests" folder in "superSecureNotesTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				superSecureNotes.xctestplan,
+			);
+			target = AA611E8730094D1300F15876 /* superSecureNotesTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA611E6A30094D0300F15876 /* superSecureNotes */ = {
@@ -66,6 +75,9 @@
 		};
 		AA611E6C30094D0300F15876 /* superSecureNotesTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA67A47B301B2FFB00DC213C /* Exceptions for "superSecureNotesTests" folder in "superSecureNotesTests" target */,
+			);
 			path = superSecureNotesTests;
 			sourceTree = "<group>";
 		};
@@ -125,7 +137,6 @@
 		AA611E5F30094D0300F15876 = {
 			isa = PBXGroup;
 			children = (
-				AA67A47A301B2A5900DC213C /* superSecureNotes.xctestplan */,
 				AA611E6A30094D0300F15876 /* superSecureNotes */,
 				AA611E6C30094D0300F15876 /* superSecureNotesTests */,
 				AA611E6930094D0300F15876 /* Products */,

@@ -6,6 +6,9 @@ public struct CreateNoteView: View {
     @Bindable private var viewModel: DefaultCreateNoteViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showsFileImporter = false
+    #if os(iOS)
+    @State private var attachmentPreview: AttachmentPreviewPresentation?
+    #endif
 
     public init(viewModel: DefaultCreateNoteViewModel) {
         self.viewModel = viewModel
@@ -73,9 +76,17 @@ public struct CreateNoteView: View {
             NoteAttachmentsSection(
                 items: viewModel.attachmentItems,
                 dataForPreview: viewModel.attachmentData(for:),
-                onRemove: viewModel.removeAttachment(id:)
+                onRemove: viewModel.removeAttachment(id:),
+                onPreview: { url in
+                    #if os(iOS)
+                    attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
+                    #endif
+                }
             )
         }
+        #if os(iOS)
+        .attachmentPreview($attachmentPreview)
+        #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.create.title"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

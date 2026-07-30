@@ -17,6 +17,8 @@ final class AppComposition {
     let shareNoteDependencies: ShareNoteDependencies
     let navigation: NavigationCoordinator
 
+    private var lastSyncedVaultActive: Bool?
+
     init() {
         let infrastructure = AppDependencies()
         self.infrastructure = infrastructure
@@ -46,6 +48,8 @@ final class AppComposition {
     }
 
     func syncRootRoute(isVaultActive: Bool) {
+        guard lastSyncedVaultActive != isVaultActive else { return }
+        lastSyncedVaultActive = isVaultActive
         SessionRootNavigation.apply(isVaultActive: isVaultActive, to: navigation.navigator)
     }
 }

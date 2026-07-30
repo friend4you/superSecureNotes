@@ -128,6 +128,7 @@ final class NoteDetailViewTests: XCTestCase {
         XCTAssertTrue(source.contains("NoteAttachmentsSection("))
         XCTAssertTrue(source.contains("viewModel.attachmentItems"))
         XCTAssertTrue(source.contains("viewModel.removeAttachment(id:)"))
+        XCTAssertTrue(source.contains("attachmentPreview($attachmentPreview)"))
     }
 
     func testNoteDetailViewSourceIncludesAttachmentPickers() throws {

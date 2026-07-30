@@ -57,6 +57,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     private var loadedAttachments: [NotePayload.Attachment] = []
     private var createdAt: UInt64 = 0
     private var fek: SymmetricKey?
+    private var didLoad = false
 
     public init(
         noteID: UUID,
@@ -71,6 +72,10 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     }
 
     public func load() async {
+        if didLoad {
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 
@@ -90,6 +95,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
             syncAttachmentItems()
             loadedTitle = title
             loadedBody = body
+            didLoad = true
         } catch {
             errorMessage = error.localizedDescription
         }

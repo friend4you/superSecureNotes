@@ -48,6 +48,7 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     public func refresh() async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             let loadedNotes = try await noteRepository.listNotes()
@@ -55,8 +56,6 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
-
-        isLoading = false
     }
 
     public func openDetail(noteID: UUID) {

@@ -52,7 +52,10 @@ let package = Package(
         ),
         .testTarget(
             name: "NotesFlowTests",
-            dependencies: ["NotesFlow"]
+            dependencies: [
+                "NotesFlow",
+                .product(name: "VaultSession", package: "VaultSession"),
+            ]
         ),
         .testTarget(
             name: "NotesFlowRoutesTests",

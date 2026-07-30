@@ -7,6 +7,9 @@ public struct NoteDetailView: View {
     @State private var showsDeleteConfirmation = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showsFileImporter = false
+    #if os(iOS)
+    @State private var attachmentPreview: AttachmentPreviewPresentation?
+    #endif
 
     public init(viewModel: DefaultNoteDetailViewModel) {
         self.viewModel = viewModel
@@ -74,9 +77,17 @@ public struct NoteDetailView: View {
             NoteAttachmentsSection(
                 items: viewModel.attachmentItems,
                 dataForPreview: viewModel.attachmentData(for:),
-                onRemove: viewModel.removeAttachment(id:)
+                onRemove: viewModel.removeAttachment(id:),
+                onPreview: { url in
+                    #if os(iOS)
+                    attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
+                    #endif
+                }
             )
         }
+        #if os(iOS)
+        .attachmentPreview($attachmentPreview)
+        #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.detail.title"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -130,7 +141,7 @@ public struct NoteDetailView: View {
                 viewModel.reportError(error.localizedDescription)
             }
         }
-        .task {
+        .task(id: viewModel.noteID) {
             await viewModel.load()
         }
     }

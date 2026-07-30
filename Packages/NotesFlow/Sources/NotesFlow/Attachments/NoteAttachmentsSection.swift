@@ -4,53 +4,39 @@ struct NoteAttachmentsSection: View {
     let items: [NoteAttachmentItem]
     let dataForPreview: (String) -> Data?
     let onRemove: (String) -> Void
-
-    @State private var previewFileURL: URL?
-    @State private var showsPreview = false
+    let onPreview: (URL) -> Void
 
     private let previewStore = AttachmentPreviewStore()
 
     var body: some View {
-        Group {
-            if !items.isEmpty {
-                Section(NotesFlowUILocalization.localized("notes.detail.attachments")) {
-                    ForEach(items) { item in
-                        attachmentRow(for: item)
-                    }
+        if !items.isEmpty {
+            Section(NotesFlowUILocalization.localized("notes.detail.attachments")) {
+                ForEach(items) { item in
+                    attachmentRow(for: item)
                 }
             }
         }
-        #if os(iOS)
-        .sheet(isPresented: $showsPreview, onDismiss: cleanupPreview) {
-            if let previewFileURL {
-                QuickLookPreview(fileURL: previewFileURL)
-                    .ignoresSafeArea()
-            }
-        }
-        #endif
     }
 
     @ViewBuilder
     private func attachmentRow(for item: NoteAttachmentItem) -> some View {
         HStack {
-            #if os(iOS)
-            Button {
-                openPreview(for: item)
-            } label: {
-                Text(item.filename)
-                    .foregroundStyle(.primary)
-            }
-            #else
             Text(item.filename)
-            #endif
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                #if os(iOS)
+                .onTapGesture {
+                    openPreview(for: item)
+                }
+                #endif
 
-            Spacer()
-
-            Button(role: .destructive) {
+            Button {
                 onRemove(item.id)
             } label: {
                 Image(systemName: "trash")
+                    .foregroundStyle(.red)
             }
+            .buttonStyle(.borderless)
             .accessibilityLabel(NotesFlowUILocalization.localized("notes.attachments.remove"))
         }
     }
@@ -61,17 +47,9 @@ struct NoteAttachmentsSection: View {
 
         do {
             let fileURL = try previewStore.writePreviewFile(data: data, filename: item.filename)
-            previewFileURL = fileURL
-            showsPreview = true
+            onPreview(fileURL)
         } catch {
             return
-        }
-    }
-
-    private func cleanupPreview() {
-        if let previewFileURL {
-            previewStore.deletePreviewFile(at: previewFileURL)
-            self.previewFileURL = nil
         }
     }
     #endif

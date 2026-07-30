@@ -23,14 +23,17 @@ final class NoteAttachmentsSectionTests: XCTestCase {
         XCTAssertTrue(source.contains("onRemove(item.id)"))
         XCTAssertTrue(source.contains("Image(systemName: \"trash\")"))
         XCTAssertTrue(source.contains("notes.attachments.remove"))
+        XCTAssertFalse(source.contains("role: .destructive"))
     }
 
-    func testNoteAttachmentsSectionSourceOpensPreviewOnIOS() throws {
+    func testNoteAttachmentsSectionSourceRequestsPreviewViaCallback() throws {
         let source = try Self.noteAttachmentsSectionSource()
 
         XCTAssertTrue(source.contains("openPreview(for: item)"))
-        XCTAssertTrue(source.contains("QuickLookPreview"))
+        XCTAssertTrue(source.contains("onPreview(fileURL)"))
         XCTAssertTrue(source.contains("dataForPreview(item.id)"))
+        XCTAssertTrue(source.contains("onTapGesture"))
+        XCTAssertFalse(source.contains("fullScreenCover"))
     }
 
     private static func noteAttachmentsSectionSource() throws -> String {

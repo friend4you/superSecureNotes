@@ -3,6 +3,7 @@ import CryptoKit
 import NavigationProtocol
 import NoteRepositoryProtocol
 import NotesFlow
+import VaultSession
 import VaultSessionProtocol
 import XCTest
 
@@ -40,6 +41,40 @@ final class NotesFlowDependenciesTests: XCTestCase {
         let viewModel = dependencies.makeNoteListViewModel()
 
         XCTAssertTrue(viewModel is DefaultNoteListViewModel)
+    }
+
+    func testMakeNoteListViewModelReturnsSameInstanceWhileVaultIsActive() {
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository()
+        )
+
+        let firstViewModel = dependencies.makeNoteListViewModel()
+        let secondViewModel = dependencies.makeNoteListViewModel()
+
+        XCTAssertTrue(firstViewModel === secondViewModel)
+    }
+
+    func testMakeNoteListViewModelCreatesNewInstanceAfterVaultClears() async {
+        let vaultSession = VaultSession()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: vaultSession,
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository()
+        )
+
+        let firstViewModel = dependencies.makeNoteListViewModel()
+        await vaultSession.establish(
+            VaultSessionKeys(udk: .init(size: .bits256), identityPrivateKey: Data(repeating: 1, count: 32))
+        )
+        await vaultSession.clear()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        let secondViewModel = dependencies.makeNoteListViewModel()
+
+        XCTAssertFalse(firstViewModel === secondViewModel)
     }
 
     func testMakeNoteDetailViewModelReturnsDefaultImplementationBoundToNoteID() {

@@ -102,6 +102,7 @@ final class CreateNoteViewTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.attachmentItems"))
         XCTAssertTrue(source.contains("viewModel.removeAttachment(id:)"))
         XCTAssertTrue(source.contains("viewModel.attachmentData(for:)"))
+        XCTAssertTrue(source.contains("attachmentPreview($attachmentPreview)"))
     }
 
     func testCreateNoteViewSourceShowsInlineStates() throws {

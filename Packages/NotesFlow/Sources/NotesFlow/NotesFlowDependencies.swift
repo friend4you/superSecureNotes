@@ -11,6 +11,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     private let vaultSession: any VaultSessionProtocol
     private let navigator: any Navigating
     internal let noteRepository: any NoteRepository
+    private var noteListViewModel: DefaultNoteListViewModel?
 
     public init(
         authRepository: any AuthRepository,
@@ -22,15 +23,27 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         self.vaultSession = vaultSession
         self.navigator = navigator
         self.noteRepository = noteRepository
+
+        Task {
+            for await isActive in vaultSession.changes where !isActive {
+                noteListViewModel = nil
+            }
+        }
     }
 
     public func makeNoteListViewModel() -> DefaultNoteListViewModel {
-        DefaultNoteListViewModel(
+        if let noteListViewModel {
+            return noteListViewModel
+        }
+
+        let viewModel = DefaultNoteListViewModel(
             authRepository: authRepository,
             vaultSession: vaultSession,
             noteRepository: noteRepository,
             navigator: navigator
         )
+        noteListViewModel = viewModel
+        return viewModel
     }
 
     public func makeNoteDetailViewModel(noteID: UUID) -> DefaultNoteDetailViewModel {
