@@ -60,6 +60,7 @@ let package = Package(
             name: "AuthRepository",
             dependencies: [
                 "AuthRepositoryProtocol",
+                "CredentialStoreProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
             ]
         ),
@@ -67,6 +68,7 @@ let package = Package(
             name: "AuthFlowProtocol",
             dependencies: [
                 "AuthFlowRoutes",
+                "AuthRepository",
                 "AuthRepositoryProtocol",
                 "CredentialStoreProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
@@ -103,7 +105,10 @@ let package = Package(
         ),
         .testTarget(
             name: "AuthRepositoryTests",
-            dependencies: ["AuthRepository"]
+            dependencies: [
+                "AuthRepository",
+                "CredentialStore",
+            ]
         ),
         .testTarget(
             name: "AuthFlowProtocolTests",

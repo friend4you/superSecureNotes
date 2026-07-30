@@ -1,3 +1,4 @@
+import AuthRepository
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation
@@ -93,21 +94,18 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
     }
 
     private func restoreOnlineSession(using unlockPassword: String) async throws {
-        if let refreshToken = credentialStore.refreshToken() {
-            do {
-                _ = try await authRepository.restoreSession(refreshToken: refreshToken)
-                return
-            } catch {
-                _ = try await authRepository.login(
-                    LoginCredentials(email: email, password: unlockPassword)
-                )
-                return
-            }
-        }
+        let restoreHelper = AuthSessionRestoreHelper()
 
-        _ = try await authRepository.login(
-            LoginCredentials(email: email, password: unlockPassword)
-        )
+        do {
+            _ = try await restoreHelper.restoreSession(
+                credentialStore: credentialStore,
+                authRepository: authRepository
+            )
+        } catch {
+            _ = try await authRepository.login(
+                LoginCredentials(email: email, password: unlockPassword)
+            )
+        }
     }
 
     private func unlockVault(using unlockPassword: String) async throws {

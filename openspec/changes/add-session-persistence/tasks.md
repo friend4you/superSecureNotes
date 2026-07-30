@@ -88,8 +88,8 @@
 
 ## 18. Auth Session Restore on Unlock
 
-- [ ] 18.1 Write failing tests: `PersistedAuthRepository` or unlock helper loads refresh token from `CredentialStore` and calls `refreshSession()`; lock clears memory only (`AuthRepositoryTests/SessionRestoreTests.swift` — scenarios: Lock clears in-memory auth tokens, Lock preserves Keychain credentials, Successful refresh restores in-memory session)
-- [ ] 18.2 Implement session restore helper; wire into unlock flow; make tests pass
+- [x] 18.1 Write failing tests: `PersistedAuthRepository` or unlock helper loads refresh token from `CredentialStore` and calls `refreshSession()`; lock clears memory only (`AuthRepositoryTests/SessionRestoreTests.swift` — scenarios: Lock clears in-memory auth tokens, Lock preserves Keychain credentials, Successful refresh restores in-memory session)
+- [x] 18.2 Implement session restore helper; wire into unlock flow; make tests pass
 
 ## 19. Logout Full Reset
 
