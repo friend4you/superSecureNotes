@@ -36,8 +36,8 @@
 
 ## 8. BiometricAuthenticator Protocol
 
-- [ ] 8.1 Write failing tests: `BiometricAuthenticator` protocol compiles; mock satisfies `canEvaluateBiometrics()` and `authenticate()` (`AuthFlowProtocolTests/BiometricAuthenticatorTests.swift`)
-- [ ] 8.2 Add `BiometricAuthenticator` protocol and `BiometricAuthResult` to `AuthFlowProtocol`; make tests pass
+- [x] 8.1 Write failing tests: `BiometricAuthenticator` protocol compiles; mock satisfies `canEvaluateBiometrics()` and `authenticate()` (`AuthFlowProtocolTests/BiometricAuthenticatorTests.swift`)
+- [x] 8.2 Add `BiometricAuthenticator` protocol and `BiometricAuthResult` to `AuthFlowProtocol`; make tests pass
 
 ## 9. LocalAuthentication BiometricAuthenticator
 
