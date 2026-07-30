@@ -129,6 +129,6 @@
 
 ## 26. Verification
 
-- [ ] 26.1 Run `swift test` in `Packages/AuthFlow`; confirm all tests pass
-- [ ] 26.2 Run app target tests; confirm lock coordinator and navigation tests pass
-- [ ] 26.3 Update `Packages/AuthFlow/README.md` with credential store, lock/unlock, and biometrics documentation
+- [x] 26.1 Run `swift test` in `Packages/AuthFlow`; confirm all tests pass
+- [x] 26.2 Run app target tests; confirm lock coordinator and navigation tests pass
+- [x] 26.3 Update `Packages/AuthFlow/README.md` with credential store, lock/unlock, and biometrics documentation

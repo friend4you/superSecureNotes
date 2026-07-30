@@ -131,16 +131,13 @@ final class AppCompositionTests: XCTestCase {
         XCTAssertEqual(viewModel.noteID, noteID)
     }
 
-    func testAppCompositionWiresSessionPersistence() {
+    func testSyncRootRouteRoutesToUnlockWhenSetupWithoutActiveVault() async {
         let composition = AppComposition()
 
         XCTAssertTrue(composition.navigation.registry.isRegistered(AuthRoute.self))
         XCTAssertTrue(composition.authDependencies.makeUnlockViewModel() is DefaultUnlockViewModel)
         XCTAssertTrue(composition.lockCoordinator is LockCoordinator)
-    }
 
-    func testSyncRootRouteRoutesToUnlockWhenSetupWithoutActiveVault() async {
-        let composition = AppComposition()
         let router = composition.navigation.hostModel.router
         let keys = VaultSessionKeys(
             udk: SymmetricKey(size: .bits256),
