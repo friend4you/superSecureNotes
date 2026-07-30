@@ -29,7 +29,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:superSecureNotes.xctestplan"
+            reference = "container:superSecureNotesTests/superSecureNotes.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>

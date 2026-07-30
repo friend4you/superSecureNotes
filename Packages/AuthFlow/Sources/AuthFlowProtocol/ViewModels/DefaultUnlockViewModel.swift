@@ -1,4 +1,3 @@
-import AuthRepository
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation

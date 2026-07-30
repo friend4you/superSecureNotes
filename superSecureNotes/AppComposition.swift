@@ -47,13 +47,16 @@ final class AppComposition {
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator
         )
+        let navigator = navigation.navigator
+        let credentialStore = infrastructure.credentialStore
         lockCoordinator = LockCoordinator(
             vaultSession: infrastructure.vaultSession,
             authRepository: infrastructure.authRepository
-        ) { [weak self] in
-            self?.syncRootRoute(
-                hasLocalSetup: infrastructure.credentialStore.hasLocalSetup,
-                isVaultActive: false
+        ) {
+            SessionRootNavigation.apply(
+                hasLocalSetup: credentialStore.hasLocalSetup,
+                isVaultActive: false,
+                to: navigator
             )
         }
         navigation.registry.registerAuthRoutes(deps: authDependencies)

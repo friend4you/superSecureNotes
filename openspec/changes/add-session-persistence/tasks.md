@@ -98,8 +98,8 @@
 
 ## 20. LockCoordinator
 
-- [ ] 20.1 Write failing tests: lock on `scenePhase .background`, on `protectedDataWillBecomeUnavailable`, clears vault session and auth memory, no Keychain changes (`superSecureNotesTests/LockCoordinatorTests.swift` — scenarios: Lock on background, Lock on device lock screen, Locked on foreground return, No grace period, Lock clears vault session, Lock preserves Keychain credentials)
-- [ ] 20.2 Implement `LockCoordinator` in app target; make tests pass
+- [x] 20.1 Write failing tests: lock on `scenePhase .background`, on `protectedDataWillBecomeUnavailable`, clears vault session and auth memory, no Keychain changes (`superSecureNotesTests/LockCoordinatorTests.swift` — scenarios: Lock on background, Lock on device lock screen, Locked on foreground return, No grace period, Lock clears vault session, Lock preserves Keychain credentials)
+- [x] 20.2 Implement `LockCoordinator` in app target; make tests pass
 
 ## 21. Root Navigation — Three States
 

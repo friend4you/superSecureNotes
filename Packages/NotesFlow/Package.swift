@@ -34,7 +34,6 @@ let package = Package(
                 "NotesFlowRoutes",
                 .product(name: "Navigation", package: "Navigation"),
                 .product(name: "AuthRepositoryProtocol", package: "AuthFlow"),
-                .product(name: "AuthFlowProtocol", package: "AuthFlow"),
                 .product(name: "AuthFlowRoutes", package: "AuthFlow"),
                 .product(name: "CredentialStoreProtocol", package: "AuthFlow"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),

@@ -42,6 +42,9 @@
 		AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221230160000F15876 /* NoteRepositoryProtocol */; };
 		AA61221730170000F15876 /* CredentialStore in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221730170001F15876 /* CredentialStore */; };
 		AA61221830170002F15876 /* CredentialStore in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221730170001F15876 /* CredentialStore */; };
+		AA61221930170003F15876 /* VaultSessionProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC23014AAAA00F15876 /* VaultSessionProtocol */; };
+		AA61221B30170005F15876 /* CredentialStoreProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221A30170004F15876 /* CredentialStoreProtocol */; };
+		AA61221C30170006F15876 /* CredentialStoreProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221A30170004F15876 /* CredentialStoreProtocol */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +110,8 @@
 				AA61221330160000F15876 /* NoteRepository in Frameworks */,
 				AA61221430160000F15876 /* NoteRepositoryProtocol in Frameworks */,
 				AA61221730170000F15876 /* CredentialStore in Frameworks */,
+				AA61221930170003F15876 /* VaultSessionProtocol in Frameworks */,
+				AA61221B30170005F15876 /* CredentialStoreProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +137,7 @@
 				AA61221530160000F15876 /* NoteRepository in Frameworks */,
 				AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */,
 				AA61221830170002F15876 /* CredentialStore in Frameworks */,
+				AA61221C30170006F15876 /* CredentialStoreProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -178,6 +184,7 @@
 			packageProductDependencies = (
 				AA611E7730094D0800F15876 /* SecureCrypto */,
 				AA611E7930094D0900F15876 /* VaultSession */,
+				AA611EC23014AAAA00F15876 /* VaultSessionProtocol */,
 				AA611E7B30094D0A00F15876 /* NotesFlow */,
 				AA611E7D30094D0B00F15876 /* AuthRepository */,
 				AA611E7F30094D0C00F15876 /* VaultRepository */,
@@ -193,6 +200,7 @@
 				AA61221130160000F15876 /* NoteRepository */,
 				AA61221230160000F15876 /* NoteRepositoryProtocol */,
 				AA61221730170001F15876 /* CredentialStore */,
+				AA61221A30170004F15876 /* CredentialStoreProtocol */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -234,6 +242,7 @@
 				AA61221130160000F15876 /* NoteRepository */,
 				AA61221230160000F15876 /* NoteRepositoryProtocol */,
 				AA61221730170001F15876 /* CredentialStore */,
+				AA61221A30170004F15876 /* CredentialStoreProtocol */,
 			);
 			productName = superSecureNotesTests;
 			productReference = AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */;
@@ -715,6 +724,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
 			productName = CredentialStore;
+		};
+		AA61221A30170004F15876 /* CredentialStoreProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
+			productName = CredentialStoreProtocol;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

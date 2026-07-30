@@ -1,3 +1,4 @@
+import AuthFlowProtocol
 import CredentialStore
 import CredentialStoreProtocol
 import XCTest
