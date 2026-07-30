@@ -76,15 +76,15 @@
 
 ## 16. Login/Register Setup Persistence
 
-- [ ] 16.1 Write failing tests: successful login calls `credentialStore.saveSetup` with email, refresh token, and vault header (`AuthFlowProtocolTests/DefaultLoginViewModelPersistenceTests.swift` — scenario: Save setup marks device ready)
-- [ ] 16.2 Update `DefaultLoginViewModel` to persist credentials after success; make tests pass
-- [ ] 16.3 Write failing tests: successful register calls `credentialStore.saveSetup` (`AuthFlowProtocolTests/DefaultRegisterViewModelPersistenceTests.swift`)
-- [ ] 16.4 Update `DefaultRegisterViewModel` to persist credentials after success; make tests pass
+- [x] 16.1 Write failing tests: successful login calls `credentialStore.saveSetup` with email, refresh token, and vault header (`AuthFlowProtocolTests/DefaultLoginViewModelPersistenceTests.swift` — scenario: Save setup marks device ready)
+- [x] 16.2 Update `DefaultLoginViewModel` to persist credentials after success; make tests pass
+- [x] 16.3 Write failing tests: successful register calls `credentialStore.saveSetup` (`AuthFlowProtocolTests/DefaultRegisterViewModelPersistenceTests.swift`)
+- [x] 16.4 Update `DefaultRegisterViewModel` to persist credentials after success; make tests pass
 
 ## 17. First-Launch Internet Gate
 
-- [ ] 17.1 Write failing tests: login/register blocked when offline and `!hasLocalSetup`; unlock allowed offline when `hasLocalSetup` (`AuthFlowProtocolTests/NetworkRequiredTests.swift` — scenarios: Offline blocks first login, Offline blocks first register, Offline does not block unlock)
-- [ ] 17.2 Add `NetworkReachability` protocol and inject into login/register ViewModels; implement `NWPathMonitor` adapter in app target; make tests pass
+- [x] 17.1 Write failing tests: login/register blocked when offline and `!hasLocalSetup`; unlock allowed offline when `hasLocalSetup` (`AuthFlowProtocolTests/NetworkRequiredTests.swift` — scenarios: Offline blocks first login, Offline blocks first register, Offline does not block unlock)
+- [x] 17.2 Add `NetworkReachability` protocol and inject into login/register ViewModels; implement `NWPathMonitor` adapter in app target; make tests pass
 
 ## 18. Auth Session Restore on Unlock
 
