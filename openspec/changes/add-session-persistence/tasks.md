@@ -103,13 +103,13 @@
 
 ## 21. Root Navigation — Three States
 
-- [ ] 21.1 Write failing tests: `SessionRootNavigation` routes to login when `!hasLocalSetup`, unlock when setup but inactive vault, notes when active (`superSecureNotesTests/SessionRootNavigationTests.swift` — scenarios: Returning user sees unlock not login, First launch sees login)
-- [ ] 21.2 Update `SessionRootNavigation` and `RootView` for three-state routing; make tests pass
+- [x] 21.1 Write failing tests: `SessionRootNavigation` routes to login when `!hasLocalSetup`, unlock when setup but inactive vault, notes when active (`superSecureNotesTests/SessionRootNavigationTests.swift` — scenarios: Returning user sees unlock not login, First launch sees login)
+- [x] 21.2 Update `SessionRootNavigation` and `RootView` for three-state routing; make tests pass
 
 ## 22. UnlockView UI
 
-- [ ] 22.1 Write failing tests: `UnlockView` is publicly constructible; displays read-only email (`AuthFlowUITests/UnlockViewTests.swift` — scenarios: Email is read-only on unlock, Unlock strings are localized)
-- [ ] 22.2 Implement `UnlockView` with password field, bio trigger, and error display; add `unlock.*` and `bio.*` localization keys; make tests pass
+- [x] 22.1 Write failing tests: `UnlockView` is publicly constructible; displays read-only email (`AuthFlowUITests/UnlockViewTests.swift` — scenarios: Email is read-only on unlock, Unlock strings are localized)
+- [x] 22.2 Implement `UnlockView` with password field, bio trigger, and error display; add `unlock.*` and `bio.*` localization keys; make tests pass
 
 ## 23. Biometric Enrollment UI
 
