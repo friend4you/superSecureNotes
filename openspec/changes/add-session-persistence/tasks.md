@@ -61,8 +61,8 @@
 
 ## 13. DefaultUnlockViewModel — Vault Unlock
 
-- [ ] 13.1 Write failing tests: reads header from `CredentialStore`, calls `VaultAuthenticator.unlockVault`, calls `vaultSession.establish()`; works offline with cached header (`AuthFlowProtocolTests/DefaultUnlockViewModelVaultTests.swift` — scenarios: Refresh success still requires password for vault, Offline unlock with cached header, Stale password allowed offline)
-- [ ] 13.2 Implement vault unlock path in `DefaultUnlockViewModel`; make tests pass
+- [x] 13.1 Write failing tests: reads header from `CredentialStore`, calls `VaultAuthenticator.unlockVault`, calls `vaultSession.establish()`; works offline with cached header (`AuthFlowProtocolTests/DefaultUnlockViewModelVaultTests.swift` — scenarios: Refresh success still requires password for vault, Offline unlock with cached header, Stale password allowed offline)
+- [x] 13.2 Implement vault unlock path in `DefaultUnlockViewModel`; make tests pass
 
 ## 14. BiometricEnrollmentViewModel
 

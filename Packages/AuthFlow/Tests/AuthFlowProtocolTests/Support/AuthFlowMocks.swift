@@ -236,6 +236,8 @@ final class MockVaultAuthenticator: VaultAuthenticator, @unchecked Sendable {
             identityPrivateKey: Data(repeating: 0x01, count: 32)
         )
     )
+    private(set) var lastUnlockHeaderData: Data?
+    private(set) var lastUnlockPassword: String?
 
     func createVault(password: String) throws -> VaultCreationOutcome {
         createVaultCallCount += 1
@@ -247,6 +249,8 @@ final class MockVaultAuthenticator: VaultAuthenticator, @unchecked Sendable {
 
     func unlockVault(headerData: Data, password: String) throws -> VaultUnlockOutcome {
         unlockVaultCallCount += 1
+        lastUnlockHeaderData = headerData
+        lastUnlockPassword = password
         if let unlockVaultError {
             throw unlockVaultError
         }
