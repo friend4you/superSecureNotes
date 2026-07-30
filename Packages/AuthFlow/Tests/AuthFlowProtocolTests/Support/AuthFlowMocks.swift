@@ -49,6 +49,24 @@ enum AuthFlowTestSupport {
             networkReachability: networkReachability
         )
     }
+
+    static func makeUnlockViewModel(
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        authRepository: any AuthRepository = MockAuthRepository(),
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        biometricAuthenticator: any BiometricAuthenticator = MockBiometricAuthenticator(),
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false)
+    ) -> DefaultUnlockViewModel {
+        DefaultUnlockViewModel(
+            credentialStore: credentialStore,
+            authRepository: authRepository,
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            biometricAuthenticator: biometricAuthenticator,
+            networkReachability: networkReachability
+        )
+    }
 }
 
 final class AuthFlowMocksSmokeTests: XCTestCase {
@@ -358,8 +376,12 @@ struct MockNetworkReachability: NetworkReachability {
 final class MockBiometricAuthenticator: BiometricAuthenticator, @unchecked Sendable {
     var canEvaluate = true
     var result: BiometricAuthResult = .success
+    private(set) var authenticateCallCount = 0
 
     func canEvaluateBiometrics() -> Bool { canEvaluate }
 
-    func authenticate(reason: String) async -> BiometricAuthResult { result }
+    func authenticate(reason: String) async -> BiometricAuthResult {
+        authenticateCallCount += 1
+        return result
+    }
 }

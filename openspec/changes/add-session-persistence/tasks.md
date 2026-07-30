@@ -51,8 +51,8 @@
 
 ## 11. DefaultUnlockViewModel — Bio-First Unlock
 
-- [ ] 11.1 Write failing tests: when `bioEnabled`, `unlock()` triggers biometric auth first; on success retrieves password and proceeds; on failure shows password form (`AuthFlowProtocolTests/DefaultUnlockViewModelBioTests.swift` — scenarios: Bio prompt on locked screen, Successful bio unlock proceeds to vault unlock, Failed bio shows password screen, Bio disabled shows password screen directly)
-- [ ] 11.2 Implement bio-first path in `DefaultUnlockViewModel`; make tests pass
+- [x] 11.1 Write failing tests: when `bioEnabled`, `unlock()` triggers biometric auth first; on success retrieves password and proceeds; on failure shows password form (`AuthFlowProtocolTests/DefaultUnlockViewModelBioTests.swift` — scenarios: Bio prompt on locked screen, Successful bio unlock proceeds to vault unlock, Failed bio shows password screen, Bio disabled shows password screen directly)
+- [x] 11.2 Implement bio-first path in `DefaultUnlockViewModel`; make tests pass
 
 ## 12. DefaultUnlockViewModel — Online Session Restore
 
