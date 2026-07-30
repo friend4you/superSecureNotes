@@ -1,3 +1,4 @@
+import AuthFlowProtocol
 import AuthFlowRoutes
 import CryptoKit
 import CredentialStoreProtocol
@@ -128,6 +129,33 @@ final class AppCompositionTests: XCTestCase {
 
         XCTAssertTrue(viewModel is DefaultShareNoteViewModel)
         XCTAssertEqual(viewModel.noteID, noteID)
+    }
+
+    func testAppCompositionWiresSessionPersistence() {
+        let composition = AppComposition()
+
+        XCTAssertTrue(composition.navigation.registry.isRegistered(AuthRoute.self))
+        XCTAssertTrue(composition.authDependencies.makeUnlockViewModel() is DefaultUnlockViewModel)
+        XCTAssertTrue(composition.lockCoordinator is LockCoordinator)
+    }
+
+    func testSyncRootRouteRoutesToUnlockWhenSetupWithoutActiveVault() async {
+        let composition = AppComposition()
+        let router = composition.navigation.hostModel.router
+        let keys = VaultSessionKeys(
+            udk: SymmetricKey(size: .bits256),
+            identityPrivateKey: Data(repeating: 0x01, count: 32)
+        )
+
+        composition.syncRootRoute(hasLocalSetup: false, isVaultActive: false)
+        XCTAssertEqual(router.rootRoute?.route.base as? AuthRoute, .login)
+
+        composition.syncRootRoute(hasLocalSetup: true, isVaultActive: false)
+        XCTAssertEqual(router.rootRoute?.route.base as? AuthRoute, .unlock)
+
+        await composition.infrastructure.vaultSession.establish(keys)
+        composition.syncRootRoute(hasLocalSetup: true, isVaultActive: true)
+        XCTAssertEqual(router.rootRoute?.route.base as? NotesRoute, .list)
     }
 }
 

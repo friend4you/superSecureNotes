@@ -1,5 +1,6 @@
 import AuthFlowUI
 import AuthRepository
+import CredentialStore
 import NoteRepository
 import VaultRepository
 import VaultSession
@@ -38,5 +39,14 @@ final class AppDependenciesTests: XCTestCase {
         XCTAssertTrue(dependencies.authRepository is NetworkAuthRepository)
         XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
         XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
+    }
+
+    func testAppDependenciesProvidesSessionPersistenceServices() {
+        StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
+        let dependencies = AppDependencies()
+
+        XCTAssertTrue(dependencies.credentialStore is KeychainCredentialStore)
+        XCTAssertTrue(dependencies.biometricAuthenticator is LocalAuthenticationBiometricAuthenticator)
+        XCTAssertTrue(dependencies.networkReachability is NWPathNetworkReachability)
     }
 }

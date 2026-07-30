@@ -123,9 +123,9 @@
 
 ## 25. App Composition Wiring
 
-- [ ] 25.1 Wire `KeychainCredentialStore`, `LockCoordinator`, `DefaultUnlockViewModel`, and `LocalAuthenticationBiometricAuthenticator` in `AppDependencies`
-- [ ] 25.2 Update `RootView` to observe `hasLocalSetup` and locked state alongside `vaultSession.changes`
-- [ ] 25.3 Build and run app; confirm unlock screen appears after backgrounding
+- [x] 25.1 Wire `KeychainCredentialStore`, `LockCoordinator`, `DefaultUnlockViewModel`, and `LocalAuthenticationBiometricAuthenticator` in `AppDependencies`
+- [x] 25.2 Update `RootView` to observe `hasLocalSetup` and locked state alongside `vaultSession.changes`
+- [x] 25.3 Build and run app; confirm unlock screen appears after backgrounding
 
 ## 26. Verification
 

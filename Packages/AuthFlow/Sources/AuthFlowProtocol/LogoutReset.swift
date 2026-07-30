@@ -9,7 +9,7 @@ public enum LogoutReset {
         credentialStore: any CredentialStore
     ) async {
         try? await authRepository.logout()
-        await vaultSession.clear()
         try? credentialStore.clearAll()
+        await vaultSession.clear()
     }
 }

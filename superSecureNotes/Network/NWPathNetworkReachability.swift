@@ -18,5 +18,9 @@ public final class NWPathNetworkReachability: NetworkReachability, @unchecked Se
         monitor.start(queue: queue)
     }
 
+    deinit {
+        monitor.cancel()
+    }
+
     public var isOnline: Bool { online }
 }
