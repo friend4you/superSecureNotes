@@ -45,6 +45,19 @@ public final class DefaultLoginViewModel: LoginViewModel {
         navigator.push(AuthRoute.register)
     }
 
+    public func makeBiometricEnrollmentViewModel() -> DefaultBiometricEnrollmentViewModel {
+        DefaultBiometricEnrollmentViewModel(
+            credentialStore: credentialStore,
+            onComplete: { [weak self] in
+                self?.pendingBiometricEnrollment = false
+            }
+        )
+    }
+
+    public func dismissBiometricEnrollment() {
+        pendingBiometricEnrollment = false
+    }
+
     public func login() async {
         guard !email.isEmpty, !password.isEmpty else {
             state = .failure(.validationError)

@@ -49,6 +49,20 @@ public struct LoginView: View {
             }
         }
         .navigationTitle(String(localized: "login.title", bundle: .module))
+        .sheet(isPresented: biometricEnrollmentSheetBinding) {
+            BiometricEnrollmentView(viewModel: viewModel.makeBiometricEnrollmentViewModel())
+        }
+    }
+
+    private var biometricEnrollmentSheetBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.pendingBiometricEnrollment },
+            set: { isPresented in
+                if !isPresented {
+                    viewModel.dismissBiometricEnrollment()
+                }
+            }
+        )
     }
 }
 

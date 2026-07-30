@@ -76,4 +76,17 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
             state = .failure(.networkError)
         }
     }
+
+    public func makeBiometricEnrollmentViewModel() -> DefaultBiometricEnrollmentViewModel {
+        DefaultBiometricEnrollmentViewModel(
+            credentialStore: credentialStore,
+            onComplete: { [weak self] in
+                self?.pendingBiometricEnrollment = false
+            }
+        )
+    }
+
+    public func dismissBiometricEnrollment() {
+        pendingBiometricEnrollment = false
+    }
 }

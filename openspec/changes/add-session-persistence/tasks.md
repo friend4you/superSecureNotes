@@ -113,8 +113,8 @@
 
 ## 23. Biometric Enrollment UI
 
-- [ ] 23.1 Write failing tests: enrollment sheet shown after first setup; not shown on subsequent unlocks (`AuthFlowUITests/BiometricEnrollmentViewTests.swift` — scenarios: Enrollment shown after first login, Enrollment not shown on subsequent unlocks)
-- [ ] 23.2 Implement `BiometricEnrollmentView` sheet; wire after login/register success; make tests pass
+- [x] 23.1 Write failing tests: enrollment sheet shown after first setup; not shown on subsequent unlocks (`AuthFlowUITests/BiometricEnrollmentViewTests.swift` — scenarios: Enrollment shown after first login, Enrollment not shown on subsequent unlocks)
+- [x] 23.2 Implement `BiometricEnrollmentView` sheet; wire after login/register success; make tests pass
 
 ## 24. Settings Biometrics Toggle UI
 
