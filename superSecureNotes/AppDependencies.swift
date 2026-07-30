@@ -20,29 +20,18 @@ final class AppDependencies {
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
 
     init() {
+        noteRepository = LocalNoteRepository()
+        vaultRepository = LocalVaultRepository()
+        vaultSession = VaultSession()
+        vaultAuthenticator = SecureCryptoVaultAuthenticator()
+
         #if DEBUG
         if StubBackendConfiguration.isEnabled {
             authRepository = InMemoryAuthRepository()
-            vaultRepository = FileVaultRepository()
-            noteRepository = FileNoteRepository()
-            vaultSession = VaultSession()
-            vaultAuthenticator = SecureCryptoVaultAuthenticator()
             return
         }
         #endif
 
-        let networkAuthRepository = NetworkAuthRepository(baseURL: Self.apiBaseURL)
-        authRepository = networkAuthRepository
-        let tokenProvider = AuthRepositoryAccessTokenProvider(repository: networkAuthRepository)
-        vaultRepository = NetworkVaultRepository(
-            baseURL: Self.apiBaseURL,
-            tokenProvider: tokenProvider
-        )
-        noteRepository = NetworkNoteRepository(
-            baseURL: Self.apiBaseURL,
-            tokenProvider: tokenProvider
-        )
-        vaultSession = VaultSession()
-        vaultAuthenticator = SecureCryptoVaultAuthenticator()
+        authRepository = NetworkAuthRepository(baseURL: Self.apiBaseURL)
     }
 }

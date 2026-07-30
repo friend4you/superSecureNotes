@@ -2,6 +2,7 @@ import AuthFlowRoutes
 import CryptoKit
 import Navigation
 import NavigationProtocol
+import NoteRepository
 import NoteRepositoryProtocol
 import NotesFlow
 import NotesFlowRoutes
@@ -56,10 +57,10 @@ final class AppCompositionTests: XCTestCase {
     func testAppCompositionPassesNoteRepositoryToNotesDependencies() {
         let composition = AppComposition()
 
-        guard let infrastructureRepository = composition.infrastructure.noteRepository as? FileNoteRepository,
-              let notesRepository = composition.notesDependencies.noteRepository as? FileNoteRepository
+        guard let infrastructureRepository = composition.infrastructure.noteRepository as? LocalNoteRepository,
+              let notesRepository = composition.notesDependencies.noteRepository as? LocalNoteRepository
         else {
-            XCTFail("Expected FileNoteRepository instances in stub mode")
+            XCTFail("Expected LocalNoteRepository instances")
             return
         }
 

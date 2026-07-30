@@ -1,0 +1,35 @@
+{
+  "configurations" : [
+    {
+      "id" : "3BAE702F-8DA1-4A26-A51F-5AB5B065288A",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "-UseStubBackend"
+      }
+    ],
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:superSecureNotes.xcodeproj",
+      "identifier" : "AA611E6730094D0300F15876",
+      "name" : "superSecureNotes"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:superSecureNotes.xcodeproj",
+        "identifier" : "AA611E8730094D1300F15876",
+        "name" : "superSecureNotesTests"
+      }
+    }
+  ],
+  "version" : 1
+}

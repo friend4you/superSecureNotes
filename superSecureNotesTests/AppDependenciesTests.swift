@@ -14,13 +14,13 @@ final class AppDependenciesTests: XCTestCase {
         super.tearDown()
     }
 
-    func testStubModeUsesInMemoryAuthAndFileVaultRepositories() {
+    func testStubModeUsesInMemoryAuthAndLocalRepositories() {
         StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.authRepository is InMemoryAuthRepository)
-        XCTAssertTrue(dependencies.vaultRepository is FileVaultRepository)
-        XCTAssertTrue(dependencies.noteRepository is FileNoteRepository)
+        XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
+        XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
     }
 
     func testStubModeUsesRealCryptoAndVaultSession() {
@@ -31,12 +31,12 @@ final class AppDependenciesTests: XCTestCase {
         XCTAssertTrue(dependencies.vaultSession is VaultSession)
     }
 
-    func testNetworkModeUsesNetworkRepositories() {
+    func testNetworkModeUsesNetworkAuthWithLocalRepositories() {
         StubBackendConfiguration.testLaunchArguments = []
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.authRepository is NetworkAuthRepository)
-        XCTAssertTrue(dependencies.vaultRepository is NetworkVaultRepository)
-        XCTAssertTrue(dependencies.noteRepository is NetworkNoteRepository)
+        XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
+        XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
     }
 }

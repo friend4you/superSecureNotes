@@ -51,6 +51,27 @@
         }
       }
     },
+    "notes.attachments.preview" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview Attachment"
+          }
+        }
+      }
+    },
+    "notes.attachments.remove" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Attachment"
+          }
+        }
+      }
+    },
     "notes.create.addFile" : {
       "localizations" : {
         "en" : {
@@ -87,26 +108,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure you want to delete this note?"
-          }
-        }
-      }
-    },
-    "notes.attachments.preview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preview Attachment"
-          }
-        }
-      }
-    },
-    "notes.attachments.remove" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove Attachment"
           }
         }
       }

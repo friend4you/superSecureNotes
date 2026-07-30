@@ -20,6 +20,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../VaultRepository"),
+        .package(path: "../SecureCrypto"),
     ],
     targets: [
         .target(
@@ -30,6 +31,7 @@ let package = Package(
             dependencies: [
                 "NoteRepositoryProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
             ]
         ),
         .testTarget(
