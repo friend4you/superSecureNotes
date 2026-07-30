@@ -46,8 +46,8 @@
 
 ## 10. UnlockViewModel Protocol
 
-- [ ] 10.1 Write failing tests: `UnlockViewModel` protocol compiles; mock satisfies contract with locked initial state (`AuthFlowProtocolTests/UnlockViewModelTests.swift`)
-- [ ] 10.2 Add `UnlockViewModel` protocol and `UnlockFormState` to `AuthFlowProtocol`; make tests pass
+- [x] 10.1 Write failing tests: `UnlockViewModel` protocol compiles; mock satisfies contract with locked initial state (`AuthFlowProtocolTests/UnlockViewModelTests.swift`)
+- [x] 10.2 Add `UnlockViewModel` protocol and `UnlockFormState` to `AuthFlowProtocol`; make tests pass
 
 ## 11. DefaultUnlockViewModel — Bio-First Unlock
 
