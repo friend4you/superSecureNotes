@@ -58,7 +58,7 @@ public struct NoteListView: View {
 
             ToolbarItem(placement: .automatic) {
                 Button(NotesFlowUILocalization.localized("notes.list.settings")) {
-                    // TODO: Implement settings navigation
+                    viewModel.openSettings()
                 }
             }
 

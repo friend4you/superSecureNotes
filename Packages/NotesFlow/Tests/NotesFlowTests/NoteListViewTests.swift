@@ -106,12 +106,11 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("await viewModel.deleteNote(noteID: noteID)"))
     }
 
-    func testNoteListViewSourceSettingsButtonHasNoNavigationSideEffects() throws {
+    func testNoteListViewSourceSettingsButtonOpensSettings() throws {
         let source = try Self.noteListViewSource()
 
         XCTAssertTrue(source.contains("notes.list.settings"))
-        XCTAssertTrue(source.contains("// TODO: Implement settings navigation"))
-        XCTAssertFalse(source.contains("navigator."))
+        XCTAssertTrue(source.contains("viewModel.openSettings()"))
     }
 
     func testNoteListViewSourceDoesNotShowPlaceholderText() throws {

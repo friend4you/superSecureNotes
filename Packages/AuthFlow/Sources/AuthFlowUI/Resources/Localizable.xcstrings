@@ -51,6 +51,36 @@
         }
       }
     },
+    "bio.settings.password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        }
+      }
+    },
+    "bio.settings.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "bio.settings.toggle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Biometrics"
+          }
+        }
+      }
+    },
     "common.loading" : {
       "extractionState" : "stale",
       "localizations" : {

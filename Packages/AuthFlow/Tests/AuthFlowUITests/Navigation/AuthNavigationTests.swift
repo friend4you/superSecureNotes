@@ -9,6 +9,7 @@ import XCTest
 private final class MockAuthFlowDependencies: AuthFlowDependencyProviding {
     private(set) var makeLoginViewModelCallCount = 0
     private(set) var makeRegisterViewModelCallCount = 0
+    private(set) var makeBiometricSettingsViewModelCallCount = 0
 
     func makeLoginViewModel() -> DefaultLoginViewModel {
         makeLoginViewModelCallCount += 1
@@ -31,7 +32,8 @@ private final class MockAuthFlowDependencies: AuthFlowDependencyProviding {
     }
 
     func makeBiometricSettingsViewModel() -> DefaultBiometricSettingsViewModel {
-        PreviewSupport.makeDependencies().makeBiometricSettingsViewModel()
+        makeBiometricSettingsViewModelCallCount += 1
+        return PreviewSupport.makeDependencies().makeBiometricSettingsViewModel()
     }
 }
 
@@ -69,5 +71,13 @@ final class AuthNavigationTests: XCTestCase {
         _ = AuthNavigation.view(for: .register, deps: deps)
 
         XCTAssertEqual(deps.makeRegisterViewModelCallCount, 1)
+    }
+
+    func testViewForSettingsBuildsBiometricSettingsView() {
+        let deps = MockAuthFlowDependencies()
+
+        _ = AuthNavigation.settingsView(deps: deps)
+
+        XCTAssertEqual(deps.makeBiometricSettingsViewModelCallCount, 1)
     }
 }

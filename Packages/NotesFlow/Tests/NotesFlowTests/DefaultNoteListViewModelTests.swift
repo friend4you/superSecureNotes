@@ -1,3 +1,4 @@
+import AuthFlowRoutes
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import CryptoKit
@@ -67,6 +68,16 @@ final class DefaultNoteListViewModelTests: XCTestCase {
 
         XCTAssertEqual(navigator.pushedRoutes.count, 1)
         XCTAssertEqual(navigator.pushedRoutes.first?.base as? NotesRoute, .create)
+    }
+
+    func testOpenSettingsPushesSettingsRoute() {
+        let navigator = MockNavigating()
+        let viewModel = makeViewModel(navigator: navigator)
+
+        viewModel.openSettings()
+
+        XCTAssertEqual(navigator.pushedRoutes.count, 1)
+        XCTAssertEqual(navigator.pushedRoutes.first?.base as? AuthRoute, .settings)
     }
 
     func testSharePresentsShareSheet() {

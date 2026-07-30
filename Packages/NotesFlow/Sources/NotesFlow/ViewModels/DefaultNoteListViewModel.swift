@@ -1,3 +1,4 @@
+import AuthFlowRoutes
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation
@@ -19,6 +20,7 @@ public protocol NoteListViewModel: Observable {
     func createNote()
     func share(noteID: UUID)
     func deleteNote(noteID: UUID) async
+    func openSettings()
     func logout() async
 }
 
@@ -81,6 +83,10 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    public func openSettings() {
+        navigator.push(AuthRoute.settings)
     }
 
     public func logout() async {

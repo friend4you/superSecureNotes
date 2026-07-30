@@ -118,8 +118,8 @@
 
 ## 24. Settings Biometrics Toggle UI
 
-- [ ] 24.1 Write failing tests: Settings toggle wires to `BiometricSettingsViewModel` (`AuthFlowUITests/BiometricSettingsViewTests.swift`)
-- [ ] 24.2 Add biometrics toggle to Settings screen; make tests pass
+- [x] 24.1 Write failing tests: Settings toggle wires to `BiometricSettingsViewModel` (`AuthFlowUITests/BiometricSettingsViewTests.swift`)
+- [x] 24.2 Add biometrics toggle to Settings screen; make tests pass
 
 ## 25. App Composition Wiring
 
