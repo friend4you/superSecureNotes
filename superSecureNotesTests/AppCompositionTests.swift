@@ -1,5 +1,6 @@
 import AuthFlowRoutes
 import CryptoKit
+import CredentialStoreProtocol
 import Navigation
 import NavigationProtocol
 import NoteRepository
@@ -48,7 +49,8 @@ final class AppCompositionTests: XCTestCase {
             authRepository: InMemoryAuthRepository(),
             vaultSession: VaultSession(),
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: TestCredentialStore()
         )
 
         XCTAssertTrue(notesDependencies is NotesDependencyProviding)
@@ -134,4 +136,21 @@ private actor MockNoteRepository: NoteRepository {
     func readNote(noteID: UUID) async throws -> Data { Data() }
     func writeNote(noteID: UUID, data: Data) async throws {}
     func deleteNote(noteID: UUID) async throws {}
+}
+
+private final class TestCredentialStore: CredentialStore, @unchecked Sendable {
+    var hasLocalSetup: Bool { false }
+    func markSetupComplete() throws {}
+    func saveEmail(_ email: String) throws {}
+    func email() -> String? { nil }
+    func saveRefreshToken(_ token: String) throws {}
+    func refreshToken() -> String? { nil }
+    func saveVaultHeader(_ header: Data) throws {}
+    func vaultHeader() -> Data? { nil }
+    func bioEnabled() -> Bool { false }
+    func setBioEnabled(_ enabled: Bool) throws {}
+    func savePassword(_ password: String) throws {}
+    func loadPasswordWithBiometrics() throws -> String { throw CredentialStoreError.itemNotFound }
+    func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {}
+    func clearAll() throws {}
 }

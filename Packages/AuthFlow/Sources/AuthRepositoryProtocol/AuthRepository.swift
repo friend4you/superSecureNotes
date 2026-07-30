@@ -8,4 +8,6 @@ public protocol AuthRepository: Sendable {
     func login(_ credentials: LoginCredentials) async throws -> AuthSession
     func logout() async throws
     func refreshSession() async throws -> AuthSession
+    func restoreSession(refreshToken: String) async throws -> AuthSession
+    func clearSession() async
 }

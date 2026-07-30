@@ -26,19 +26,40 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class SessionRootNavigationTests: XCTestCase {
-    func testInactiveSessionSetsAuthLoginRoot() {
+    func testFirstLaunchSetsAuthLoginRoot() {
         let navigator = MockNavigating()
 
-        SessionRootNavigation.apply(isVaultActive: false, to: navigator)
+        SessionRootNavigation.apply(
+            hasLocalSetup: false,
+            isVaultActive: false,
+            to: navigator
+        )
 
         XCTAssertEqual(navigator.setRootRoutes.count, 1)
         XCTAssertEqual(navigator.setRootRoutes.first?.base as? AuthRoute, .login)
     }
 
+    func testReturningUserSetsUnlockRoot() {
+        let navigator = MockNavigating()
+
+        SessionRootNavigation.apply(
+            hasLocalSetup: true,
+            isVaultActive: false,
+            to: navigator
+        )
+
+        XCTAssertEqual(navigator.setRootRoutes.count, 1)
+        XCTAssertEqual(navigator.setRootRoutes.first?.base as? AuthRoute, .unlock)
+    }
+
     func testActiveSessionSetsNotesListRoot() {
         let navigator = MockNavigating()
 
-        SessionRootNavigation.apply(isVaultActive: true, to: navigator)
+        SessionRootNavigation.apply(
+            hasLocalSetup: true,
+            isVaultActive: true,
+            to: navigator
+        )
 
         XCTAssertEqual(navigator.setRootRoutes.count, 1)
         XCTAssertEqual(navigator.setRootRoutes.first?.base as? NotesRoute, .list)

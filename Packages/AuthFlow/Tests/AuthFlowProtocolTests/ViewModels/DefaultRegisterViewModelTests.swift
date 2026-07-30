@@ -48,11 +48,6 @@ final class DefaultRegisterViewModelTests: XCTestCase {
     }
 
     private func makeViewModel(authRepository: MockAuthRepository) -> DefaultRegisterViewModel {
-        DefaultRegisterViewModel(
-            authRepository: authRepository,
-            vaultRepository: MockVaultRepository(),
-            vaultAuthenticator: MockVaultAuthenticator(),
-            vaultSession: MockVaultSession()
-        )
+        AuthFlowTestSupport.makeRegisterViewModel(authRepository: authRepository)
     }
 }

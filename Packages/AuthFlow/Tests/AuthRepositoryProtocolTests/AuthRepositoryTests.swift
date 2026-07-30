@@ -64,4 +64,13 @@ private actor MockAuthRepository: AuthRepository {
         }
         return session
     }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        AuthSession(accessToken: "access", refreshToken: refreshToken, expiresAt: Date())
+    }
+
+    func clearSession() async {
+        session = nil
+        user = nil
+    }
 }

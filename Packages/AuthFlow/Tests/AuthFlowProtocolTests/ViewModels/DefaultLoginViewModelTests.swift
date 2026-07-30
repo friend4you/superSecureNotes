@@ -48,12 +48,6 @@ final class DefaultLoginViewModelTests: XCTestCase {
     }
 
     private func makeViewModel(authRepository: MockAuthRepository) -> DefaultLoginViewModel {
-        DefaultLoginViewModel(
-            authRepository: authRepository,
-            vaultRepository: MockVaultRepository(),
-            vaultAuthenticator: MockVaultAuthenticator(),
-            vaultSession: MockVaultSession(),
-            navigator: MockNavigating()
-        )
+        AuthFlowTestSupport.makeLoginViewModel(authRepository: authRepository)
     }
 }

@@ -19,6 +19,20 @@ private final class MockAuthFlowDependencies: AuthFlowDependencyProviding {
         makeRegisterViewModelCallCount += 1
         return PreviewSupport.makeRegisterViewModel()
     }
+
+    func makeUnlockViewModel() -> DefaultUnlockViewModel {
+        PreviewSupport.makeDependencies().makeUnlockViewModel()
+    }
+
+    func makeBiometricEnrollmentViewModel(
+        onComplete: @escaping () -> Void
+    ) -> DefaultBiometricEnrollmentViewModel {
+        PreviewSupport.makeDependencies().makeBiometricEnrollmentViewModel(onComplete: onComplete)
+    }
+
+    func makeBiometricSettingsViewModel() -> DefaultBiometricSettingsViewModel {
+        PreviewSupport.makeDependencies().makeBiometricSettingsViewModel()
+    }
 }
 
 @MainActor

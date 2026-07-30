@@ -24,7 +24,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
 
         XCTAssertTrue(dependencies is NotesFlowDependencies)
@@ -35,7 +36,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
 
         let viewModel = dependencies.makeNoteListViewModel()
@@ -48,7 +50,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
 
         let firstViewModel = dependencies.makeNoteListViewModel()
@@ -63,7 +66,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: vaultSession,
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
 
         let firstViewModel = dependencies.makeNoteListViewModel()
@@ -83,7 +87,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
 
         let viewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
@@ -97,7 +102,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
-            noteRepository: MockNoteRepository()
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
 
         let viewModel = dependencies.makeCreateNoteViewModel()
@@ -119,6 +125,12 @@ private actor MockAuthRepository: AuthRepository {
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }
 
 private actor MockVaultSession: VaultSessionProtocol {

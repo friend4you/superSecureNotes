@@ -1,38 +1,38 @@
 ## 1. Package Structure
 
-- [ ] 1.1 Extend `Packages/AuthFlow/Package.swift` with `CredentialStoreProtocol` and `CredentialStore` products/targets; add `CredentialStoreTests` test target
-- [ ] 1.2 Scaffold `Sources/CredentialStoreProtocol/` and `Sources/CredentialStore/` module entry points
-- [ ] 1.3 Add `CredentialStore` package product to Xcode project app target
+- [x] 1.1 Extend `Packages/AuthFlow/Package.swift` with `CredentialStoreProtocol` and `CredentialStore` products/targets; add `CredentialStoreTests` test target
+- [x] 1.2 Scaffold `Sources/CredentialStoreProtocol/` and `Sources/CredentialStore/` module entry points
+- [x] 1.3 Add `CredentialStore` package product to Xcode project app target
 
 ## 2. CredentialStore Protocol and Error Types
 
-- [ ] 2.1 Write failing tests: `CredentialStore` protocol compiles; `CredentialStoreError` cases are `Equatable` and `Sendable` (`CredentialStoreTests/CredentialStoreProtocolTests.swift`)
-- [ ] 2.2 Add `CredentialStore` protocol and `CredentialStoreError` to `CredentialStoreProtocol`; make tests pass
+- [x] 2.1 Write failing tests: `CredentialStore` protocol compiles; `CredentialStoreError` cases are `Equatable` and `Sendable` (`CredentialStoreTests/CredentialStoreProtocolTests.swift`)
+- [x] 2.2 Add `CredentialStore` protocol and `CredentialStoreError` to `CredentialStoreProtocol`; make tests pass
 
 ## 3. Device Setup Flag
 
-- [ ] 3.1 Write failing tests: `hasLocalSetup` is `false` initially; `markSetupComplete()` sets `true`; `clearAll()` resets to `false` (`CredentialStoreTests/DeviceSetupFlagTests.swift` — scenarios: Initial state is not set up, Mark device set up after first auth, Clear all removes every item)
-- [ ] 3.2 Implement `hasLocalSetup` and `markSetupComplete()` in `KeychainCredentialStore`; make tests pass
+- [x] 3.1 Write failing tests: `hasLocalSetup` is `false` initially; `markSetupComplete()` sets `true`; `clearAll()` resets to `false` (`CredentialStoreTests/DeviceSetupFlagTests.swift` — scenarios: Initial state is not set up, Mark device set up after first auth, Clear all removes every item)
+- [x] 3.2 Implement `hasLocalSetup` and `markSetupComplete()` in `KeychainCredentialStore`; make tests pass
 
 ## 4. Email and Refresh Token Persistence
 
-- [ ] 4.1 Write failing tests: save/read email and refresh token; cleared on `clearAll()` (`CredentialStoreTests/TokenPersistenceTests.swift` — scenarios: Save and read email, Save and read refresh token, Email cleared on full reset, Refresh token cleared on full reset)
-- [ ] 4.2 Implement email and refresh token Keychain items with `whenUnlockedThisDeviceOnly`; make tests pass
+- [x] 4.1 Write failing tests: save/read email and refresh token; cleared on `clearAll()` (`CredentialStoreTests/TokenPersistenceTests.swift` — scenarios: Save and read email, Save and read refresh token, Email cleared on full reset, Refresh token cleared on full reset)
+- [x] 4.2 Implement email and refresh token Keychain items with `whenUnlockedThisDeviceOnly`; make tests pass
 
 ## 5. Vault Header Cache
 
-- [ ] 5.1 Write failing tests: save/read vault header `Data`; update on re-save; cleared on `clearAll()` (`CredentialStoreTests/VaultHeaderCacheTests.swift` — scenarios: Save and read vault header, Vault header updated on successful online unlock, Vault header cleared on full reset)
-- [ ] 5.2 Implement vault header Keychain item; make tests pass
+- [x] 5.1 Write failing tests: save/read vault header `Data`; update on re-save; cleared on `clearAll()` (`CredentialStoreTests/VaultHeaderCacheTests.swift` — scenarios: Save and read vault header, Vault header updated on successful online unlock, Vault header cleared on full reset)
+- [x] 5.2 Implement vault header Keychain item; make tests pass
 
 ## 6. Bio-Gated Password Storage
 
-- [ ] 6.1 Write failing tests: `bioEnabled` defaults `false`; `setBioEnabled(true)` + `savePassword` stores retrievable password; `setBioEnabled(false)` removes item (`CredentialStoreTests/BioPasswordTests.swift` — scenarios: Save password with biometrics enabled, Password item removed when biometrics disabled, Password not stored when biometrics never enabled, Bio flag updated on enable)
-- [ ] 6.2 Implement bio-gated password Keychain item with `biometryCurrentSet`; make tests pass (use test seam or mock `LAContext` wrapper)
+- [x] 6.1 Write failing tests: `bioEnabled` defaults `false`; `setBioEnabled(true)` + `savePassword` stores retrievable password; `setBioEnabled(false)` removes item (`CredentialStoreTests/BioPasswordTests.swift` — scenarios: Save password with biometrics enabled, Password item removed when biometrics disabled, Password not stored when biometrics never enabled, Bio flag updated on enable)
+- [x] 6.2 Implement bio-gated password Keychain item with `biometryCurrentSet`; make tests pass (use test seam or mock `LAContext` wrapper)
 
 ## 7. Complete Setup Persistence
 
-- [ ] 7.1 Write failing tests: `saveSetup(email:refreshToken:vaultHeader:)` atomically persists all fields and sets `hasLocalSetup` (`CredentialStoreTests/SetupPersistenceTests.swift` — scenario: Save setup marks device ready)
-- [ ] 7.2 Implement `saveSetup` and `clearAll()`; make tests pass
+- [x] 7.1 Write failing tests: `saveSetup(email:refreshToken:vaultHeader:)` atomically persists all fields and sets `hasLocalSetup` (`CredentialStoreTests/SetupPersistenceTests.swift` — scenario: Save setup marks device ready)
+- [x] 7.2 Implement `saveSetup` and `clearAll()`; make tests pass
 
 ## 8. BiometricAuthenticator Protocol
 

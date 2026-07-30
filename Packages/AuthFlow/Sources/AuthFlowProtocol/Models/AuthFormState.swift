@@ -6,12 +6,14 @@ public enum AuthFormState: Equatable, Sendable {
     case failure(AuthFlowError)
 }
 
-public enum AuthFlowError: Equatable, Sendable {
+public enum AuthFlowError: Error, Equatable, Sendable {
     case invalidCredentials
     case emailAlreadyExists
     case validationError
     case vaultNotFound
     case vaultUnlockFailed
     case networkError
+    case networkRequired
+    case sessionExpired
     case unknown
 }

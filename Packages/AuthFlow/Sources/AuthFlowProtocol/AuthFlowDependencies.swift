@@ -1,5 +1,6 @@
 import AuthFlowRoutes
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import NavigationProtocol
 import VaultRepositoryProtocol
 import VaultSessionProtocol
@@ -11,19 +12,28 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
     private let navigator: any Navigating
+    private let credentialStore: any CredentialStore
+    private let biometricAuthenticator: any BiometricAuthenticator
+    private let networkReachability: any NetworkReachability
 
     public init(
         authRepository: any AuthRepository,
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
         vaultSession: any VaultSessionProtocol,
-        navigator: any Navigating
+        navigator: any Navigating,
+        credentialStore: any CredentialStore,
+        biometricAuthenticator: any BiometricAuthenticator,
+        networkReachability: any NetworkReachability
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
         self.navigator = navigator
+        self.credentialStore = credentialStore
+        self.biometricAuthenticator = biometricAuthenticator
+        self.networkReachability = networkReachability
     }
 
     public func makeLoginViewModel() -> DefaultLoginViewModel {
@@ -32,7 +42,9 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             vaultRepository: vaultRepository,
             vaultAuthenticator: vaultAuthenticator,
             vaultSession: vaultSession,
-            navigator: navigator
+            navigator: navigator,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability
         )
     }
 
@@ -41,7 +53,33 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability
         )
+    }
+
+    public func makeUnlockViewModel() -> DefaultUnlockViewModel {
+        DefaultUnlockViewModel(
+            credentialStore: credentialStore,
+            authRepository: authRepository,
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            biometricAuthenticator: biometricAuthenticator,
+            networkReachability: networkReachability
+        )
+    }
+
+    public func makeBiometricEnrollmentViewModel(
+        onComplete: @escaping () -> Void
+    ) -> DefaultBiometricEnrollmentViewModel {
+        DefaultBiometricEnrollmentViewModel(
+            credentialStore: credentialStore,
+            onComplete: onComplete
+        )
+    }
+
+    public func makeBiometricSettingsViewModel() -> DefaultBiometricSettingsViewModel {
+        DefaultBiometricSettingsViewModel(credentialStore: credentialStore)
     }
 }

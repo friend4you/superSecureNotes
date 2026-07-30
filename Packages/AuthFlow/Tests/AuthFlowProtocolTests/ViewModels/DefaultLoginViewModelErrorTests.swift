@@ -58,12 +58,10 @@ final class DefaultLoginViewModelErrorTests: XCTestCase {
         vaultRepository: MockVaultRepository = MockVaultRepository(),
         authenticator: MockVaultAuthenticator = MockVaultAuthenticator()
     ) -> DefaultLoginViewModel {
-        DefaultLoginViewModel(
+        AuthFlowTestSupport.makeLoginViewModel(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
-            vaultAuthenticator: authenticator,
-            vaultSession: MockVaultSession(),
-            navigator: MockNavigating()
+            vaultAuthenticator: authenticator
         )
     }
 }

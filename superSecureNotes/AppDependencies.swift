@@ -1,6 +1,7 @@
 import AuthRepository
 import AuthFlowUI
 import AuthRepositoryProtocol
+import CredentialStore
 import Foundation
 import NoteRepository
 import NoteRepositoryProtocol
@@ -18,12 +19,18 @@ final class AppDependencies {
     let noteRepository: any NoteRepository
     let vaultSession: VaultSession
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
+    let credentialStore: KeychainCredentialStore
+    let biometricAuthenticator: LocalAuthenticationBiometricAuthenticator
+    let networkReachability: NWPathNetworkReachability
 
     init() {
         noteRepository = LocalNoteRepository()
         vaultRepository = LocalVaultRepository()
         vaultSession = VaultSession()
         vaultAuthenticator = SecureCryptoVaultAuthenticator()
+        credentialStore = KeychainCredentialStore()
+        biometricAuthenticator = LocalAuthenticationBiometricAuthenticator()
+        networkReachability = NWPathNetworkReachability()
 
         #if DEBUG
         if StubBackendConfiguration.isEnabled {

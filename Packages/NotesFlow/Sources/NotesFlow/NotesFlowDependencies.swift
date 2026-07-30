@@ -1,4 +1,5 @@
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import Foundation
 import NavigationProtocol
 import NoteRepositoryProtocol
@@ -11,18 +12,21 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     private let vaultSession: any VaultSessionProtocol
     private let navigator: any Navigating
     internal let noteRepository: any NoteRepository
+    private let credentialStore: any CredentialStore
     private var noteListViewModel: DefaultNoteListViewModel?
 
     public init(
         authRepository: any AuthRepository,
         vaultSession: any VaultSessionProtocol,
         navigator: any Navigating,
-        noteRepository: any NoteRepository
+        noteRepository: any NoteRepository,
+        credentialStore: any CredentialStore
     ) {
         self.authRepository = authRepository
         self.vaultSession = vaultSession
         self.navigator = navigator
         self.noteRepository = noteRepository
+        self.credentialStore = credentialStore
 
         Task {
             for await isActive in vaultSession.changes where !isActive {
@@ -40,7 +44,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
             authRepository: authRepository,
             vaultSession: vaultSession,
             noteRepository: noteRepository,
-            navigator: navigator
+            navigator: navigator,
+            credentialStore: credentialStore
         )
         noteListViewModel = viewModel
         return viewModel

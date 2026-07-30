@@ -57,4 +57,10 @@ private actor MockAuthRepository: AuthRepository {
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }

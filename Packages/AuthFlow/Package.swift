@@ -30,6 +30,14 @@ let package = Package(
             name: "AuthFlowRoutes",
             targets: ["AuthFlowRoutes"]
         ),
+        .library(
+            name: "CredentialStoreProtocol",
+            targets: ["CredentialStoreProtocol"]
+        ),
+        .library(
+            name: "CredentialStore",
+            targets: ["CredentialStore"]
+        ),
     ],
     dependencies: [
         .package(path: "../VaultRepository"),
@@ -38,6 +46,13 @@ let package = Package(
         .package(path: "../Navigation"),
     ],
     targets: [
+        .target(
+            name: "CredentialStoreProtocol"
+        ),
+        .target(
+            name: "CredentialStore",
+            dependencies: ["CredentialStoreProtocol"]
+        ),
         .target(
             name: "AuthRepositoryProtocol"
         ),
@@ -53,6 +68,7 @@ let package = Package(
             dependencies: [
                 "AuthFlowRoutes",
                 "AuthRepositoryProtocol",
+                "CredentialStoreProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
                 .product(name: "NavigationProtocol", package: "Navigation"),
@@ -69,12 +85,17 @@ let package = Package(
             dependencies: [
                 "AuthFlowProtocol",
                 "AuthFlowRoutes",
+                "CredentialStoreProtocol",
                 .product(name: "Navigation", package: "Navigation"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
             ],
             resources: [
                 .process("Resources"),
             ]
+        ),
+        .testTarget(
+            name: "CredentialStoreTests",
+            dependencies: ["CredentialStore", "CredentialStoreProtocol"]
         ),
         .testTarget(
             name: "AuthRepositoryProtocolTests",
@@ -89,6 +110,7 @@ let package = Package(
             dependencies: [
                 "AuthFlowProtocol",
                 "AuthFlowRoutes",
+                "CredentialStoreProtocol",
                 .product(name: "NavigationProtocol", package: "Navigation"),
             ]
         ),

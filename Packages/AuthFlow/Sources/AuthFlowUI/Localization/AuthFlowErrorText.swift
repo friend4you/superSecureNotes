@@ -16,6 +16,10 @@ enum AuthFlowErrorText {
             return String(localized: "error.vaultUnlockFailed", bundle: .module)
         case .networkError:
             return String(localized: "error.networkError", bundle: .module)
+        case .networkRequired:
+            return String(localized: "error.networkRequired", bundle: .module)
+        case .sessionExpired:
+            return String(localized: "error.sessionExpired", bundle: .module)
         case .unknown:
             return String(localized: "error.unknown", bundle: .module)
         }

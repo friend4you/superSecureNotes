@@ -8,7 +8,7 @@ final class DefaultRegisterViewModelSuccessTests: XCTestCase {
         let vaultRepository = MockVaultRepository()
         let authenticator = MockVaultAuthenticator()
         let vaultSession = MockVaultSession()
-        let viewModel = DefaultRegisterViewModel(
+        let viewModel = AuthFlowTestSupport.makeRegisterViewModel(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,

@@ -1,4 +1,5 @@
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import Foundation
 import Observation
 import VaultRepositoryProtocol
@@ -10,22 +11,29 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
     public var email = ""
     public var password = ""
     public private(set) var state: AuthFormState = .idle
+    public private(set) var pendingBiometricEnrollment = false
 
     private let authRepository: any AuthRepository
     private let vaultRepository: any VaultRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
+    private let credentialStore: any CredentialStore
+    private let networkReachability: any NetworkReachability
 
     public init(
         authRepository: any AuthRepository,
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
-        vaultSession: any VaultSessionProtocol
+        vaultSession: any VaultSessionProtocol,
+        credentialStore: any CredentialStore,
+        networkReachability: any NetworkReachability
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
+        self.credentialStore = credentialStore
+        self.networkReachability = networkReachability
     }
 
     public func register() async {
@@ -34,10 +42,16 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
             return
         }
 
+        if !credentialStore.hasLocalSetup, !networkReachability.isOnline {
+            state = .failure(.networkRequired)
+            return
+        }
+
         state = .loading
+        let wasFirstSetup = !credentialStore.hasLocalSetup
 
         do {
-            _ = try await authRepository.register(
+            let session = try await authRepository.register(
                 RegisterCredentials(email: email, password: password)
             )
             let creationOutcome = try vaultAuthenticator.createVault(password: password)
@@ -47,6 +61,12 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
                 password: password
             )
             await vaultSession.establish(unlockOutcome.sessionKeys)
+            try credentialStore.saveSetup(
+                email: email,
+                refreshToken: session.refreshToken,
+                vaultHeader: creationOutcome.headerData
+            )
+            pendingBiometricEnrollment = wasFirstSetup
             state = .idle
         } catch let error as AuthRepositoryError {
             state = .failure(AuthFlowErrorMapper.map(error))

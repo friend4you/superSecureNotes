@@ -35,6 +35,7 @@ let package = Package(
                 .product(name: "Navigation", package: "Navigation"),
                 .product(name: "AuthRepositoryProtocol", package: "AuthFlow"),
                 .product(name: "AuthFlowRoutes", package: "AuthFlow"),
+                .product(name: "CredentialStoreProtocol", package: "AuthFlow"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
                 .product(name: "ShareNoteRoutes", package: "ShareNote"),
                 .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
@@ -55,6 +56,7 @@ let package = Package(
             dependencies: [
                 "NotesFlow",
                 .product(name: "VaultSession", package: "VaultSession"),
+                .product(name: "CredentialStoreProtocol", package: "AuthFlow"),
             ]
         ),
         .testTarget(

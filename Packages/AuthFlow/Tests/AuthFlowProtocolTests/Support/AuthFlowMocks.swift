@@ -1,5 +1,6 @@
 import AuthRepositoryProtocol
 import AuthFlowProtocol
+import CredentialStoreProtocol
 import CryptoKit
 import Foundation
 import NavigationProtocol
@@ -8,6 +9,47 @@ import VaultSessionProtocol
 import XCTest
 
 @testable import AuthFlowProtocol
+
+@MainActor
+enum AuthFlowTestSupport {
+    static func makeLoginViewModel(
+        authRepository: any AuthRepository = MockAuthRepository(),
+        vaultRepository: any VaultRepository = MockVaultRepository(),
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        navigator: (any Navigating)? = nil,
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true)
+    ) -> DefaultLoginViewModel {
+        DefaultLoginViewModel(
+            authRepository: authRepository,
+            vaultRepository: vaultRepository,
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            navigator: navigator ?? MockNavigating(),
+            credentialStore: credentialStore,
+            networkReachability: networkReachability
+        )
+    }
+
+    static func makeRegisterViewModel(
+        authRepository: any AuthRepository = MockAuthRepository(),
+        vaultRepository: any VaultRepository = MockVaultRepository(),
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true)
+    ) -> DefaultRegisterViewModel {
+        DefaultRegisterViewModel(
+            authRepository: authRepository,
+            vaultRepository: vaultRepository,
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability
+        )
+    }
+}
 
 final class AuthFlowMocksSmokeTests: XCTestCase {
     @MainActor
@@ -22,7 +64,9 @@ final class AuthFlowMocksSmokeTests: XCTestCase {
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
             vaultSession: vaultSession,
-            navigator: MockNavigating()
+            navigator: MockNavigating(),
+            credentialStore: MockCredentialStore(),
+            networkReachability: MockNetworkReachability(isOnline: true)
         )
 
         XCTAssertEqual(viewModel.state, .idle)
@@ -34,6 +78,7 @@ actor MockAuthRepository: AuthRepository {
     var registerCallCount = 0
     var loginError: AuthRepositoryError?
     var registerError: AuthRepositoryError?
+    var restoreError: AuthRepositoryError?
     var shouldSuspendOnLogin = false
     var shouldSuspendOnRegister = false
 
@@ -111,6 +156,24 @@ actor MockAuthRepository: AuthRepository {
             throw AuthRepositoryError.notAuthenticated
         }
         return session
+    }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        if let restoreError {
+            throw restoreError
+        }
+        let newSession = AuthSession(
+            accessToken: "access",
+            refreshToken: refreshToken,
+            expiresAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        session = newSession
+        return newSession
+    }
+
+    func clearSession() async {
+        session = nil
+        user = nil
     }
 }
 
@@ -229,4 +292,74 @@ final class MockNavigating: Navigating {
     func dismissPresentation() {
         dismissPresentationCallCount += 1
     }
+}
+
+final class MockCredentialStore: CredentialStore, @unchecked Sendable {
+    private var setup = false
+    private var storedEmail: String?
+    private var storedRefreshToken: String?
+    private var storedVaultHeader: Data?
+    private var storedBioEnabled = false
+    private var storedPassword: String?
+
+    var hasLocalSetup: Bool { setup }
+
+    func markSetupComplete() throws { setup = true }
+
+    func saveEmail(_ email: String) throws { storedEmail = email }
+    func email() -> String? { storedEmail }
+
+    func saveRefreshToken(_ token: String) throws { storedRefreshToken = token }
+    func refreshToken() -> String? { storedRefreshToken }
+
+    func saveVaultHeader(_ header: Data) throws { storedVaultHeader = header }
+    func vaultHeader() -> Data? { storedVaultHeader }
+
+    func bioEnabled() -> Bool { storedBioEnabled }
+
+    func setBioEnabled(_ enabled: Bool) throws {
+        storedBioEnabled = enabled
+        if !enabled { storedPassword = nil }
+    }
+
+    func savePassword(_ password: String) throws {
+        guard storedBioEnabled else { throw CredentialStoreError.storageFailed }
+        storedPassword = password
+    }
+
+    func loadPasswordWithBiometrics() throws -> String {
+        guard storedBioEnabled, let storedPassword else {
+            throw CredentialStoreError.itemNotFound
+        }
+        return storedPassword
+    }
+
+    func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {
+        try saveEmail(email)
+        try saveRefreshToken(refreshToken)
+        try saveVaultHeader(vaultHeader)
+        try markSetupComplete()
+    }
+
+    func clearAll() throws {
+        setup = false
+        storedEmail = nil
+        storedRefreshToken = nil
+        storedVaultHeader = nil
+        storedBioEnabled = false
+        storedPassword = nil
+    }
+}
+
+struct MockNetworkReachability: NetworkReachability {
+    let isOnline: Bool
+}
+
+final class MockBiometricAuthenticator: BiometricAuthenticator, @unchecked Sendable {
+    var canEvaluate = true
+    var result: BiometricAuthResult = .success
+
+    func canEvaluateBiometrics() -> Bool { canEvaluate }
+
+    func authenticate(reason: String) async -> BiometricAuthResult { result }
 }

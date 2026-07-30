@@ -1,4 +1,5 @@
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import Foundation
 import NavigationProtocol
 import NoteRepositoryProtocol
@@ -32,17 +33,20 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     private let vaultSession: any VaultSessionProtocol
     private let noteRepository: any NoteRepository
     private let navigator: any Navigating
+    private let credentialStore: any CredentialStore
 
     public init(
         authRepository: any AuthRepository,
         vaultSession: any VaultSessionProtocol,
         noteRepository: any NoteRepository,
-        navigator: any Navigating
+        navigator: any Navigating,
+        credentialStore: any CredentialStore
     ) {
         self.authRepository = authRepository
         self.vaultSession = vaultSession
         self.noteRepository = noteRepository
         self.navigator = navigator
+        self.credentialStore = credentialStore
     }
 
     public func refresh() async {
@@ -82,5 +86,6 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     public func logout() async {
         try? await authRepository.logout()
         await vaultSession.clear()
+        try? credentialStore.clearAll()
     }
 }

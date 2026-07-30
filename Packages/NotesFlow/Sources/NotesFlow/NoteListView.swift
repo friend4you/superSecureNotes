@@ -106,7 +106,8 @@ public struct NoteListView: View {
                 authRepository: PreviewAuthRepository(),
                 vaultSession: PreviewVaultSession(),
                 noteRepository: PreviewNoteRepository(),
-                navigator: PreviewNavigator()
+                navigator: PreviewNavigator(),
+                credentialStore: PreviewCredentialStore()
             )
         )
     }
@@ -114,6 +115,7 @@ public struct NoteListView: View {
 
 #if DEBUG
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import CryptoKit
 import NavigationProtocol
 import VaultSessionProtocol
@@ -132,6 +134,29 @@ private actor PreviewAuthRepository: AuthRepository {
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
+}
+
+private final class PreviewCredentialStore: CredentialStore, @unchecked Sendable {
+    var hasLocalSetup: Bool { false }
+    func markSetupComplete() throws {}
+    func saveEmail(_ email: String) throws {}
+    func email() -> String? { nil }
+    func saveRefreshToken(_ token: String) throws {}
+    func refreshToken() -> String? { nil }
+    func saveVaultHeader(_ header: Data) throws {}
+    func vaultHeader() -> Data? { nil }
+    func bioEnabled() -> Bool { false }
+    func setBioEnabled(_ enabled: Bool) throws {}
+    func savePassword(_ password: String) throws {}
+    func loadPasswordWithBiometrics() throws -> String { throw CredentialStoreError.itemNotFound }
+    func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {}
+    func clearAll() throws {}
 }
 
 private actor PreviewVaultSession: VaultSessionProtocol {

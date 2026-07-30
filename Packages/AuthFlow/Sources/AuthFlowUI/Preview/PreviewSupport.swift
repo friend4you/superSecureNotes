@@ -1,5 +1,6 @@
 import AuthFlowProtocol
 import AuthRepositoryProtocol
+import CredentialStoreProtocol
 import CryptoKit
 import Foundation
 import NavigationProtocol
@@ -24,7 +25,10 @@ enum PreviewSupport {
             vaultRepository: PreviewVaultRepository(),
             vaultAuthenticator: PreviewVaultAuthenticator(),
             vaultSession: PreviewVaultSession(),
-            navigator: navigator ?? PreviewNavigator()
+            navigator: navigator ?? PreviewNavigator(),
+            credentialStore: PreviewCredentialStore(),
+            biometricAuthenticator: PreviewBiometricAuthenticator(),
+            networkReachability: PreviewNetworkReachability()
         )
     }
 }
@@ -52,6 +56,12 @@ private actor PreviewAuthRepository: AuthRepository {
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }
 
 private actor PreviewVaultRepository: VaultRepository {
@@ -79,4 +89,30 @@ private actor PreviewVaultSession: VaultSessionProtocol {
     func clear() {}
     func udk() throws -> SymmetricKey { .init(size: .bits256) }
     func identityPrivateKey() throws -> Data { Data() }
+}
+
+private final class PreviewCredentialStore: CredentialStore, @unchecked Sendable {
+    var hasLocalSetup: Bool { false }
+    func markSetupComplete() throws {}
+    func saveEmail(_ email: String) throws {}
+    func email() -> String? { nil }
+    func saveRefreshToken(_ token: String) throws {}
+    func refreshToken() -> String? { nil }
+    func saveVaultHeader(_ header: Data) throws {}
+    func vaultHeader() -> Data? { nil }
+    func bioEnabled() -> Bool { false }
+    func setBioEnabled(_ enabled: Bool) throws {}
+    func savePassword(_ password: String) throws {}
+    func loadPasswordWithBiometrics() throws -> String { throw CredentialStoreError.itemNotFound }
+    func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {}
+    func clearAll() throws {}
+}
+
+private struct PreviewNetworkReachability: NetworkReachability {
+    let isOnline = true
+}
+
+private struct PreviewBiometricAuthenticator: BiometricAuthenticator {
+    func canEvaluateBiometrics() -> Bool { false }
+    func authenticate(reason: String) async -> BiometricAuthResult { .unavailable }
 }

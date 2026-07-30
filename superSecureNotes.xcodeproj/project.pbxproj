@@ -40,6 +40,8 @@
 		AA61221430160000F15876 /* NoteRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221230160000F15876 /* NoteRepositoryProtocol */; };
 		AA61221530160000F15876 /* NoteRepository in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221130160000F15876 /* NoteRepository */; };
 		AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221230160000F15876 /* NoteRepositoryProtocol */; };
+		AA61221730170000F15876 /* CredentialStore in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221730170001F15876 /* CredentialStore */; };
+		AA61221830170002F15876 /* CredentialStore in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221730170001F15876 /* CredentialStore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +106,7 @@
 				AA61220830150000F15876 /* ShareNoteRoutes in Frameworks */,
 				AA61221330160000F15876 /* NoteRepository in Frameworks */,
 				AA61221430160000F15876 /* NoteRepositoryProtocol in Frameworks */,
+				AA61221730170000F15876 /* CredentialStore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,6 +131,7 @@
 				AA61220A30150000F15876 /* ShareNoteRoutes in Frameworks */,
 				AA61221530160000F15876 /* NoteRepository in Frameworks */,
 				AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */,
+				AA61221830170002F15876 /* CredentialStore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -188,6 +192,7 @@
 				AA61220230150000F15876 /* ShareNoteRoutes */,
 				AA61221130160000F15876 /* NoteRepository */,
 				AA61221230160000F15876 /* NoteRepositoryProtocol */,
+				AA61221730170001F15876 /* CredentialStore */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -228,6 +233,7 @@
 				AA61220230150000F15876 /* ShareNoteRoutes */,
 				AA61221130160000F15876 /* NoteRepository */,
 				AA61221230160000F15876 /* NoteRepositoryProtocol */,
+				AA61221730170001F15876 /* CredentialStore */,
 			);
 			productName = superSecureNotesTests;
 			productReference = AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */;
@@ -704,6 +710,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA61221030160000F15876 /* XCLocalSwiftPackageReference "Packages/NoteRepository" */;
 			productName = NoteRepositoryProtocol;
+		};
+		AA61221730170001F15876 /* CredentialStore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
+			productName = CredentialStore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

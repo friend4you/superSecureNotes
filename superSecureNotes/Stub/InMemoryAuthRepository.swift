@@ -30,6 +30,21 @@ actor InMemoryAuthRepository: AuthRepository {
         return session
     }
 
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        let newSession = AuthSession(
+            accessToken: "stub-access-token",
+            refreshToken: refreshToken,
+            expiresAt: .distantFuture
+        )
+        session = newSession
+        return newSession
+    }
+
+    func clearSession() async {
+        session = nil
+        user = nil
+    }
+
     private func storeSession(for email: String) -> AuthSession {
         let newSession = AuthSession(
             accessToken: "stub-access-token",

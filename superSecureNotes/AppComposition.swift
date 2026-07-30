@@ -1,12 +1,14 @@
 import AuthFlowRoutes
 import AuthFlowProtocol
 import AuthFlowUI
+import CredentialStore
 import Navigation
 import NotesFlow
 import NotesFlowRoutes
 import Observation
 import ShareNote
 import ShareNoteRoutes
+import SwiftUI
 
 @Observable
 @MainActor
@@ -16,7 +18,9 @@ final class AppComposition {
     let notesDependencies: NotesFlowDependencies
     let shareNoteDependencies: ShareNoteDependencies
     let navigation: NavigationCoordinator
+    let lockCoordinator: LockCoordinator
 
+    private var lastSyncedHasLocalSetup: Bool?
     private var lastSyncedVaultActive: Bool?
 
     init() {
@@ -28,17 +32,30 @@ final class AppComposition {
             vaultRepository: infrastructure.vaultRepository,
             vaultAuthenticator: infrastructure.vaultAuthenticator,
             vaultSession: infrastructure.vaultSession,
-            navigator: navigation.navigator
+            navigator: navigation.navigator,
+            credentialStore: infrastructure.credentialStore,
+            biometricAuthenticator: infrastructure.biometricAuthenticator,
+            networkReachability: infrastructure.networkReachability
         )
         notesDependencies = NotesFlowDependencies(
             authRepository: infrastructure.authRepository,
             vaultSession: infrastructure.vaultSession,
             navigator: navigation.navigator,
-            noteRepository: infrastructure.noteRepository
+            noteRepository: infrastructure.noteRepository,
+            credentialStore: infrastructure.credentialStore
         )
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator
         )
+        lockCoordinator = LockCoordinator(
+            vaultSession: infrastructure.vaultSession,
+            authRepository: infrastructure.authRepository
+        ) { [weak self] in
+            self?.syncRootRoute(
+                hasLocalSetup: infrastructure.credentialStore.hasLocalSetup,
+                isVaultActive: false
+            )
+        }
         navigation.registry.registerAuthRoutes(deps: authDependencies)
         navigation.registry.registerNotesRoutes(deps: notesDependencies)
         navigation.registry.registerShareNoteRoutes(deps: shareNoteDependencies)
@@ -47,9 +64,20 @@ final class AppComposition {
         #endif
     }
 
-    func syncRootRoute(isVaultActive: Bool) {
-        guard lastSyncedVaultActive != isVaultActive else { return }
+    func syncRootRoute(hasLocalSetup: Bool, isVaultActive: Bool) {
+        guard lastSyncedHasLocalSetup != hasLocalSetup || lastSyncedVaultActive != isVaultActive else {
+            return
+        }
+        lastSyncedHasLocalSetup = hasLocalSetup
         lastSyncedVaultActive = isVaultActive
-        SessionRootNavigation.apply(isVaultActive: isVaultActive, to: navigation.navigator)
+        SessionRootNavigation.apply(
+            hasLocalSetup: hasLocalSetup,
+            isVaultActive: isVaultActive,
+            to: navigation.navigator
+        )
+    }
+
+    func handleScenePhase(_ phase: ScenePhase) {
+        lockCoordinator.handleScenePhase(phase)
     }
 }

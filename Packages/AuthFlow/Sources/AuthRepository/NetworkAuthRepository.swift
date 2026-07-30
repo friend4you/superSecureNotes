@@ -59,6 +59,16 @@ public actor NetworkAuthRepository: AuthRepository {
         return refreshed
     }
 
+    public func restoreSession(refreshToken: String) async throws -> AuthSession {
+        let refreshed = try await apiClient.refresh(refreshToken: refreshToken)
+        self.session = refreshed
+        return refreshed
+    }
+
+    public func clearSession() async {
+        clear()
+    }
+
     private func store(_ result: AuthAPIResult) {
         session = result.session
         user = result.user

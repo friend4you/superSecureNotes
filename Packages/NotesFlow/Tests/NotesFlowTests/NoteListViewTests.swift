@@ -136,7 +136,8 @@ final class NoteListViewTests: XCTestCase {
             authRepository: MockAuthRepository(),
             vaultSession: MockVaultSession(),
             noteRepository: noteRepository,
-            navigator: navigator ?? MockNavigating()
+            navigator: navigator ?? MockNavigating(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
         )
     }
 
@@ -186,6 +187,12 @@ private actor MockAuthRepository: AuthRepository {
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }
 
 private actor MockVaultSession: VaultSessionProtocol {

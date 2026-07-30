@@ -8,12 +8,11 @@ final class DefaultLoginViewModelSuccessTests: XCTestCase {
         let vaultRepository = MockVaultRepository()
         let authenticator = MockVaultAuthenticator()
         let vaultSession = MockVaultSession()
-        let viewModel = DefaultLoginViewModel(
+        let viewModel = AuthFlowTestSupport.makeLoginViewModel(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
-            vaultSession: vaultSession,
-            navigator: MockNavigating()
+            vaultSession: vaultSession
         )
         viewModel.email = "user@example.com"
         viewModel.password = "secret"

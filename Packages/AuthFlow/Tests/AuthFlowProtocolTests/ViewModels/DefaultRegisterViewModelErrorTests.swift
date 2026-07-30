@@ -45,11 +45,9 @@ final class DefaultRegisterViewModelErrorTests: XCTestCase {
         authRepository: MockAuthRepository = MockAuthRepository(),
         vaultRepository: MockVaultRepository = MockVaultRepository()
     ) -> DefaultRegisterViewModel {
-        DefaultRegisterViewModel(
+        AuthFlowTestSupport.makeRegisterViewModel(
             authRepository: authRepository,
-            vaultRepository: vaultRepository,
-            vaultAuthenticator: MockVaultAuthenticator(),
-            vaultSession: MockVaultSession()
+            vaultRepository: vaultRepository
         )
     }
 }
