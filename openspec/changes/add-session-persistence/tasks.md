@@ -41,8 +41,8 @@
 
 ## 9. LocalAuthentication BiometricAuthenticator
 
-- [ ] 9.1 Write failing tests: `LocalAuthenticationBiometricAuthenticator` wraps `LAContext` behind injectable seam (`AuthFlowUITests/LocalAuthenticationBiometricAuthenticatorTests.swift`)
-- [ ] 9.2 Implement `LocalAuthenticationBiometricAuthenticator` in `AuthFlowUI`; make tests pass
+- [x] 9.1 Write failing tests: `LocalAuthenticationBiometricAuthenticator` wraps `LAContext` behind injectable seam (`AuthFlowUITests/LocalAuthenticationBiometricAuthenticatorTests.swift`)
+- [x] 9.2 Implement `LocalAuthenticationBiometricAuthenticator` in `AuthFlowUI`; make tests pass
 
 ## 10. UnlockViewModel Protocol
 
