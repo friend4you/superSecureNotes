@@ -66,13 +66,13 @@
 
 ## 14. BiometricEnrollmentViewModel
 
-- [ ] 14.1 Write failing tests: `enableBiometrics(password:)` saves bio-gated password and sets flag; `skip()` leaves bio disabled (`AuthFlowProtocolTests/BiometricEnrollmentViewModelTests.swift` — scenarios: User can skip enrollment, Enable bio from Settings with password confirmation)
-- [ ] 14.2 Implement `DefaultBiometricEnrollmentViewModel`; make tests pass
+- [x] 14.1 Write failing tests: `enableBiometrics(password:)` saves bio-gated password and sets flag; `skip()` leaves bio disabled (`AuthFlowProtocolTests/BiometricEnrollmentViewModelTests.swift` — scenarios: User can skip enrollment, Enable bio from Settings with password confirmation)
+- [x] 14.2 Implement `DefaultBiometricEnrollmentViewModel`; make tests pass
 
 ## 15. Settings Biometrics Toggle
 
-- [ ] 15.1 Write failing tests: enabling requires password confirmation; disabling removes bio Keychain item (`AuthFlowProtocolTests/BiometricSettingsViewModelTests.swift` — scenario: Disable bio from Settings)
-- [ ] 15.2 Implement `DefaultBiometricSettingsViewModel`; make tests pass
+- [x] 15.1 Write failing tests: enabling requires password confirmation; disabling removes bio Keychain item (`AuthFlowProtocolTests/BiometricSettingsViewModelTests.swift` — scenario: Disable bio from Settings)
+- [x] 15.2 Implement `DefaultBiometricSettingsViewModel`; make tests pass
 
 ## 16. Login/Register Setup Persistence
 
