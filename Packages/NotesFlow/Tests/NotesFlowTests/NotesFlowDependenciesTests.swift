@@ -110,6 +110,21 @@ final class NotesFlowDependenciesTests: XCTestCase {
 
         XCTAssertTrue(viewModel is DefaultCreateNoteViewModel)
     }
+
+    func testNotesFlowDependenciesDoesNotReceiveNotesIndexStore() {
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore()
+        )
+
+        let propertyNames = Mirror(reflecting: dependencies).children.compactMap(\.label)
+
+        XCTAssertTrue(propertyNames.contains("noteRepository"))
+        XCTAssertFalse(propertyNames.contains("notesIndexStore"))
+    }
 }
 
 private actor MockAuthRepository: AuthRepository {

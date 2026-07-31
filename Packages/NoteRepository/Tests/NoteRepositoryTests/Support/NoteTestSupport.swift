@@ -14,7 +14,7 @@ enum NoteTestSupport {
     static func makeLocalRepository(
         notesRootURL: URL
     ) -> (NotesIndexStore, LocalNoteRepository) {
-        let store = NotesIndexStore()
+        let store = NotesIndexStore(notesDirectoryURL: notesRootURL)
         let repository = LocalNoteRepository(
             notesIndexStore: store,
             notesRootURL: notesRootURL

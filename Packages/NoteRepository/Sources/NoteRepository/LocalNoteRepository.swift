@@ -3,8 +3,7 @@ import NoteRepositoryProtocol
 import SecureCrypto
 
 public actor LocalNoteRepository: NoteRepository {
-    private static let noteFileName = "note"
-    private static let fekFileName = "fek"
+    private static let payloadFileName = "payload"
 
     private let notesIndexStore: NotesIndexStore
     private let notesRootURL: URL
@@ -32,59 +31,28 @@ public actor LocalNoteRepository: NoteRepository {
 
     public func listNotes() async throws -> [NoteSummary] {
         try await requireOpen()
-        try ensureNotesRootDirectory()
-
-        let directoryURLs = try fileManager.contentsOfDirectory(
-            at: notesRootURL,
-            includingPropertiesForKeys: [.isDirectoryKey]
-        )
-
-        var summaries: [NoteSummary] = []
-        for directoryURL in directoryURLs {
-            let values = try directoryURL.resourceValues(forKeys: [.isDirectoryKey])
-            guard values.isDirectory == true else { continue }
-
-            let noteFileURL = directoryURL.appendingPathComponent(Self.noteFileName, isDirectory: false)
-            guard fileManager.fileExists(atPath: noteFileURL.path) else { continue }
-
-            let noteBody = try Data(contentsOf: noteFileURL)
-            let metadata = try NoteMetadata.fromLocalNoteBody(noteBody)
-            summaries.append(
-                NoteSummary(
-                    noteID: metadata.noteID,
-                    title: metadata.title,
-                    updatedAt: metadata.updatedAt
-                )
-            )
-        }
-        return summaries
+        return try await notesIndexStore.listSummaries()
     }
 
     public func readNote(noteID: UUID) async throws -> StoredNote {
         try await requireOpen()
 
-        let noteDirectoryURL = noteDirectoryURL(for: noteID)
-        guard fileManager.fileExists(atPath: noteDirectoryURL.path) else {
+        guard let row = try await notesIndexStore.fetchNote(noteID: noteID) else {
             throw NoteRepositoryError.noteNotFound
         }
 
-        let noteFileURL = noteDirectoryURL.appendingPathComponent(Self.noteFileName, isDirectory: false)
-        let fekFileURL = noteDirectoryURL.appendingPathComponent(Self.fekFileName, isDirectory: false)
-        let noteExists = fileManager.fileExists(atPath: noteFileURL.path)
-        let fekExists = fileManager.fileExists(atPath: fekFileURL.path)
-
-        guard noteExists, fekExists else {
+        let payloadURL = noteDirectoryURL(for: noteID)
+            .appendingPathComponent(Self.payloadFileName, isDirectory: false)
+        guard fileManager.fileExists(atPath: payloadURL.path) else {
             throw NoteRepositoryError.corruptNote
         }
 
-        let noteBody = try Data(contentsOf: noteFileURL)
-        let wrappedFEK = try Data(contentsOf: fekFileURL)
-        let sections = try parseLocalNoteBody(noteBody)
+        let encryptedPayload = try readNotePayloadFile(from: payloadURL)
         return StoredNote(
-            metadata: sections.metadata,
-            wrappedFEK: wrappedFEK,
-            encryptedPayload: sections.encryptedPayload,
-            syncState: .pendingSync
+            metadata: row.metadata,
+            wrappedFEK: row.wrappedFEK,
+            encryptedPayload: encryptedPayload,
+            syncState: row.syncState
         )
     }
 
@@ -96,11 +64,6 @@ public actor LocalNoteRepository: NoteRepository {
         }
 
         let noteID = note.metadata.noteID
-        let localNoteBody = try assembleLocalNoteBody(
-            metadata: note.metadata,
-            encryptedPayload: note.encryptedPayload
-        )
-
         try ensureNotesRootDirectory()
 
         let tempDirectoryURL = notesRootURL.appendingPathComponent(
@@ -114,14 +77,12 @@ public actor LocalNoteRepository: NoteRepository {
         }
         try fileManager.createDirectory(at: tempDirectoryURL, withIntermediateDirectories: true)
 
-        try localNoteBody.write(
-            to: tempDirectoryURL.appendingPathComponent(Self.noteFileName, isDirectory: false),
-            options: .atomic
+        try writeNotePayloadFile(
+            note.encryptedPayload,
+            to: tempDirectoryURL.appendingPathComponent(Self.payloadFileName, isDirectory: false)
         )
-        try note.wrappedFEK.write(
-            to: tempDirectoryURL.appendingPathComponent(Self.fekFileName, isDirectory: false),
-            options: .atomic
-        )
+
+        try await notesIndexStore.upsertNote(NoteIndexRow(storedNote: note))
 
         if fileManager.fileExists(atPath: finalDirectoryURL.path) {
             _ = try fileManager.replaceItemAt(finalDirectoryURL, withItemAt: tempDirectoryURL)
@@ -133,11 +94,16 @@ public actor LocalNoteRepository: NoteRepository {
     public func deleteNote(noteID: UUID) async throws {
         try await requireOpen()
 
-        let noteDirectoryURL = noteDirectoryURL(for: noteID)
-        guard fileManager.fileExists(atPath: noteDirectoryURL.path) else {
+        guard try await notesIndexStore.fetchNote(noteID: noteID) != nil else {
             throw NoteRepositoryError.noteNotFound
         }
-        try fileManager.removeItem(at: noteDirectoryURL)
+
+        try await notesIndexStore.deleteNote(noteID: noteID)
+
+        let noteDirectoryURL = noteDirectoryURL(for: noteID)
+        if fileManager.fileExists(atPath: noteDirectoryURL.path) {
+            try fileManager.removeItem(at: noteDirectoryURL)
+        }
     }
 
     private func requireOpen() async throws {

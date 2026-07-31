@@ -6,25 +6,25 @@
 
 ## 2. SecureCrypto — payload-only format and DB key derivation
 
-- [ ] 2.1 Write failing tests: payload file roundtrip; reject empty payload (`Packages/SecureCrypto/Tests/SecureCryptoTests/Note/NotePayloadFileTests.swift`)
-- [ ] 2.2 Implement payload-only file helpers in `Packages/SecureCrypto/Sources/SecureCrypto/Note/`; make tests pass
-- [ ] 2.3 Write failing tests: `deriveNotesDatabaseKey` deterministic and distinct from raw UDK (`Packages/SecureCrypto/Tests/SecureCryptoTests/NotesDatabaseKeyTests.swift`)
-- [ ] 2.4 Implement `deriveNotesDatabaseKey(from:)` in SecureCrypto; make tests pass
-- [ ] 2.5 Remove `LocalNoteBody.swift`, `LocalNoteBodyTests.swift`, and `NoteMetadata.fromLocalNoteBody`; update any remaining references; ensure wire-format tests still pass
+- [x] 2.1 Write failing tests: payload file roundtrip; reject empty payload (`Packages/SecureCrypto/Tests/SecureCryptoTests/Note/NotePayloadFileTests.swift`)
+- [x] 2.2 Implement payload-only file helpers in `Packages/SecureCrypto/Sources/SecureCrypto/Note/`; make tests pass
+- [x] 2.3 Write failing tests: `deriveNotesDatabaseKey` deterministic and distinct from raw UDK (`Packages/SecureCrypto/Tests/SecureCryptoTests/NotesDatabaseKeyTests.swift`)
+- [x] 2.4 Implement `deriveNotesDatabaseKey(from:)` in SecureCrypto; make tests pass
+- [x] 2.5 Remove `LocalNoteBody.swift`, `LocalNoteBodyTests.swift`, and `NoteMetadata.fromLocalNoteBody`; update any remaining references; ensure wire-format tests still pass
 
 ## 3. NoteRepository — GRDB + SQLCipher setup
 
-- [ ] 3.1 Add GRDB + SQLCipher dependencies to `Packages/NoteRepository/Package.swift`
+- [x] 3.1 Add GRDB + SQLCipher dependencies to `Packages/NoteRepository/Package.swift`
 
 ## 4. NoteRepository — NotesIndexStore
 
-- [ ] 4.1 Write failing tests: open with correct passphrase succeeds; wrong passphrase fails; schema creates `notes` table; close prevents queries; `isOpen` reflects state (`Packages/NoteRepository/Tests/NoteRepositoryTests/NotesIndexStoreTests.swift`)
-- [ ] 4.2 Implement `NotesIndexStore` actor with GRDB SQLCipher open/close, schema, and index query methods; make tests pass
+- [x] 4.1 Write failing tests: open with correct passphrase succeeds; wrong passphrase fails; schema creates `notes` table; close prevents queries; `isOpen` reflects state (`Packages/NoteRepository/Tests/NoteRepositoryTests/NotesIndexStoreTests.swift`)
+- [x] 4.2 Implement `NotesIndexStore` actor with GRDB SQLCipher open/close, schema, and index query methods; make tests pass
 
 ## 5. NoteRepository — LocalNoteRepository rewrite
 
-- [ ] 5.1 Write failing tests: write/read `StoredNote` roundtrip via open index store; `listNotes` from index store; delete removes row and payload dir; `noteNotFound`; `corruptNote` when row/file mismatch; `databaseNotOpen` when index store closed; `validationError` on empty payload; payload file has no metadata header; atomic directory replace; `syncState` persisted (`Packages/NoteRepository/Tests/NoteRepositoryTests/LocalNoteRepositoryTests.swift`)
-- [ ] 5.2 Rewrite `LocalNoteRepository` with injected `NotesIndexStore` + `notes/{uuid}/payload` storage; make tests pass
+- [x] 5.1 Write failing tests: write/read `StoredNote` roundtrip via open index store; `listNotes` from index store; delete removes row and payload dir; `noteNotFound`; `corruptNote` when row/file mismatch; `databaseNotOpen` when index store closed; `validationError` on empty payload; payload file has no metadata header; atomic directory replace; `syncState` persisted (`Packages/NoteRepository/Tests/NoteRepositoryTests/LocalNoteRepositoryTests.swift`)
+- [x] 5.2 Rewrite `LocalNoteRepository` with injected `NotesIndexStore` + `notes/{uuid}/payload` storage; make tests pass
 
 ## 6. NoteRepository — NetworkNoteRepository update
 
@@ -39,11 +39,11 @@
 
 ## 8. App wiring — NotesIndexStore lifecycle (auth layer only)
 
-- [ ] 8.1 Write failing tests: `LockCoordinator.lock` calls `notesIndexStore.close()` before `vaultSession.clear()`; `LogoutReset.perform` calls `notesIndexStore.close()` before clear (`superSecureNotesTests/LockCoordinatorTests.swift`, `Packages/AuthFlow/Tests/AuthFlowProtocolTests/LogoutResetTests.swift`)
-- [ ] 8.2 Update `LockCoordinator`, `LogoutReset`, and call sites to use `notesIndexStore`; make tests pass
-- [ ] 8.3 Write failing tests: unlock/login/register view models call `notesIndexStore.open(passphrase:)` with `deriveNotesDatabaseKey(udk)` after successful `establish`; failed unlock does not open (`Packages/AuthFlow/Tests/AuthFlowProtocolTests/ViewModels/NotesIndexStoreOpenTests.swift`)
-- [ ] 8.4 Inject `notesIndexStore` into auth view models (not NotesFlow); call `open` after `establish`; update `AppComposition`; make tests pass
-- [ ] 8.5 Write failing test: `NotesFlowDependencies` does not receive `NotesIndexStore` (`Packages/NotesFlow/Tests/NotesFlowTests/NotesFlowDependenciesTests.swift`)
+- [x] 8.1 Write failing tests: `LockCoordinator.lock` calls `notesIndexStore.close()` before `vaultSession.clear()`; `LogoutReset.perform` calls `notesIndexStore.close()` before clear (`superSecureNotesTests/LockCoordinatorTests.swift`, `Packages/AuthFlow/Tests/AuthFlowProtocolTests/LogoutResetTests.swift`)
+- [x] 8.2 Update `LockCoordinator`, `LogoutReset`, and call sites to use `notesIndexStore`; make tests pass
+- [x] 8.3 Write failing tests: unlock/login/register view models call `notesIndexStore.open(passphrase:)` with `deriveNotesDatabaseKey(udk)` after successful `establish`; failed unlock does not open (`Packages/AuthFlow/Tests/AuthFlowProtocolTests/ViewModels/NotesIndexStoreOpenTests.swift`)
+- [x] 8.4 Inject `notesIndexStore` into auth view models (not NotesFlow); call `open` after `establish`; update `AppComposition`; make tests pass
+- [x] 8.5 Write failing test: `NotesFlowDependencies` does not receive `NotesIndexStore` (`Packages/NotesFlow/Tests/NotesFlowTests/NotesFlowDependenciesTests.swift`)
 - [ ] 8.6 Update `AppCompositionTests`, `LogoutFlowTests`, and other composition tests; make tests pass
 
 ## 9. Manual verification
