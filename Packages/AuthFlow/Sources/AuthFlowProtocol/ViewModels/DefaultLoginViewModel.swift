@@ -4,6 +4,7 @@ import CredentialStoreProtocol
 import Foundation
 import NavigationProtocol
 import NetworkProtocol
+import NoteRepositoryProtocol
 import Observation
 import VaultRepositoryProtocol
 import VaultSessionProtocol
@@ -20,6 +21,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
     private let vaultRepository: any VaultRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
+    private let notesIndexStore: any NotesIndexStoreProtocol
     private let navigator: any Navigating
     private let credentialStore: any CredentialStore
     private let networkReachability: any NetworkReachability
@@ -29,6 +31,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
         vaultSession: any VaultSessionProtocol,
+        notesIndexStore: any NotesIndexStoreProtocol,
         navigator: any Navigating,
         credentialStore: any CredentialStore,
         networkReachability: any NetworkReachability
@@ -37,6 +40,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
         self.vaultRepository = vaultRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
+        self.notesIndexStore = notesIndexStore
         self.navigator = navigator
         self.credentialStore = credentialStore
         self.networkReachability = networkReachability
@@ -82,7 +86,11 @@ public final class DefaultLoginViewModel: LoginViewModel {
                 headerData: headerData,
                 password: password
             )
-            await vaultSession.establish(unlockOutcome.sessionKeys)
+            try await NotesIndexStoreLifecycle.openAfterEstablish(
+                sessionKeys: unlockOutcome.sessionKeys,
+                vaultSession: vaultSession,
+                notesIndexStore: notesIndexStore
+            )
             try credentialStore.saveSetup(
                 email: email,
                 refreshToken: session.refreshToken,

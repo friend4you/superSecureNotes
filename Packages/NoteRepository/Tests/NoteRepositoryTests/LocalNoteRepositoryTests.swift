@@ -22,10 +22,10 @@ final class LocalNoteRepositoryTests: XCTestCase {
 
     func testWriteThenReadNoteRoundtrip() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440000")!
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
         let storedNote = NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Roundtrip note")
 
-        try await NoteTestSupport.openDatabase(repository)
+        try await NoteTestSupport.openIndexStore(indexStore)
         try await repository.writeNote(storedNote)
         let readNote = try await repository.readNote(noteID: noteID)
 
@@ -38,9 +38,9 @@ final class LocalNoteRepositoryTests: XCTestCase {
     func testListNotesFromStoredDirectories() async throws {
         let firstID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440001")!
         let secondID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440002")!
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
 
-        try await NoteTestSupport.openDatabase(repository)
+        try await NoteTestSupport.openIndexStore(indexStore)
         try await repository.writeNote(
             NoteTestSupport.makeSampleStoredNote(
                 noteID: firstID,
@@ -65,8 +65,8 @@ final class LocalNoteRepositoryTests: XCTestCase {
 
     func testDeleteNoteRemovesDirectory() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440003")!
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        try await NoteTestSupport.openDatabase(repository)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openIndexStore(indexStore)
         try await repository.writeNote(
             NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Delete me")
         )
@@ -84,8 +84,8 @@ final class LocalNoteRepositoryTests: XCTestCase {
     }
 
     func testReadNoteWhenDirectoryMissingThrowsNoteNotFound() async throws {
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        try await NoteTestSupport.openDatabase(repository)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openIndexStore(indexStore)
 
         do {
             _ = try await repository.readNote(noteID: UUID())
@@ -107,8 +107,8 @@ final class LocalNoteRepositoryTests: XCTestCase {
         )
         try localBody.write(to: noteDirectory.appendingPathComponent("note"))
 
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        try await NoteTestSupport.openDatabase(repository)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openIndexStore(indexStore)
 
         do {
             _ = try await repository.readNote(noteID: noteID)
@@ -121,8 +121,8 @@ final class LocalNoteRepositoryTests: XCTestCase {
     }
 
     func testWriteNoteRejectsEmptyPayload() async throws {
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        try await NoteTestSupport.openDatabase(repository)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openIndexStore(indexStore)
         let noteID = UUID()
         let emptyNote = StoredNote(
             metadata: NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Empty").metadata,
@@ -141,8 +141,8 @@ final class LocalNoteRepositoryTests: XCTestCase {
         }
     }
 
-    func testCRUDBeforeOpenThrowsDatabaseNotOpen() async throws {
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+    func testCRUDBeforeIndexStoreOpenThrowsDatabaseNotOpen() async throws {
+        let (_, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
         let noteID = UUID()
 
         do {
@@ -166,7 +166,7 @@ final class LocalNoteRepositoryTests: XCTestCase {
 
     func testAtomicDirectoryReplaceOnUpdate() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440007")!
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
         let firstNote = NoteTestSupport.makeSampleStoredNote(
             noteID: noteID,
             title: "First version",
@@ -178,7 +178,7 @@ final class LocalNoteRepositoryTests: XCTestCase {
             updatedAt: 2
         )
 
-        try await NoteTestSupport.openDatabase(repository)
+        try await NoteTestSupport.openIndexStore(indexStore)
         try await repository.writeNote(firstNote)
         try await repository.writeNote(secondNote)
         let readNote = try await repository.readNote(noteID: noteID)
@@ -189,8 +189,8 @@ final class LocalNoteRepositoryTests: XCTestCase {
 
     func testNotesRootExcludedFromBackup() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440008")!
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        try await NoteTestSupport.openDatabase(repository)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openIndexStore(indexStore)
         try await repository.writeNote(
             NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Backup exclusion")
         )

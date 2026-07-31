@@ -2,6 +2,7 @@ import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation
 import NetworkProtocol
+import NoteRepositoryProtocol
 import Observation
 import VaultRepositoryProtocol
 import VaultSessionProtocol
@@ -18,6 +19,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
     private let vaultRepository: any VaultRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
+    private let notesIndexStore: any NotesIndexStoreProtocol
     private let credentialStore: any CredentialStore
     private let networkReachability: any NetworkReachability
 
@@ -26,6 +28,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
         vaultRepository: any VaultRepository,
         vaultAuthenticator: any VaultAuthenticator,
         vaultSession: any VaultSessionProtocol,
+        notesIndexStore: any NotesIndexStoreProtocol,
         credentialStore: any CredentialStore,
         networkReachability: any NetworkReachability
     ) {
@@ -33,6 +36,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
         self.vaultRepository = vaultRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
+        self.notesIndexStore = notesIndexStore
         self.credentialStore = credentialStore
         self.networkReachability = networkReachability
     }
@@ -61,7 +65,11 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
                 headerData: creationOutcome.headerData,
                 password: password
             )
-            await vaultSession.establish(unlockOutcome.sessionKeys)
+            try await NotesIndexStoreLifecycle.openAfterEstablish(
+                sessionKeys: unlockOutcome.sessionKeys,
+                vaultSession: vaultSession,
+                notesIndexStore: notesIndexStore
+            )
             try credentialStore.saveSetup(
                 email: email,
                 refreshToken: session.refreshToken,

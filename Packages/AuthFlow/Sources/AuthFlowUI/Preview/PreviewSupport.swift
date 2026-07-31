@@ -5,6 +5,7 @@ import CryptoKit
 import Foundation
 import NetworkProtocol
 import NavigationProtocol
+import NoteRepositoryProtocol
 import VaultRepositoryProtocol
 import VaultSessionProtocol
 
@@ -26,6 +27,7 @@ enum PreviewSupport {
             vaultRepository: PreviewVaultRepository(),
             vaultAuthenticator: PreviewVaultAuthenticator(),
             vaultSession: PreviewVaultSession(),
+            notesIndexStore: PreviewNotesIndexStore(),
             navigator: navigator ?? PreviewNavigator(),
             credentialStore: PreviewCredentialStore(),
             biometricAuthenticator: PreviewBiometricAuthenticator(),
@@ -116,4 +118,10 @@ private struct PreviewNetworkReachability: NetworkReachability {
 private struct PreviewBiometricAuthenticator: BiometricAuthenticator {
     func canEvaluateBiometrics() -> Bool { false }
     func authenticate(reason: String) async -> BiometricAuthResult { .unavailable }
+}
+
+private actor PreviewNotesIndexStore: NotesIndexStoreProtocol {
+    var isOpen: Bool { false }
+    func open(passphrase: Data) async throws {}
+    func close() async {}
 }

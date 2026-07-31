@@ -4,6 +4,8 @@ import CredentialStore
 import CredentialStoreProtocol
 import CryptoKit
 import NavigationProtocol
+import NoteRepository
+import NoteRepositoryProtocol
 import SwiftUI
 import VaultSession
 import VaultSessionProtocol
@@ -145,6 +147,24 @@ final class LockCoordinatorTests: XCTestCase {
         XCTAssertFalse(isActiveAfterBackground)
     }
 
+    func testLockClosesNotesIndexStoreBeforeClearingVaultSession() async throws {
+        let notesIndexStore = NotesIndexStore()
+        try await notesIndexStore.open(passphrase: Data([0x01]))
+        let (coordinator, waiter, vaultSession, _) = makeLockCoordinator(
+            notesIndexStore: notesIndexStore
+        )
+        await vaultSession.establish(sampleVaultKeys())
+
+        await triggerLockAndWait(coordinator: coordinator, waiter: waiter) {
+            coordinator.lock()
+        }
+
+        let isOpen = await notesIndexStore.isOpen
+        let isActive = await vaultSession.isActive
+        XCTAssertFalse(isOpen)
+        XCTAssertFalse(isActive)
+    }
+
     func testLockClearsVaultSession() async throws {
         let (coordinator, waiter, vaultSession, _) = makeLockCoordinator()
         await vaultSession.establish(sampleVaultKeys())
@@ -195,12 +215,14 @@ final class LockCoordinatorTests: XCTestCase {
     private func makeLockCoordinator(
         vaultSession: VaultSession = VaultSession(),
         authRepository: MockAuthRepository = MockAuthRepository(),
+        notesIndexStore: NotesIndexStore = NotesIndexStore(),
         onLock: @escaping () -> Void = {}
     ) -> (LockCoordinator, LockWaiter, VaultSession, MockAuthRepository) {
         let waiter = LockWaiter()
         let coordinator = LockCoordinator(
             vaultSession: vaultSession,
-            authRepository: authRepository
+            authRepository: authRepository,
+            notesIndexStore: notesIndexStore
         ) {
             waiter.fulfill()
             onLock()

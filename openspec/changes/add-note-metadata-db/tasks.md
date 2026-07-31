@@ -2,7 +2,7 @@
 
 - [x] 1.1 Write failing tests: `NoteSyncState` equatable; `StoredNote` equatable; `NoteRepositoryError.databaseNotOpen` equatable (`Packages/NoteRepository/Tests/NoteRepositoryProtocolTests/StoredNoteTests.swift`, `NoteRepositoryErrorTests.swift`)
 - [x] 1.2 Add `NoteSyncState`, `StoredNote`, `databaseNotOpen` error, and updated `NoteRepository` protocol (`writeNote(_:)`, `readNote` → `StoredNote`); make tests pass (interim: includes `openDatabase`/`closeDatabase` on protocol)
-- [ ] 1.3 Refactor per updated design: introduce `NotesIndexStore` with `open`/`close`; remove lifecycle from `NoteRepository` protocol; `LocalNoteRepository` injects `NotesIndexStore`; update protocol and repository tests
+- [x] 1.3 Refactor per updated design: introduce `NotesIndexStore` with `open`/`close`; remove lifecycle from `NoteRepository` protocol; `LocalNoteRepository` injects `NotesIndexStore`; update protocol and repository tests
 
 ## 2. SecureCrypto — payload-only format and DB key derivation
 

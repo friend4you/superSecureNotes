@@ -2,6 +2,7 @@ import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation
 import NetworkProtocol
+import NoteRepositoryProtocol
 import Observation
 import VaultSessionProtocol
 
@@ -16,6 +17,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
     private let authRepository: any AuthRepository
     private let vaultAuthenticator: any VaultAuthenticator
     private let vaultSession: any VaultSessionProtocol
+    private let notesIndexStore: any NotesIndexStoreProtocol
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
 
@@ -24,6 +26,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
         authRepository: any AuthRepository,
         vaultAuthenticator: any VaultAuthenticator,
         vaultSession: any VaultSessionProtocol,
+        notesIndexStore: any NotesIndexStoreProtocol,
         biometricAuthenticator: any BiometricAuthenticator,
         networkReachability: any NetworkReachability
     ) {
@@ -31,6 +34,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
         self.authRepository = authRepository
         self.vaultAuthenticator = vaultAuthenticator
         self.vaultSession = vaultSession
+        self.notesIndexStore = notesIndexStore
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
         self.email = credentialStore.email() ?? ""
@@ -117,7 +121,11 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
             headerData: headerData,
             password: unlockPassword
         )
-        await vaultSession.establish(unlockOutcome.sessionKeys)
+        try await NotesIndexStoreLifecycle.openAfterEstablish(
+            sessionKeys: unlockOutcome.sessionKeys,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore
+        )
     }
 
     private func mapAuthError(_ error: AuthRepositoryError) -> AuthFlowError {

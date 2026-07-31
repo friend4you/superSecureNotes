@@ -1,6 +1,8 @@
 import AuthFlowProtocol
 import AuthRepositoryProtocol
 import CryptoKit
+import NoteRepositoryProtocol
+import SecureCrypto
 import VaultSessionProtocol
 import XCTest
 
@@ -22,23 +24,30 @@ final class LogoutResetTests: XCTestCase {
         )
 
         let vaultSession = MockVaultSession()
+        let notesIndexStore = MockNotesIndexStore()
         await vaultSession.establish(
             VaultSessionKeys(
                 udk: SymmetricKey(size: .bits256),
                 identityPrivateKey: Data(repeating: 0x01, count: 32)
             )
         )
+        try await notesIndexStore.open(passphrase: Data([0x01]))
 
         await LogoutReset.perform(
             authRepository: authRepository,
             vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
             credentialStore: credentialStore
         )
 
         let currentSession = await authRepository.currentSession
         let establishedKeys = await vaultSession.establishedKeys
+        let isOpen = await notesIndexStore.isOpen
+        let closeCallCount = await notesIndexStore.closeCallCount
         XCTAssertNil(currentSession)
         XCTAssertNil(establishedKeys)
+        XCTAssertFalse(isOpen)
+        XCTAssertEqual(closeCallCount, 1)
         XCTAssertFalse(credentialStore.hasLocalSetup)
         XCTAssertNil(credentialStore.email())
         XCTAssertNil(credentialStore.refreshToken())
@@ -63,6 +72,7 @@ final class LogoutResetTests: XCTestCase {
         await LogoutReset.perform(
             authRepository: authRepository,
             vaultSession: MockVaultSession(),
+            notesIndexStore: MockNotesIndexStore(),
             credentialStore: credentialStore
         )
 

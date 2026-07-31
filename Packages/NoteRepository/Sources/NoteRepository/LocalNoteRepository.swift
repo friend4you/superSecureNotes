@@ -6,11 +6,16 @@ public actor LocalNoteRepository: NoteRepository {
     private static let noteFileName = "note"
     private static let fekFileName = "fek"
 
+    private let notesIndexStore: NotesIndexStore
     private let notesRootURL: URL
     private let fileManager: FileManager
-    private var isDatabaseOpen = false
 
-    public init(notesRootURL: URL? = nil, fileManager: FileManager = .default) {
+    public init(
+        notesIndexStore: NotesIndexStore,
+        notesRootURL: URL? = nil,
+        fileManager: FileManager = .default
+    ) {
+        self.notesIndexStore = notesIndexStore
         self.fileManager = fileManager
         if let notesRootURL {
             self.notesRootURL = notesRootURL
@@ -25,17 +30,8 @@ public actor LocalNoteRepository: NoteRepository {
         }
     }
 
-    public func openDatabase(passphrase: Data) async throws {
-        _ = passphrase
-        isDatabaseOpen = true
-    }
-
-    public func closeDatabase() async {
-        isDatabaseOpen = false
-    }
-
     public func listNotes() async throws -> [NoteSummary] {
-        try requireOpen()
+        try await requireOpen()
         try ensureNotesRootDirectory()
 
         let directoryURLs = try fileManager.contentsOfDirectory(
@@ -65,7 +61,7 @@ public actor LocalNoteRepository: NoteRepository {
     }
 
     public func readNote(noteID: UUID) async throws -> StoredNote {
-        try requireOpen()
+        try await requireOpen()
 
         let noteDirectoryURL = noteDirectoryURL(for: noteID)
         guard fileManager.fileExists(atPath: noteDirectoryURL.path) else {
@@ -93,7 +89,7 @@ public actor LocalNoteRepository: NoteRepository {
     }
 
     public func writeNote(_ note: StoredNote) async throws {
-        try requireOpen()
+        try await requireOpen()
 
         guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
@@ -135,7 +131,7 @@ public actor LocalNoteRepository: NoteRepository {
     }
 
     public func deleteNote(noteID: UUID) async throws {
-        try requireOpen()
+        try await requireOpen()
 
         let noteDirectoryURL = noteDirectoryURL(for: noteID)
         guard fileManager.fileExists(atPath: noteDirectoryURL.path) else {
@@ -144,8 +140,8 @@ public actor LocalNoteRepository: NoteRepository {
         try fileManager.removeItem(at: noteDirectoryURL)
     }
 
-    private func requireOpen() throws {
-        guard isDatabaseOpen else {
+    private func requireOpen() async throws {
+        guard await notesIndexStore.isOpen else {
             throw NoteRepositoryError.databaseNotOpen
         }
     }

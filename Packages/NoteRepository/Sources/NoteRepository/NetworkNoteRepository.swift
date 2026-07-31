@@ -21,12 +21,6 @@ public actor NetworkNoteRepository: NoteRepository {
         self.tokenProvider = tokenProvider
     }
 
-    public func openDatabase(passphrase: Data) async throws {
-        _ = passphrase
-    }
-
-    public func closeDatabase() async {}
-
     public func listNotes() async throws -> [NoteSummary] {
         let accessToken = try await tokenProvider.accessToken()
         return try await apiClient.listNotes(accessToken: accessToken)

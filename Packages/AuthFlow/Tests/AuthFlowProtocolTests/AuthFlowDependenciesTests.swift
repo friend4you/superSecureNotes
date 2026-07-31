@@ -27,6 +27,7 @@ final class AuthFlowDependenciesTests: XCTestCase {
             vaultRepository: MockVaultRepository(),
             vaultAuthenticator: MockVaultAuthenticator(),
             vaultSession: MockVaultSession(),
+            notesIndexStore: MockNotesIndexStore(),
             navigator: navigator ?? MockNavigating(),
             credentialStore: MockCredentialStore(),
             biometricAuthenticator: MockBiometricAuthenticator(),

@@ -10,7 +10,6 @@ final class NoteRepositoryTests: XCTestCase {
         let summary = NoteSummary(noteID: noteID, title: "My note", updatedAt: 1_700_000_000)
         let storedNote = makeStoredNote(noteID: noteID)
 
-        try await repository.openDatabase(passphrase: Data([0x01]))
         await repository.setNotes([summary])
         await repository.setStoredNote(storedNote)
 
@@ -33,31 +32,6 @@ final class NoteRepositoryTests: XCTestCase {
         try await repository.deleteNote(noteID: noteID)
         let notesAfterDelete = try await repository.listNotes()
         XCTAssertTrue(notesAfterDelete.isEmpty)
-
-        await repository.closeDatabase()
-    }
-
-    func testMockActorRejectsCRUDBeforeOpen() async {
-        let repository = MockNoteRepository()
-        let noteID = UUID()
-
-        do {
-            _ = try await repository.listNotes()
-            XCTFail("Expected databaseNotOpen")
-        } catch NoteRepositoryError.databaseNotOpen {
-            // expected
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-
-        do {
-            _ = try await repository.readNote(noteID: noteID)
-            XCTFail("Expected databaseNotOpen")
-        } catch NoteRepositoryError.databaseNotOpen {
-            // expected
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
     }
 
     private func makeStoredNote(noteID: UUID) -> StoredNote {
@@ -78,7 +52,6 @@ final class NoteRepositoryTests: XCTestCase {
 }
 
 private actor MockNoteRepository: NoteRepository {
-    private var isOpen = false
     private var notes: [NoteSummary] = []
     private var storedNote: StoredNote?
 
@@ -90,22 +63,11 @@ private actor MockNoteRepository: NoteRepository {
         self.storedNote = storedNote
     }
 
-    func openDatabase(passphrase: Data) async throws {
-        _ = passphrase
-        isOpen = true
-    }
-
-    func closeDatabase() async {
-        isOpen = false
-    }
-
     func listNotes() async throws -> [NoteSummary] {
-        try requireOpen()
-        return notes
+        notes
     }
 
     func readNote(noteID: UUID) async throws -> StoredNote {
-        try requireOpen()
         _ = noteID
         guard let storedNote else {
             throw NoteRepositoryError.noteNotFound
@@ -114,20 +76,12 @@ private actor MockNoteRepository: NoteRepository {
     }
 
     func writeNote(_ note: StoredNote) async throws {
-        try requireOpen()
         storedNote = note
     }
 
     func deleteNote(noteID: UUID) async throws {
-        try requireOpen()
         _ = noteID
         notes = []
         storedNote = nil
-    }
-
-    private func requireOpen() throws {
-        guard isOpen else {
-            throw NoteRepositoryError.databaseNotOpen
-        }
     }
 }

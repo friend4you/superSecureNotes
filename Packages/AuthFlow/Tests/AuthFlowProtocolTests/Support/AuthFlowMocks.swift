@@ -5,6 +5,8 @@ import CryptoKit
 import Foundation
 import NetworkProtocol
 import NavigationProtocol
+import NoteRepositoryProtocol
+import SecureCrypto
 import VaultRepositoryProtocol
 import VaultSessionProtocol
 import XCTest
@@ -18,6 +20,7 @@ enum AuthFlowTestSupport {
         vaultRepository: any VaultRepository = MockVaultRepository(),
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         navigator: (any Navigating)? = nil,
         credentialStore: any CredentialStore = MockCredentialStore(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true)
@@ -27,6 +30,7 @@ enum AuthFlowTestSupport {
             vaultRepository: vaultRepository,
             vaultAuthenticator: vaultAuthenticator,
             vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
             navigator: navigator ?? MockNavigating(),
             credentialStore: credentialStore,
             networkReachability: networkReachability
@@ -38,6 +42,7 @@ enum AuthFlowTestSupport {
         vaultRepository: any VaultRepository = MockVaultRepository(),
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         credentialStore: any CredentialStore = MockCredentialStore(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true)
     ) -> DefaultRegisterViewModel {
@@ -46,6 +51,7 @@ enum AuthFlowTestSupport {
             vaultRepository: vaultRepository,
             vaultAuthenticator: vaultAuthenticator,
             vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
             networkReachability: networkReachability
         )
@@ -56,6 +62,7 @@ enum AuthFlowTestSupport {
         authRepository: any AuthRepository = MockAuthRepository(),
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         biometricAuthenticator: any BiometricAuthenticator = MockBiometricAuthenticator(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false)
     ) -> DefaultUnlockViewModel {
@@ -64,6 +71,7 @@ enum AuthFlowTestSupport {
             authRepository: authRepository,
             vaultAuthenticator: vaultAuthenticator,
             vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
             biometricAuthenticator: biometricAuthenticator,
             networkReachability: networkReachability
         )
@@ -83,6 +91,7 @@ final class AuthFlowMocksSmokeTests: XCTestCase {
             vaultRepository: vaultRepository,
             vaultAuthenticator: authenticator,
             vaultSession: vaultSession,
+            notesIndexStore: MockNotesIndexStore(),
             navigator: MockNavigating(),
             credentialStore: MockCredentialStore(),
             networkReachability: MockNetworkReachability(isOnline: true)
@@ -378,6 +387,28 @@ final class MockCredentialStore: CredentialStore, @unchecked Sendable {
 
 struct MockNetworkReachability: NetworkReachability {
     let isOnline: Bool
+}
+
+actor MockNotesIndexStore: NotesIndexStoreProtocol {
+    private(set) var isOpen = false
+    private(set) var openCallCount = 0
+    private(set) var closeCallCount = 0
+    private(set) var lastPassphrase: Data?
+    var openError: Error?
+
+    func open(passphrase: Data) async throws {
+        openCallCount += 1
+        lastPassphrase = passphrase
+        if let openError {
+            throw openError
+        }
+        isOpen = true
+    }
+
+    func close() async {
+        closeCallCount += 1
+        isOpen = false
+    }
 }
 
 final class MockBiometricAuthenticator: BiometricAuthenticator, @unchecked Sendable {

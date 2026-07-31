@@ -45,6 +45,7 @@ let package = Package(
         .package(path: "../VaultSession"),
         .package(path: "../Navigation"),
         .package(path: "../Network"),
+        .package(path: "../NoteRepository"),
     ],
     targets: [
         .target(
@@ -74,6 +75,8 @@ let package = Package(
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
                 .product(name: "NavigationProtocol", package: "Navigation"),
                 .product(name: "NetworkProtocol", package: "Network"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
             ]
         ),
         .target(
@@ -91,6 +94,7 @@ let package = Package(
                 .product(name: "Navigation", package: "Navigation"),
                 .product(name: "NetworkProtocol", package: "Network"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
             ],
             resources: [
                 .process("Resources"),
@@ -120,6 +124,8 @@ let package = Package(
                 "CredentialStoreProtocol",
                 .product(name: "NavigationProtocol", package: "Navigation"),
                 .product(name: "NetworkProtocol", package: "Network"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
             ]
         ),
         .testTarget(

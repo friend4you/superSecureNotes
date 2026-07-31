@@ -2,11 +2,24 @@ import Foundation
 import NoteRepositoryProtocol
 import SecureCrypto
 
+@testable import NoteRepository
+
 enum NoteTestSupport {
     static let databasePassphrase = Data([0x01, 0x02, 0x03])
 
-    static func openDatabase(_ repository: any NoteRepository) async throws {
-        try await repository.openDatabase(passphrase: databasePassphrase)
+    static func openIndexStore(_ store: NotesIndexStore) async throws {
+        try await store.open(passphrase: databasePassphrase)
+    }
+
+    static func makeLocalRepository(
+        notesRootURL: URL
+    ) -> (NotesIndexStore, LocalNoteRepository) {
+        let store = NotesIndexStore()
+        let repository = LocalNoteRepository(
+            notesIndexStore: store,
+            notesRootURL: notesRootURL
+        )
+        return (store, repository)
     }
 
     static func makeSampleStoredNote(

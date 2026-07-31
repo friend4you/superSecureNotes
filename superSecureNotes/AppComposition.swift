@@ -32,6 +32,7 @@ final class AppComposition {
             vaultRepository: infrastructure.vaultRepository,
             vaultAuthenticator: infrastructure.vaultAuthenticator,
             vaultSession: infrastructure.vaultSession,
+            notesIndexStore: infrastructure.notesIndexStore,
             navigator: navigation.navigator,
             credentialStore: infrastructure.credentialStore,
             biometricAuthenticator: infrastructure.biometricAuthenticator,
@@ -51,7 +52,8 @@ final class AppComposition {
         let credentialStore = infrastructure.credentialStore
         lockCoordinator = LockCoordinator(
             vaultSession: infrastructure.vaultSession,
-            authRepository: infrastructure.authRepository
+            authRepository: infrastructure.authRepository,
+            notesIndexStore: infrastructure.notesIndexStore
         ) {
             SessionRootNavigation.apply(
                 hasLocalSetup: credentialStore.hasLocalSetup,

@@ -1,4 +1,5 @@
 import AuthRepositoryProtocol
+import NoteRepositoryProtocol
 import SwiftUI
 import VaultSessionProtocol
 
@@ -10,6 +11,7 @@ import UIKit
 final class LockCoordinator {
     private let vaultSession: any VaultSessionProtocol
     private let authRepository: any AuthRepository
+    private let notesIndexStore: any NotesIndexStoreProtocol
     private let onLock: () -> Void
 
     #if canImport(UIKit)
@@ -19,10 +21,12 @@ final class LockCoordinator {
     init(
         vaultSession: any VaultSessionProtocol,
         authRepository: any AuthRepository,
+        notesIndexStore: any NotesIndexStoreProtocol,
         onLock: @escaping () -> Void
     ) {
         self.vaultSession = vaultSession
         self.authRepository = authRepository
+        self.notesIndexStore = notesIndexStore
         self.onLock = onLock
 
         #if canImport(UIKit)
@@ -54,6 +58,7 @@ final class LockCoordinator {
 
     func lock() {
         Task {
+            await notesIndexStore.close()
             await vaultSession.clear()
             await authRepository.clearSession()
             onLock()

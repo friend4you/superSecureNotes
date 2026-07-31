@@ -17,6 +17,7 @@ final class AppDependencies {
 
     let authRepository: any AuthRepository
     let vaultRepository: any VaultRepository
+    let notesIndexStore: NotesIndexStore
     let noteRepository: any NoteRepository
     let vaultSession: VaultSession
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
@@ -25,7 +26,8 @@ final class AppDependencies {
     let networkReachability: NWPathNetworkReachability
 
     init() {
-        noteRepository = LocalNoteRepository()
+        notesIndexStore = NotesIndexStore()
+        noteRepository = LocalNoteRepository(notesIndexStore: notesIndexStore)
         vaultRepository = LocalVaultRepository()
         vaultSession = VaultSession()
         vaultAuthenticator = SecureCryptoVaultAuthenticator()
