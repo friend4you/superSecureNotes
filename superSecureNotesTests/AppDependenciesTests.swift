@@ -3,6 +3,7 @@ import AuthRepository
 import CredentialStore
 import NetworkMonitoring
 import NoteRepository
+import SecureCrypto
 import VaultRepository
 import VaultSession
 import XCTest
@@ -16,38 +17,42 @@ final class AppDependenciesTests: XCTestCase {
         super.tearDown()
     }
 
-    func testStubModeUsesInMemoryAuthAndLocalRepositories() {
+    func testStubModeUsesInMemoryAuthAndLocalRepositories() async {
         StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.authRepository is InMemoryAuthRepository)
         XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
         XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
+        await Task.yield()
     }
 
-    func testStubModeUsesRealCryptoAndVaultSession() {
+    func testStubModeUsesRealCryptoAndVaultSession() async {
         StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.vaultAuthenticator is SecureCryptoVaultAuthenticator)
         XCTAssertTrue(dependencies.vaultSession is VaultSession)
+        await Task.yield()
     }
 
-    func testNetworkModeUsesNetworkAuthWithLocalRepositories() {
+    func testNetworkModeUsesNetworkAuthWithLocalRepositories() async {
         StubBackendConfiguration.testLaunchArguments = []
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.authRepository is NetworkAuthRepository)
         XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
         XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
+        await Task.yield()
     }
 
-    func testAppDependenciesProvidesSessionPersistenceServices() {
+    func testAppDependenciesProvidesSessionPersistenceServices() async {
         StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.credentialStore is KeychainCredentialStore)
         XCTAssertTrue(dependencies.biometricAuthenticator is LocalAuthenticationBiometricAuthenticator)
         XCTAssertTrue(dependencies.networkReachability is NWPathNetworkReachability)
+        await Task.yield()
     }
 }

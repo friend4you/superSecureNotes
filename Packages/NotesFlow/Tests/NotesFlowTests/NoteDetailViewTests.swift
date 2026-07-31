@@ -33,7 +33,7 @@ final class NoteDetailViewTests: XCTestCase {
     func testSaveIsDisabledWhenCannotSave() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
@@ -41,8 +41,8 @@ final class NoteDetailViewTests: XCTestCase {
         )
         let viewModel = makeViewModel(
             noteID: noteID,
-            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
-            vaultSession: MockVaultSession(udk: udk)
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
 
@@ -52,7 +52,7 @@ final class NoteDetailViewTests: XCTestCase {
     func testSaveIsEnabledAfterChangesWithNonEmptyTitle() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
@@ -60,8 +60,8 @@ final class NoteDetailViewTests: XCTestCase {
         )
         let viewModel = makeViewModel(
             noteID: noteID,
-            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
-            vaultSession: MockVaultSession(udk: udk)
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
         viewModel.body = "Updated body"
@@ -85,7 +85,7 @@ final class NoteDetailViewTests: XCTestCase {
 
     func testDeleteConfirmationCallsViewModelDelete() async {
         let noteID = UUID()
-        let noteRepository = MockNoteRepository()
+        let noteRepository = StoredNoteMockRepository()
         let navigator = MockNavigating()
         let viewModel = makeViewModel(
             noteID: noteID,
@@ -156,8 +156,8 @@ final class NoteDetailViewTests: XCTestCase {
     @MainActor
     private func makeViewModel(
         noteID: UUID = UUID(),
-        noteRepository: MockNoteRepository = MockNoteRepository(),
-        vaultSession: MockVaultSession = MockVaultSession(),
+        noteRepository: StoredNoteMockRepository = StoredNoteMockRepository(),
+        vaultSession: StoredNoteMockVaultSession = StoredNoteMockVaultSession(),
         navigator: MockNavigating? = nil
     ) -> DefaultNoteDetailViewModel {
         DefaultNoteDetailViewModel(
@@ -165,31 +165,6 @@ final class NoteDetailViewTests: XCTestCase {
             noteRepository: noteRepository,
             vaultSession: vaultSession,
             navigator: navigator ?? MockNavigating()
-        )
-    }
-
-    private func makeEncryptedNoteFile(
-        noteID: UUID,
-        title: String,
-        body: String,
-        udk: SymmetricKey
-    ) throws -> Data {
-        let fek = generateSymmetricKey()
-        let payload = NotePayload(body: Data(body.utf8))
-        let encryptedPayload = try encryptPayload(payload, with: fek)
-        let wrappedFEK = try wrapFEK(fek, with: udk)
-        let metadata = NoteMetadata(
-            noteID: noteID,
-            title: title,
-            createdAt: 1_700_000_000,
-            updatedAt: 1_700_000_100,
-            attachmentCount: 0,
-            attachmentsTotalSize: 0
-        )
-        return try assembleNoteFile(
-            metadata: metadata,
-            wrappedFEK: wrappedFEK,
-            encryptedPayload: encryptedPayload
         )
     }
 
@@ -202,43 +177,4 @@ final class NoteDetailViewTests: XCTestCase {
             .appendingPathComponent("Sources/NotesFlow/NoteDetailView.swift")
         return try String(contentsOf: sourceURL, encoding: .utf8)
     }
-}
-
-private actor MockNoteRepository: NoteRepository {
-    private var notes: [UUID: Data]
-    private(set) var deletedNoteIDs: [UUID] = []
-
-    init(notes: [UUID: Data] = [:]) {
-        self.notes = notes
-    }
-
-    func listNotes() async throws -> [NoteSummary] { [] }
-    func readNote(noteID: UUID) async throws -> Data {
-        guard let data = notes[noteID] else {
-            throw NoteRepositoryError.noteNotFound
-        }
-        return data
-    }
-    func writeNote(noteID: UUID, data: Data) async throws {
-        notes[noteID] = data
-    }
-    func deleteNote(noteID: UUID) async throws {
-        deletedNoteIDs.append(noteID)
-        notes.removeValue(forKey: noteID)
-    }
-}
-
-private actor MockVaultSession: VaultSessionProtocol {
-    private let key: SymmetricKey
-
-    init(udk: SymmetricKey = SymmetricKey(size: .bits256)) {
-        key = udk
-    }
-
-    var isActive: Bool { true }
-    nonisolated var changes: AsyncStream<Bool> { AsyncStream { $0.finish() } }
-    func establish(_ keys: VaultSessionKeys) {}
-    func clear() {}
-    func udk() throws -> SymmetricKey { key }
-    func identityPrivateKey() throws -> Data { Data(repeating: 0x01, count: 32) }
 }

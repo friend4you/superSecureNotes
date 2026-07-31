@@ -80,15 +80,14 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         errorMessage = nil
 
         do {
-            let data = try await noteRepository.readNote(noteID: noteID)
+            let storedNote = try await noteRepository.readNote(noteID: noteID)
             let udk = try await vaultSession.udk()
-            let sections = try parseNoteFile(data)
-            let loadedFEK = try unwrapFEK(sections.wrappedFEK, with: udk)
-            let payload = try decryptPayload(sections.encryptedPayload, with: loadedFEK)
+            let loadedFEK = try unwrapFEK(storedNote.wrappedFEK, with: udk)
+            let payload = try decryptPayload(storedNote.encryptedPayload, with: loadedFEK)
 
             fek = loadedFEK
-            createdAt = sections.metadata.createdAt
-            title = sections.metadata.title
+            createdAt = storedNote.metadata.createdAt
+            title = storedNote.metadata.title
             body = String(data: payload.body, encoding: .utf8) ?? ""
             attachments = payload.attachments
             loadedAttachments = payload.attachments
@@ -141,12 +140,13 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
                 attachmentCount: UInt32(attachments.count),
                 attachmentsTotalSize: attachments.reduce(0) { $0 + UInt64($1.data.count) }
             )
-            let data = try assembleNoteFile(
+            let storedNote = StoredNote(
                 metadata: metadata,
                 wrappedFEK: wrappedFEK,
-                encryptedPayload: encryptedPayload
+                encryptedPayload: encryptedPayload,
+                syncState: .pendingSync
             )
-            try await noteRepository.writeNote(noteID: noteID, data: data)
+            try await noteRepository.writeNote(storedNote)
 
             loadedTitle = title
             loadedBody = body

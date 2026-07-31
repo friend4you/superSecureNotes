@@ -33,7 +33,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testLoadDecryptsNoteContent() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Shopping list",
             body: "Milk and eggs",
@@ -47,11 +47,11 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
                 ),
             ]
         )
-        let noteRepository = MockNoteRepository(notes: [noteID: noteData])
+        let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
         let viewModel = makeViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: MockVaultSession(udk: udk)
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
 
         await viewModel.load()
@@ -68,7 +68,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testAddAttachmentMarksDetailDirty() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
@@ -76,8 +76,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         )
         let viewModel = makeViewModel(
             noteID: noteID,
-            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
-            vaultSession: MockVaultSession(udk: udk)
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
 
@@ -98,7 +98,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testRemoveAttachmentMarksDetailDirty() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
@@ -114,8 +114,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         )
         let viewModel = makeViewModel(
             noteID: noteID,
-            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
-            vaultSession: MockVaultSession(udk: udk)
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
 
@@ -129,17 +129,17 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testSavePersistsAttachmentChanges() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
             udk: udk
         )
-        let noteRepository = MockNoteRepository(notes: [noteID: noteData])
+        let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
         let viewModel = makeViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: MockVaultSession(udk: udk)
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
         viewModel.addAttachment(
@@ -153,10 +153,10 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
 
         await viewModel.save()
 
-        let savedData = try await noteRepository.noteData(noteID: noteID)
-        let sections = try parseNoteFile(savedData)
-        let fek = try unwrapFEK(sections.wrappedFEK, with: udk)
-        let payload = try decryptPayload(sections.encryptedPayload, with: fek)
+        let savedNote = try await noteRepository.storedNote(noteID: noteID)
+        let fek = try unwrapFEK(savedNote.wrappedFEK, with: udk)
+        let payload = try decryptPayload(savedNote.encryptedPayload, with: fek)
+        XCTAssertEqual(savedNote.syncState, .pendingSync)
         XCTAssertEqual(payload.attachments.map(\.filename), ["saved.txt"])
         XCTAssertFalse(viewModel.hasChanges)
     }
@@ -164,7 +164,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testAttachmentDataReturnsBytesForValidID() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
@@ -180,8 +180,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         )
         let viewModel = makeViewModel(
             noteID: noteID,
-            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
-            vaultSession: MockVaultSession(udk: udk)
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
 
@@ -192,17 +192,17 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testLoadOnlyRunsOncePerViewModel() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
             udk: udk
         )
-        let noteRepository = MockNoteRepository(notes: [noteID: noteData])
+        let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
         let viewModel = makeViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: MockVaultSession(udk: udk)
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
 
         await viewModel.load()
@@ -223,17 +223,17 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testSaveWritesEncryptedBlob() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Original title",
             body: "Original body",
             udk: udk
         )
-        let noteRepository = MockNoteRepository(notes: [noteID: noteData])
+        let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
         let viewModel = makeViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: MockVaultSession(udk: udk)
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
         viewModel.title = "Updated title"
@@ -241,11 +241,11 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
 
         await viewModel.save()
 
-        let savedData = try await noteRepository.noteData(noteID: noteID)
-        let sections = try parseNoteFile(savedData)
-        let fek = try unwrapFEK(sections.wrappedFEK, with: udk)
-        let payload = try decryptPayload(sections.encryptedPayload, with: fek)
-        XCTAssertEqual(sections.metadata.title, "Updated title")
+        let savedNote = try await noteRepository.storedNote(noteID: noteID)
+        let fek = try unwrapFEK(savedNote.wrappedFEK, with: udk)
+        let payload = try decryptPayload(savedNote.encryptedPayload, with: fek)
+        XCTAssertEqual(savedNote.syncState, .pendingSync)
+        XCTAssertEqual(savedNote.metadata.title, "Updated title")
         XCTAssertEqual(String(data: payload.body, encoding: .utf8), "Updated body")
         XCTAssertTrue(viewModel.canSave == false)
         XCTAssertFalse(viewModel.hasChanges)
@@ -254,7 +254,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     func testCanSaveRequiresChangesAndNonEmptyTitle() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
-        let noteData = try makeEncryptedNoteFile(
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
@@ -262,8 +262,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         )
         let viewModel = makeViewModel(
             noteID: noteID,
-            noteRepository: MockNoteRepository(notes: [noteID: noteData]),
-            vaultSession: MockVaultSession(udk: udk)
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
         )
         await viewModel.load()
 
@@ -296,7 +296,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
 
     func testDeleteCallsRepositoryAndPops() async {
         let noteID = UUID()
-        let noteRepository = MockNoteRepository()
+        let noteRepository = StoredNoteMockRepository()
         let navigator = MockNavigating()
         let viewModel = makeViewModel(
             noteID: noteID,
@@ -314,8 +314,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
     @MainActor
     private func makeViewModel(
         noteID: UUID = UUID(),
-        noteRepository: MockNoteRepository = MockNoteRepository(),
-        vaultSession: MockVaultSession = MockVaultSession(),
+        noteRepository: StoredNoteMockRepository = StoredNoteMockRepository(),
+        vaultSession: StoredNoteMockVaultSession = StoredNoteMockVaultSession(),
         navigator: MockNavigating? = nil
     ) -> DefaultNoteDetailViewModel {
         DefaultNoteDetailViewModel(
@@ -325,82 +325,4 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
             navigator: navigator ?? MockNavigating()
         )
     }
-
-    private func makeEncryptedNoteFile(
-        noteID: UUID,
-        title: String,
-        body: String,
-        udk: SymmetricKey,
-        attachments: [NotePayload.Attachment] = [],
-        createdAt: UInt64 = 1_700_000_000,
-        updatedAt: UInt64 = 1_700_000_100
-    ) throws -> Data {
-        let fek = generateSymmetricKey()
-        let payload = NotePayload(body: Data(body.utf8), attachments: attachments)
-        let encryptedPayload = try encryptPayload(payload, with: fek)
-        let wrappedFEK = try wrapFEK(fek, with: udk)
-        let metadata = NoteMetadata(
-            noteID: noteID,
-            title: title,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            attachmentCount: UInt32(attachments.count),
-            attachmentsTotalSize: attachments.reduce(0) { $0 + UInt64($1.data.count) }
-        )
-        return try assembleNoteFile(
-            metadata: metadata,
-            wrappedFEK: wrappedFEK,
-            encryptedPayload: encryptedPayload
-        )
-    }
-}
-
-private actor MockNoteRepository: NoteRepository {
-    private var notes: [UUID: Data]
-    private(set) var deletedNoteIDs: [UUID] = []
-
-    init(notes: [UUID: Data] = [:]) {
-        self.notes = notes
-    }
-
-    func listNotes() async throws -> [NoteSummary] { [] }
-
-    func readNote(noteID: UUID) async throws -> Data {
-        guard let data = notes[noteID] else {
-            throw NoteRepositoryError.noteNotFound
-        }
-        return data
-    }
-
-    func writeNote(noteID: UUID, data: Data) async throws {
-        notes[noteID] = data
-    }
-
-    func deleteNote(noteID: UUID) async throws {
-        deletedNoteIDs.append(noteID)
-        notes.removeValue(forKey: noteID)
-    }
-
-    func noteData(noteID: UUID) async throws -> Data {
-        try await readNote(noteID: noteID)
-    }
-}
-
-private actor MockVaultSession: VaultSessionProtocol {
-    private let key: SymmetricKey
-
-    init(udk: SymmetricKey = SymmetricKey(size: .bits256)) {
-        key = udk
-    }
-
-    var isActive: Bool { true }
-
-    nonisolated var changes: AsyncStream<Bool> {
-        AsyncStream { $0.finish() }
-    }
-
-    func establish(_ keys: VaultSessionKeys) {}
-    func clear() {}
-    func udk() throws -> SymmetricKey { key }
-    func identityPrivateKey() throws -> Data { Data(repeating: 0x01, count: 32) }
 }

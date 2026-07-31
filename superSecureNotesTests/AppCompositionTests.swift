@@ -7,6 +7,7 @@ import NavigationProtocol
 import NoteRepository
 import NoteRepositoryProtocol
 import NotesFlow
+import SecureCrypto
 import NotesFlowRoutes
 import ShareNote
 import ShareNoteRoutes
@@ -57,7 +58,7 @@ final class AppCompositionTests: XCTestCase {
         XCTAssertTrue(notesDependencies is NotesDependencyProviding)
     }
 
-    func testAppCompositionPassesNoteRepositoryToNotesDependencies() {
+    func testAppCompositionPassesNoteRepositoryToNotesDependencies() async {
         let composition = AppComposition()
 
         guard let infrastructureRepository = composition.infrastructure.noteRepository as? LocalNoteRepository,
@@ -68,14 +69,16 @@ final class AppCompositionTests: XCTestCase {
         }
 
         XCTAssertTrue(infrastructureRepository === notesRepository)
+        await Task.yield()
     }
 
-    func testAppCompositionPassesAuthAndVaultSessionToNotesDependencies() {
+    func testAppCompositionPassesAuthAndVaultSessionToNotesDependencies() async {
         let composition = AppComposition()
 
         let viewModel = composition.notesDependencies.makeNoteListViewModel()
 
         XCTAssertTrue(viewModel is DefaultNoteListViewModel)
+        await Task.yield()
     }
 
     func testAppUsesShareNoteDependencies() {
@@ -84,19 +87,21 @@ final class AppCompositionTests: XCTestCase {
         XCTAssertTrue(shareNoteDependencies is ShareNoteDependencyProviding)
     }
 
-    func testAppCompositionRegistersShareNoteRoute() {
+    func testAppCompositionRegistersShareNoteRoute() async {
         let composition = AppComposition()
 
         XCTAssertTrue(composition.navigation.registry.isRegistered(ShareNoteRoute.self))
+        await Task.yield()
     }
 
-    func testAppCompositionRegistersNotesRoute() {
+    func testAppCompositionRegistersNotesRoute() async {
         let composition = AppComposition()
 
         XCTAssertTrue(composition.navigation.registry.isRegistered(NotesRoute.self))
+        await Task.yield()
     }
 
-    func testNotesListToDetailNavigationViaRegistry() {
+    func testNotesListToDetailNavigationViaRegistry() async {
         let composition = AppComposition()
         let navigator = composition.navigation.navigator
         let registry = composition.navigation.registry
@@ -113,15 +118,17 @@ final class AppCompositionTests: XCTestCase {
         expectedPath.append(NotesRoute.detail(noteID: noteID))
         XCTAssertEqual(router.path, expectedPath)
         _ = registry.view(for: NotesRoute.detail(noteID: noteID))
+        await Task.yield()
     }
 
-    func testAppCompositionNotesRouteRegistryResolvesCreateRoute() {
+    func testAppCompositionNotesRouteRegistryResolvesCreateRoute() async {
         let composition = AppComposition()
 
         _ = composition.navigation.registry.view(for: NotesRoute.create)
+        await Task.yield()
     }
 
-    func testAppCompositionExposesShareNoteDependencies() {
+    func testAppCompositionExposesShareNoteDependencies() async {
         let composition = AppComposition()
 
         let noteID = UUID()
@@ -129,6 +136,7 @@ final class AppCompositionTests: XCTestCase {
 
         XCTAssertTrue(viewModel is DefaultShareNoteViewModel)
         XCTAssertEqual(viewModel.noteID, noteID)
+        await Task.yield()
     }
 
     func testSyncRootRouteRoutesToUnlockWhenSetupWithoutActiveVault() async {
@@ -158,8 +166,22 @@ final class AppCompositionTests: XCTestCase {
 
 private actor MockNoteRepository: NoteRepository {
     func listNotes() async throws -> [NoteSummary] { [] }
-    func readNote(noteID: UUID) async throws -> Data { Data() }
-    func writeNote(noteID: UUID, data: Data) async throws {}
+    func readNote(noteID: UUID) async throws -> StoredNote {
+        StoredNote(
+            metadata: NoteMetadata(
+                noteID: noteID,
+                title: "",
+                createdAt: 0,
+                updatedAt: 0,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0
+            ),
+            wrappedFEK: Data(),
+            encryptedPayload: Data([0x01]),
+            syncState: .pendingSync
+        )
+    }
+    func writeNote(_ note: StoredNote) async throws {}
     func deleteNote(noteID: UUID) async throws {}
 }
 

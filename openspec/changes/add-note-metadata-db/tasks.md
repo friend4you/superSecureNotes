@@ -28,14 +28,14 @@
 
 ## 6. NoteRepository — NetworkNoteRepository update
 
-- [ ] 6.1 Write failing tests: write assembles wire blob; read parses to `StoredNote` with `syncState: .synced`; no lifecycle methods on protocol (`Packages/NoteRepository/Tests/NoteRepositoryTests/NetworkNoteRepositoryStoredNoteTests.swift`)
-- [ ] 6.2 Update `NetworkNoteRepository` and existing network tests; remove lifecycle methods; make tests pass
+- [x] 6.1 Write failing tests: write assembles wire blob; read parses to `StoredNote` with `syncState: .synced`; no lifecycle methods on protocol (`Packages/NoteRepository/Tests/NoteRepositoryTests/NetworkNoteRepositoryStoredNoteTests.swift`)
+- [x] 6.2 Update `NetworkNoteRepository` and existing network tests; remove lifecycle methods; make tests pass
 
 ## 7. NotesFlow — ViewModel updates
 
-- [ ] 7.1 Write failing tests: `DefaultCreateNoteViewModel.save` writes `StoredNote` with `pendingSync`; `DefaultNoteDetailViewModel.load` reads `StoredNote` and decrypts; `save` writes `StoredNote` with `pendingSync`; view models do not call index store lifecycle (`Packages/NotesFlow/Tests/NotesFlowTests/DefaultCreateNoteViewModelTests.swift`, `DefaultNoteDetailViewModelTests.swift`)
-- [ ] 7.2 Update `DefaultCreateNoteViewModel` and `DefaultNoteDetailViewModel` to use structured repository API; make tests pass
-- [ ] 7.3 Update `NotesFlow` test mocks (`MockNoteRepository`) for CRUD-only protocol; make all NotesFlow tests pass
+- [x] 7.1 Write failing tests: `DefaultCreateNoteViewModel.save` writes `StoredNote` with `pendingSync`; `DefaultNoteDetailViewModel.load` reads `StoredNote` and decrypts; `save` writes `StoredNote` with `pendingSync`; view models do not call index store lifecycle (`Packages/NotesFlow/Tests/NotesFlowTests/DefaultCreateNoteViewModelTests.swift`, `DefaultNoteDetailViewModelTests.swift`)
+- [x] 7.2 Update `DefaultCreateNoteViewModel` and `DefaultNoteDetailViewModel` to use structured repository API; make tests pass
+- [x] 7.3 Update `NotesFlow` test mocks (`MockNoteRepository`) for CRUD-only protocol; make all NotesFlow tests pass
 
 ## 8. App wiring — NotesIndexStore lifecycle (auth layer only)
 
@@ -44,7 +44,7 @@
 - [x] 8.3 Write failing tests: unlock/login/register view models call `notesIndexStore.open(passphrase:)` with `deriveNotesDatabaseKey(udk)` after successful `establish`; failed unlock does not open (`Packages/AuthFlow/Tests/AuthFlowProtocolTests/ViewModels/NotesIndexStoreOpenTests.swift`)
 - [x] 8.4 Inject `notesIndexStore` into auth view models (not NotesFlow); call `open` after `establish`; update `AppComposition`; make tests pass
 - [x] 8.5 Write failing test: `NotesFlowDependencies` does not receive `NotesIndexStore` (`Packages/NotesFlow/Tests/NotesFlowTests/NotesFlowDependenciesTests.swift`)
-- [ ] 8.6 Update `AppCompositionTests`, `LogoutFlowTests`, and other composition tests; make tests pass
+- [x] 8.6 Update `AppCompositionTests`, `LogoutFlowTests`, and other composition tests; make tests pass
 
 ## 9. Manual verification
 

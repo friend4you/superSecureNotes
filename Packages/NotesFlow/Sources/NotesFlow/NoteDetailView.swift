@@ -177,12 +177,27 @@ import AuthRepositoryProtocol
 import CryptoKit
 import NavigationProtocol
 import NoteRepositoryProtocol
+import SecureCrypto
 import VaultSessionProtocol
 
 private actor PreviewNoteRepository: NoteRepository {
     func listNotes() async throws -> [NoteSummary] { [] }
-    func readNote(noteID: UUID) async throws -> Data { Data() }
-    func writeNote(noteID: UUID, data: Data) async throws {}
+    func readNote(noteID: UUID) async throws -> StoredNote {
+        StoredNote(
+            metadata: NoteMetadata(
+                noteID: noteID,
+                title: "",
+                createdAt: 0,
+                updatedAt: 0,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0
+            ),
+            wrappedFEK: Data(),
+            encryptedPayload: Data([0x01]),
+            syncState: .pendingSync
+        )
+    }
+    func writeNote(_ note: StoredNote) async throws {}
     func deleteNote(noteID: UUID) async throws {}
 }
 

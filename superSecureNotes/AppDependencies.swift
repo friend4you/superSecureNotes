@@ -15,15 +15,15 @@ import VaultSession
 final class AppDependencies {
     static let apiBaseURL = URL(string: "https://api.example.com/v1")!
 
-    let authRepository: any AuthRepository
-    let vaultRepository: any VaultRepository
     let notesIndexStore: NotesIndexStore
     let noteRepository: any NoteRepository
+    let vaultRepository: any VaultRepository
     let vaultSession: VaultSession
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
     let credentialStore: KeychainCredentialStore
     let biometricAuthenticator: LocalAuthenticationBiometricAuthenticator
     let networkReachability: NWPathNetworkReachability
+    let authRepository: any AuthRepository
 
     init() {
         notesIndexStore = NotesIndexStore()

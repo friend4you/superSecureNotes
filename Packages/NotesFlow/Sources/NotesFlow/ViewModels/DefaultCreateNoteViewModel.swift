@@ -92,12 +92,13 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
                 attachmentCount: UInt32(attachments.count),
                 attachmentsTotalSize: attachments.reduce(0) { $0 + UInt64($1.data.count) }
             )
-            let data = try assembleNoteFile(
+            let storedNote = StoredNote(
                 metadata: metadata,
                 wrappedFEK: wrappedFEK,
-                encryptedPayload: encryptedPayload
+                encryptedPayload: encryptedPayload,
+                syncState: .pendingSync
             )
-            try await noteRepository.writeNote(noteID: noteID, data: data)
+            try await noteRepository.writeNote(storedNote)
             navigator.pop()
         } catch {
             errorMessage = error.localizedDescription

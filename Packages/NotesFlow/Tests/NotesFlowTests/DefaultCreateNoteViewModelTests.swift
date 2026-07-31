@@ -90,13 +90,13 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.attachmentData(for: "missing"))
     }
 
-    func testSaveWritesNewNoteAndPops() async throws {
+    func testSaveWritesStoredNoteWithPendingSyncAndPops() async throws {
         let udk = SymmetricKey(size: .bits256)
-        let noteRepository = MockNoteRepository()
+        let noteRepository = StoredNoteMockRepository()
         let navigator = MockNavigating()
         let viewModel = makeViewModel(
             noteRepository: noteRepository,
-            vaultSession: MockVaultSession(udk: udk),
+            vaultSession: StoredNoteMockVaultSession(udk: udk),
             navigator: navigator
         )
         viewModel.title = "New note"
@@ -110,18 +110,17 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
         XCTAssertEqual(navigator.popCount, 1)
         XCTAssertNil(viewModel.errorMessage)
 
-        let (noteID, data) = writtenNotes[0]
-        let sections = try parseNoteFile(data)
-        XCTAssertEqual(sections.metadata.noteID, noteID)
-        XCTAssertEqual(sections.metadata.title, "New note")
-        let fek = try unwrapFEK(sections.wrappedFEK, with: udk)
-        let payload = try decryptPayload(sections.encryptedPayload, with: fek)
+        let storedNote = writtenNotes[0]
+        XCTAssertEqual(storedNote.syncState, .pendingSync)
+        XCTAssertEqual(storedNote.metadata.title, "New note")
+        let fek = try unwrapFEK(storedNote.wrappedFEK, with: udk)
+        let payload = try decryptPayload(storedNote.encryptedPayload, with: fek)
         XCTAssertEqual(String(data: payload.body, encoding: .utf8), "New body")
         XCTAssertEqual(payload.attachments.map(\.filename), ["image.png"])
     }
 
     func testSaveDoesNothingWhenCannotSave() async {
-        let noteRepository = MockNoteRepository()
+        let noteRepository = StoredNoteMockRepository()
         let navigator = MockNavigating()
         let viewModel = makeViewModel(
             noteRepository: noteRepository,
@@ -137,8 +136,8 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
 
     @MainActor
     private func makeViewModel(
-        noteRepository: MockNoteRepository = MockNoteRepository(),
-        vaultSession: MockVaultSession = MockVaultSession(),
+        noteRepository: StoredNoteMockRepository = StoredNoteMockRepository(),
+        vaultSession: StoredNoteMockVaultSession = StoredNoteMockVaultSession(),
         navigator: MockNavigating? = nil
     ) -> DefaultCreateNoteViewModel {
         DefaultCreateNoteViewModel(
@@ -161,32 +160,4 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
             data: data
         )
     }
-}
-
-private actor MockNoteRepository: NoteRepository {
-    private(set) var writtenNotes: [(UUID, Data)] = []
-
-    func listNotes() async throws -> [NoteSummary] { [] }
-    func readNote(noteID: UUID) async throws -> Data { Data() }
-
-    func writeNote(noteID: UUID, data: Data) async throws {
-        writtenNotes.append((noteID, data))
-    }
-
-    func deleteNote(noteID: UUID) async throws {}
-}
-
-private actor MockVaultSession: VaultSessionProtocol {
-    private let key: SymmetricKey
-
-    init(udk: SymmetricKey = SymmetricKey(size: .bits256)) {
-        key = udk
-    }
-
-    var isActive: Bool { true }
-    nonisolated var changes: AsyncStream<Bool> { AsyncStream { $0.finish() } }
-    func establish(_ keys: VaultSessionKeys) {}
-    func clear() {}
-    func udk() throws -> SymmetricKey { key }
-    func identityPrivateKey() throws -> Data { Data(repeating: 0x01, count: 32) }
 }

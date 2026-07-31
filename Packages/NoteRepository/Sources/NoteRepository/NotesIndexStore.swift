@@ -27,12 +27,6 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
         }
     }
 
-    deinit {
-        if let database {
-            sqlite3_close(database)
-        }
-    }
-
     private var databaseURL: URL {
         notesDirectoryURL.appendingPathComponent("notes.db", isDirectory: false)
     }
