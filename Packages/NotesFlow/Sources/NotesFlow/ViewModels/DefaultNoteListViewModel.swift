@@ -36,19 +36,22 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     private let noteRepository: any NoteRepository
     private let navigator: any Navigating
     private let credentialStore: any CredentialStore
+    private let performLogout: () async -> Void
 
     public init(
         authRepository: any AuthRepository,
         vaultSession: any VaultSessionProtocol,
         noteRepository: any NoteRepository,
         navigator: any Navigating,
-        credentialStore: any CredentialStore
+        credentialStore: any CredentialStore,
+        performLogout: @escaping () async -> Void
     ) {
         self.authRepository = authRepository
         self.vaultSession = vaultSession
         self.noteRepository = noteRepository
         self.navigator = navigator
         self.credentialStore = credentialStore
+        self.performLogout = performLogout
     }
 
     public func refresh() async {
@@ -90,8 +93,6 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     }
 
     public func logout() async {
-        try? await authRepository.logout()
-        try? credentialStore.clearAll()
-        await vaultSession.clear()
+        await performLogout()
     }
 }

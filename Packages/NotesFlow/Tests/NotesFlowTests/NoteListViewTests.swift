@@ -137,7 +137,8 @@ final class NoteListViewTests: XCTestCase {
             vaultSession: MockVaultSession(),
             noteRepository: noteRepository,
             navigator: navigator ?? MockNavigating(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
     }
 

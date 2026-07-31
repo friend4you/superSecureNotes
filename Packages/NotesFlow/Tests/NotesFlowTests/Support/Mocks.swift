@@ -5,6 +5,8 @@ enum NotesFlowTestMocks {
     static func credentialStore() -> MockCredentialStore {
         MockCredentialStore()
     }
+
+    static func noopLogout() async {}
 }
 
 final class MockCredentialStore: CredentialStore, @unchecked Sendable {

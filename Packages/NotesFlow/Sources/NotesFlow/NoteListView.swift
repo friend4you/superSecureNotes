@@ -107,7 +107,8 @@ public struct NoteListView: View {
                 vaultSession: PreviewVaultSession(),
                 noteRepository: PreviewNoteRepository(),
                 navigator: PreviewNavigator(),
-                credentialStore: PreviewCredentialStore()
+                credentialStore: PreviewCredentialStore(),
+                performLogout: {}
             )
         )
     }

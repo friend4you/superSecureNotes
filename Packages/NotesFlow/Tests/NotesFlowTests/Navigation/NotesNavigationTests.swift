@@ -36,7 +36,8 @@ private final class MockNotesDependencies: NotesDependencyProviding {
             vaultSession: MockVaultSession(),
             noteRepository: noteRepository,
             navigator: MockNavigating(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
     }
 

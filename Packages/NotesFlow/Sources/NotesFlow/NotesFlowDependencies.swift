@@ -13,6 +13,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     private let navigator: any Navigating
     internal let noteRepository: any NoteRepository
     private let credentialStore: any CredentialStore
+    private let performLogout: () async -> Void
     private var noteListViewModel: DefaultNoteListViewModel?
 
     public init(
@@ -20,13 +21,15 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         vaultSession: any VaultSessionProtocol,
         navigator: any Navigating,
         noteRepository: any NoteRepository,
-        credentialStore: any CredentialStore
+        credentialStore: any CredentialStore,
+        performLogout: @escaping () async -> Void
     ) {
         self.authRepository = authRepository
         self.vaultSession = vaultSession
         self.navigator = navigator
         self.noteRepository = noteRepository
         self.credentialStore = credentialStore
+        self.performLogout = performLogout
 
         Task {
             for await isActive in vaultSession.changes where !isActive {
@@ -45,7 +48,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
             vaultSession: vaultSession,
             noteRepository: noteRepository,
             navigator: navigator,
-            credentialStore: credentialStore
+            credentialStore: credentialStore,
+            performLogout: performLogout
         )
         noteListViewModel = viewModel
         return viewModel

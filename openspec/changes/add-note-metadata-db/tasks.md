@@ -48,6 +48,6 @@
 
 ## 9. Manual verification
 
-- [ ] 9.1 Wipe app data; unlock → create note → verify `notes/notes.db` exists and `notes/{uuid}/payload` has no plaintext title
-- [ ] 9.2 Lock app → unlock → note list and detail still work
-- [ ] 9.3 Logout → verify index store closed; login again → notes empty (fresh) or wipe confirmed
+- [x] 9.1 Wipe app data; unlock → create note → verify `notes/notes.db` exists and `notes/{uuid}/payload` has no plaintext title
+- [x] 9.2 Lock app → unlock → note list and detail still work
+- [x] 9.3 Logout → verify index store closed; login again → notes empty (fresh) or wipe confirmed

@@ -138,7 +138,12 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         let viewModel = makeViewModel(
             authRepository: authRepository,
             vaultSession: vaultSession,
-            credentialStore: credentialStore
+            credentialStore: credentialStore,
+            performLogout: {
+                try? await authRepository.logout()
+                try? credentialStore.clearAll()
+                await vaultSession.clear()
+            }
         )
         await viewModel.logout()
 
@@ -155,14 +160,16 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         vaultSession: MockVaultSession = MockVaultSession(),
         noteRepository: MockNoteRepository = MockNoteRepository(),
         navigator: MockNavigating? = nil,
-        credentialStore: MockCredentialStore = NotesFlowTestMocks.credentialStore()
+        credentialStore: MockCredentialStore = NotesFlowTestMocks.credentialStore(),
+        performLogout: (() async -> Void)? = nil
     ) -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
             authRepository: authRepository,
             vaultSession: vaultSession,
             noteRepository: noteRepository,
             navigator: navigator ?? MockNavigating(),
-            credentialStore: credentialStore
+            credentialStore: credentialStore,
+            performLogout: performLogout ?? NotesFlowTestMocks.noopLogout
         )
     }
 }

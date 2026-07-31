@@ -26,7 +26,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         XCTAssertTrue(dependencies is NotesFlowDependencies)
@@ -38,7 +39,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         let viewModel = dependencies.makeNoteListViewModel()
@@ -52,7 +54,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         let firstViewModel = dependencies.makeNoteListViewModel()
@@ -68,7 +71,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: vaultSession,
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         let firstViewModel = dependencies.makeNoteListViewModel()
@@ -89,7 +93,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         let viewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
@@ -104,7 +109,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         let viewModel = dependencies.makeCreateNoteViewModel()
@@ -118,7 +124,8 @@ final class NotesFlowDependenciesTests: XCTestCase {
             vaultSession: MockVaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: NotesFlowTestMocks.credentialStore()
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
         )
 
         let propertyNames = Mirror(reflecting: dependencies).children.compactMap(\.label)

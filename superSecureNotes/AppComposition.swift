@@ -43,7 +43,15 @@ final class AppComposition {
             vaultSession: infrastructure.vaultSession,
             navigator: navigation.navigator,
             noteRepository: infrastructure.noteRepository,
-            credentialStore: infrastructure.credentialStore
+            credentialStore: infrastructure.credentialStore,
+            performLogout: {
+                await LogoutReset.perform(
+                    authRepository: infrastructure.authRepository,
+                    vaultSession: infrastructure.vaultSession,
+                    notesIndexStore: infrastructure.notesIndexStore,
+                    credentialStore: infrastructure.credentialStore
+                )
+            }
         )
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator

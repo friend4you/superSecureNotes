@@ -52,7 +52,8 @@ final class AppCompositionTests: XCTestCase {
             vaultSession: VaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
-            credentialStore: TestCredentialStore()
+            credentialStore: TestCredentialStore(),
+            performLogout: {}
         )
 
         XCTAssertTrue(notesDependencies is NotesDependencyProviding)
