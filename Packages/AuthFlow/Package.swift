@@ -44,6 +44,7 @@ let package = Package(
         .package(path: "../SecureCrypto"),
         .package(path: "../VaultSession"),
         .package(path: "../Navigation"),
+        .package(path: "../Network"),
     ],
     targets: [
         .target(
@@ -72,6 +73,7 @@ let package = Package(
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
                 .product(name: "VaultSessionProtocol", package: "VaultSession"),
                 .product(name: "NavigationProtocol", package: "Navigation"),
+                .product(name: "NetworkProtocol", package: "Network"),
             ]
         ),
         .target(
@@ -87,6 +89,7 @@ let package = Package(
                 "AuthFlowRoutes",
                 "CredentialStoreProtocol",
                 .product(name: "Navigation", package: "Navigation"),
+                .product(name: "NetworkProtocol", package: "Network"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
             ],
             resources: [
@@ -116,6 +119,7 @@ let package = Package(
                 "AuthFlowRoutes",
                 "CredentialStoreProtocol",
                 .product(name: "NavigationProtocol", package: "Navigation"),
+                .product(name: "NetworkProtocol", package: "Network"),
             ]
         ),
         .testTarget(

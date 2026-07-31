@@ -1,10 +1,5 @@
-import AuthFlowProtocol
-import AuthRepositoryProtocol
-import CredentialStoreProtocol
-import CredentialStoreProtocol
-import Foundation
 import Network
-import VaultSessionProtocol
+import NetworkProtocol
 
 public final class NWPathNetworkReachability: NetworkReachability, @unchecked Sendable {
     private let monitor = NWPathMonitor()

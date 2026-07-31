@@ -2,6 +2,7 @@ import AuthFlowRoutes
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import NavigationProtocol
+import NetworkProtocol
 import VaultRepositoryProtocol
 import VaultSessionProtocol
 

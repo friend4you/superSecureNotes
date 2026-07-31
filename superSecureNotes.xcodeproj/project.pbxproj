@@ -45,6 +45,10 @@
 		AA61221930170003F15876 /* VaultSessionProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA611EC23014AAAA00F15876 /* VaultSessionProtocol */; };
 		AA61221B30170005F15876 /* CredentialStoreProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221A30170004F15876 /* CredentialStoreProtocol */; };
 		AA61221C30170006F15876 /* CredentialStoreProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61221A30170004F15876 /* CredentialStoreProtocol */; };
+		AA61222D30180003F15876 /* NetworkProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61222B30180001F15876 /* NetworkProtocol */; };
+		AA61222E30180004F15876 /* NetworkMonitoring in Frameworks */ = {isa = PBXBuildFile; productRef = AA61222C30180002F15876 /* NetworkMonitoring */; };
+		AA61222F30180005F15876 /* NetworkProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AA61222B30180001F15876 /* NetworkProtocol */; };
+		AA61223030180006F15876 /* NetworkMonitoring in Frameworks */ = {isa = PBXBuildFile; productRef = AA61222C30180002F15876 /* NetworkMonitoring */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +116,8 @@
 				AA61221730170000F15876 /* CredentialStore in Frameworks */,
 				AA61221930170003F15876 /* VaultSessionProtocol in Frameworks */,
 				AA61221B30170005F15876 /* CredentialStoreProtocol in Frameworks */,
+				AA61222D30180003F15876 /* NetworkProtocol in Frameworks */,
+				AA61222E30180004F15876 /* NetworkMonitoring in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,6 +144,8 @@
 				AA61221630160000F15876 /* NoteRepositoryProtocol in Frameworks */,
 				AA61221830170002F15876 /* CredentialStore in Frameworks */,
 				AA61221C30170006F15876 /* CredentialStoreProtocol in Frameworks */,
+				AA61222F30180005F15876 /* NetworkProtocol in Frameworks */,
+				AA61223030180006F15876 /* NetworkMonitoring in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,6 +209,8 @@
 				AA61221230160000F15876 /* NoteRepositoryProtocol */,
 				AA61221730170001F15876 /* CredentialStore */,
 				AA61221A30170004F15876 /* CredentialStoreProtocol */,
+				AA61222B30180001F15876 /* NetworkProtocol */,
+				AA61222C30180002F15876 /* NetworkMonitoring */,
 			);
 			productName = superSecureNotes;
 			productReference = AA611E6830094D0300F15876 /* superSecureNotes.app */;
@@ -243,6 +253,8 @@
 				AA61221230160000F15876 /* NoteRepositoryProtocol */,
 				AA61221730170001F15876 /* CredentialStore */,
 				AA61221A30170004F15876 /* CredentialStoreProtocol */,
+				AA61222B30180001F15876 /* NetworkProtocol */,
+				AA61222C30180002F15876 /* NetworkMonitoring */,
 			);
 			productName = superSecureNotesTests;
 			productReference = AA611E8830094D1300F15876 /* superSecureNotesTests.xctest */;
@@ -285,6 +297,7 @@
 				AA611E8430094D1000F15876 /* XCLocalSwiftPackageReference "Packages/Navigation" */,
 				AA61220030150000F15876 /* XCLocalSwiftPackageReference "Packages/ShareNote" */,
 				AA61221030160000F15876 /* XCLocalSwiftPackageReference "Packages/NoteRepository" */,
+				AA61222A30180000F15876 /* XCLocalSwiftPackageReference "Packages/Network" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA611E6930094D0300F15876 /* Products */;
@@ -632,6 +645,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/NoteRepository;
 		};
+		AA61222A30180000F15876 /* XCLocalSwiftPackageReference "Packages/Network" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Network;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -729,6 +746,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA611E7C30094D0B00F15876 /* XCLocalSwiftPackageReference "Packages/AuthFlow" */;
 			productName = CredentialStoreProtocol;
+		};
+		AA61222B30180001F15876 /* NetworkProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA61222A30180000F15876 /* XCLocalSwiftPackageReference "Packages/Network" */;
+			productName = NetworkProtocol;
+		};
+		AA61222C30180002F15876 /* NetworkMonitoring */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA61222A30180000F15876 /* XCLocalSwiftPackageReference "Packages/Network" */;
+			productName = NetworkMonitoring;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -3,6 +3,7 @@ import AuthFlowUI
 import AuthRepositoryProtocol
 import CredentialStore
 import Foundation
+import NetworkMonitoring
 import NoteRepository
 import NoteRepositoryProtocol
 import SecureCrypto

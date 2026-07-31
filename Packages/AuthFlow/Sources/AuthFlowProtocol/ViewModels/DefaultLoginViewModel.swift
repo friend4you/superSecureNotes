@@ -3,6 +3,7 @@ import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import Foundation
 import NavigationProtocol
+import NetworkProtocol
 import Observation
 import VaultRepositoryProtocol
 import VaultSessionProtocol
