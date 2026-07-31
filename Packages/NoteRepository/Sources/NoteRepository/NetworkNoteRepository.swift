@@ -1,5 +1,6 @@
 import Foundation
 import NoteRepositoryProtocol
+import SecureCrypto
 import VaultRepositoryProtocol
 
 public actor NetworkNoteRepository: NoteRepository {
@@ -20,23 +21,45 @@ public actor NetworkNoteRepository: NoteRepository {
         self.tokenProvider = tokenProvider
     }
 
+    public func openDatabase(passphrase: Data) async throws {
+        _ = passphrase
+    }
+
+    public func closeDatabase() async {}
+
     public func listNotes() async throws -> [NoteSummary] {
         let accessToken = try await tokenProvider.accessToken()
         return try await apiClient.listNotes(accessToken: accessToken)
     }
 
-    public func readNote(noteID: UUID) async throws -> Data {
+    public func readNote(noteID: UUID) async throws -> StoredNote {
         let accessToken = try await tokenProvider.accessToken()
-        return try await apiClient.readNote(noteID: noteID, accessToken: accessToken)
+        let data = try await apiClient.readNote(noteID: noteID, accessToken: accessToken)
+        let sections = try parseNoteFile(data)
+        return StoredNote(
+            metadata: sections.metadata,
+            wrappedFEK: sections.wrappedFEK,
+            encryptedPayload: sections.encryptedPayload,
+            syncState: .synced
+        )
     }
 
-    public func writeNote(noteID: UUID, data: Data) async throws {
-        guard !data.isEmpty else {
+    public func writeNote(_ note: StoredNote) async throws {
+        guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
         }
 
+        let data = try assembleNoteFile(
+            metadata: note.metadata,
+            wrappedFEK: note.wrappedFEK,
+            encryptedPayload: note.encryptedPayload
+        )
         let accessToken = try await tokenProvider.accessToken()
-        try await apiClient.writeNote(noteID: noteID, data: data, accessToken: accessToken)
+        try await apiClient.writeNote(
+            noteID: note.metadata.noteID,
+            data: data,
+            accessToken: accessToken
+        )
     }
 
     public func deleteNote(noteID: UUID) async throws {

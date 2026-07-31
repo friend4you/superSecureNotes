@@ -21,8 +21,10 @@ final class NetworkNoteRepositoryReadNoteTests: XCTestCase {
             session: .stubbed()
         )
 
-        let noteData = try await repository.readNote(noteID: NoteFixtures.noteID)
-        XCTAssertEqual(noteData, NoteFixtures.noteBytes)
+        let storedNote = try await repository.readNote(noteID: NoteFixtures.noteID)
+        XCTAssertEqual(storedNote.metadata.noteID, NoteFixtures.noteID)
+        XCTAssertEqual(storedNote.metadata.title, "My note")
+        XCTAssertEqual(storedNote.syncState, .synced)
     }
 
     func testReadNoteMapsNoteNotFound() async {

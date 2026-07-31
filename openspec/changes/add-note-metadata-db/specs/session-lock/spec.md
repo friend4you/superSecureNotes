@@ -2,12 +2,12 @@
 
 ### Requirement: Lock clears in-memory session only
 
-On lock, the system SHALL call `noteRepository.closeDatabase()`, then `vaultSession.clear()`, and clear in-memory auth session state (`currentSession`, `currentUser`). The system SHALL NOT modify Keychain contents on lock.
+On lock, the system SHALL call `notesIndexStore.close()`, then `vaultSession.clear()`, and clear in-memory auth session state (`currentSession`, `currentUser`). The system SHALL NOT modify Keychain contents on lock.
 
-#### Scenario: Lock closes note database
+#### Scenario: Lock closes notes index store
 
-- **WHEN** a lock event occurs while the note database is open
-- **THEN** `noteRepository.closeDatabase()` is called before `vaultSession.clear()`
+- **WHEN** a lock event occurs while the notes index store is open
+- **THEN** `notesIndexStore.close()` is called before `vaultSession.clear()`
 
 #### Scenario: Lock clears vault session
 
@@ -26,12 +26,12 @@ On lock, the system SHALL call `noteRepository.closeDatabase()`, then `vaultSess
 
 ### Requirement: Logout full reset
 
-Logout SHALL call `noteRepository.closeDatabase()`, `credentialStore.clearAll()`, `vaultSession.clear()`, clear in-memory auth state, and navigate to the login screen with editable email.
+Logout SHALL call `notesIndexStore.close()`, `credentialStore.clearAll()`, `vaultSession.clear()`, clear in-memory auth state, and navigate to the login screen with editable email.
 
-#### Scenario: Logout closes note database
+#### Scenario: Logout closes notes index store
 
 - **WHEN** the user taps logout
-- **THEN** `noteRepository.closeDatabase()` is called before `vaultSession.clear()`
+- **THEN** `notesIndexStore.close()` is called before `vaultSession.clear()`
 
 #### Scenario: Logout wipes all persisted credentials
 

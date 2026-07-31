@@ -1,52 +1,83 @@
 ## ADDED Requirements
 
-### Requirement: Note database opened after vault unlock
+### Requirement: Notes index store opened after vault unlock
 
-After successful vault unlock, auth view models (`DefaultUnlockViewModel`, `DefaultLoginViewModel`, `DefaultRegisterViewModel`) SHALL call `noteRepository.openDatabase(passphrase:)` with a UDK-derived passphrase before navigating to the notes flow. `openDatabase` SHALL be called after `vaultSession.establish(_:)` succeeds.
+After successful vault unlock, auth view models (`DefaultUnlockViewModel`, `DefaultLoginViewModel`, `DefaultRegisterViewModel`) SHALL call `notesIndexStore.open(passphrase:)` with a UDK-derived passphrase from `deriveNotesDatabaseKey` before navigating to the notes flow. `open` SHALL be called after `vaultSession.establish(_:)` succeeds and before any notes screen is shown.
 
-#### Scenario: Unlock opens note database
+#### Scenario: Unlock opens notes index store
 
 - **WHEN** unlock with password succeeds
-- **THEN** `noteRepository.openDatabase(passphrase:)` is called before navigation to notes
+- **THEN** `notesIndexStore.open(passphrase:)` is called after `vaultSession.establish` and before navigation to notes
 
-#### Scenario: Login opens note database
+#### Scenario: Login opens notes index store
 
 - **WHEN** login succeeds and vault session is established
-- **THEN** `noteRepository.openDatabase(passphrase:)` is called before navigation to notes
+- **THEN** `notesIndexStore.open(passphrase:)` is called before navigation to notes
 
-#### Scenario: Register opens note database
+#### Scenario: Register opens notes index store
 
 - **WHEN** registration succeeds and vault session is established
-- **THEN** `noteRepository.openDatabase(passphrase:)` is called before navigation to notes
+- **THEN** `notesIndexStore.open(passphrase:)` is called before navigation to notes
 
-#### Scenario: Failed unlock does not open database
+#### Scenario: Failed unlock does not open index store
 
 - **WHEN** unlock fails before `vaultSession.establish`
-- **THEN** `noteRepository.openDatabase` is not called
+- **THEN** `notesIndexStore.open` is not called
+
+### Requirement: Auth layer receives NotesIndexStore
+
+`AppComposition` SHALL construct a shared `NotesIndexStore` instance and pass it to auth view models (`DefaultUnlockViewModel`, `DefaultLoginViewModel`, `DefaultRegisterViewModel`) and lock/logout coordinators. `NotesFlow` dependencies SHALL receive `noteRepository` only — not `NotesIndexStore`.
+
+#### Scenario: Unlock view model has notes index store
+
+- **WHEN** `AppComposition` constructs the unlock view model
+- **THEN** it receives the shared `NotesIndexStore` instance
+
+#### Scenario: Notes flow dependencies do not receive notes index store
+
+- **WHEN** `NotesFlowDependencies` is constructed
+- **THEN** it receives `noteRepository` but does not receive `NotesIndexStore`
+
+### Requirement: LockCoordinator closes notes index store
+
+`LockCoordinator.lock()` SHALL call `notesIndexStore.close()` before `vaultSession.clear()`.
+
+#### Scenario: Lock coordinator closes index store
+
+- **WHEN** `LockCoordinator.lock()` is invoked
+- **THEN** `notesIndexStore.close()` is called before `vaultSession.clear()`
+
+### Requirement: LogoutReset closes notes index store
+
+`LogoutReset.perform` SHALL accept `notesIndexStore` and call `close()` before `vaultSession.clear()`.
+
+#### Scenario: Logout reset closes index store
+
+- **WHEN** `LogoutReset.perform` is called
+- **THEN** `notesIndexStore.close()` is called before `vaultSession.clear()`
+
+## REMOVED Requirements
 
 ### Requirement: Auth view models receive note repository
 
-`AppComposition` SHALL pass `noteRepository` to `DefaultUnlockViewModel`, `DefaultLoginViewModel`, and `DefaultRegisterViewModel` factory methods for database lifecycle calls.
+**Reason**: Auth layer opens `NotesIndexStore` for lifecycle; `NoteRepository` is CRUD-only for NotesFlow.
 
-#### Scenario: Unlock view model has note repository
+**Migration**: Pass `notesIndexStore` to auth view models instead of `noteRepository` for unlock wiring.
 
-- **WHEN** `AppComposition` constructs the unlock view model
-- **THEN** it receives the same `noteRepository` instance as `AppDependencies`
+### Requirement: Note database opened after vault unlock
+
+**Reason**: Replaced by `NotesIndexStore` lifecycle requirement.
+
+**Migration**: Replace `noteRepository.openDatabase` calls with `notesIndexStore.open`.
 
 ### Requirement: LockCoordinator closes note database
 
-`LockCoordinator.lock()` SHALL call `noteRepository.closeDatabase()` before `vaultSession.clear()`.
+**Reason**: Replaced by `NotesIndexStore` close requirement.
 
-#### Scenario: Lock coordinator closes database
-
-- **WHEN** `LockCoordinator.lock()` is invoked
-- **THEN** `noteRepository.closeDatabase()` is called before `vaultSession.clear()`
+**Migration**: Replace `noteRepository.closeDatabase` with `notesIndexStore.close`.
 
 ### Requirement: LogoutReset closes note database
 
-`LogoutReset.perform` SHALL accept `noteRepository` and call `closeDatabase()` before `vaultSession.clear()`.
+**Reason**: Replaced by `NotesIndexStore` close requirement.
 
-#### Scenario: Logout reset closes database
-
-- **WHEN** `LogoutReset.perform` is called
-- **THEN** `noteRepository.closeDatabase()` is called before `vaultSession.clear()`
+**Migration**: Replace `noteRepository.closeDatabase` with `notesIndexStore.close`.

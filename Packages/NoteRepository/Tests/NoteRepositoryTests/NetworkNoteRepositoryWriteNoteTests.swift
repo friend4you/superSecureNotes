@@ -21,7 +21,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
             session: .stubbed()
         )
 
-        try await repository.writeNote(noteID: NoteFixtures.noteID, data: NoteFixtures.noteBytes)
+        try await repository.writeNote(NoteFixtures.sampleStoredNote)
     }
 
     func testWriteNoteRejectsEmptyDataLocally() async {
@@ -31,8 +31,15 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
             session: .stubbed()
         )
 
+        let emptyNote = StoredNote(
+            metadata: NoteFixtures.sampleStoredNote.metadata,
+            wrappedFEK: NoteFixtures.sampleStoredNote.wrappedFEK,
+            encryptedPayload: Data(),
+            syncState: .pendingSync
+        )
+
         do {
-            try await repository.writeNote(noteID: NoteFixtures.noteID, data: Data())
+            try await repository.writeNote(emptyNote)
             XCTFail("Expected validationError")
         } catch let error as NoteRepositoryError {
             XCTAssertEqual(error, .validationError("Note must not be empty."))
@@ -54,7 +61,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
         )
 
         do {
-            try await repository.writeNote(noteID: NoteFixtures.noteID, data: NoteFixtures.noteBytes)
+            try await repository.writeNote(NoteFixtures.sampleStoredNote)
             XCTFail("Expected validationError")
         } catch let error as NoteRepositoryError {
             XCTAssertEqual(error, .validationError("Invalid note."))
@@ -71,7 +78,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
         )
 
         do {
-            try await repository.writeNote(noteID: NoteFixtures.noteID, data: NoteFixtures.noteBytes)
+            try await repository.writeNote(NoteFixtures.sampleStoredNote)
             XCTFail("Expected token provider error")
         } catch is MockTokenProvider.Failure {
             // expected

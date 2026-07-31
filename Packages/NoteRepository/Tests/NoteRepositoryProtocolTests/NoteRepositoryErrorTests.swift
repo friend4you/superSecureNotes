@@ -7,6 +7,7 @@ final class NoteRepositoryErrorTests: XCTestCase {
         XCTAssertEqual(NoteRepositoryError.notAuthenticated, .notAuthenticated)
         XCTAssertEqual(NoteRepositoryError.noteNotFound, .noteNotFound)
         XCTAssertEqual(NoteRepositoryError.corruptNote, .corruptNote)
+        XCTAssertEqual(NoteRepositoryError.databaseNotOpen, .databaseNotOpen)
         XCTAssertEqual(NoteRepositoryError.validationError("bad"), .validationError("bad"))
         XCTAssertEqual(NoteRepositoryError.networkError, .networkError)
         XCTAssertEqual(NoteRepositoryError.serverError(statusCode: 500), .serverError(statusCode: 500))

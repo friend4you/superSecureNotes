@@ -18,24 +18,38 @@ The `NoteRepositoryProtocol` module SHALL define a `StoredNote` struct that is `
 - **WHEN** two `StoredNote` values with identical field values are compared
 - **THEN** they are equal
 
-### Requirement: NoteRepository database lifecycle
+### Requirement: NotesIndexStore actor
 
-The `NoteRepository` protocol SHALL provide `openDatabase(passphrase: Data)` and `closeDatabase()` async methods. `openDatabase` SHALL open a SQLCipher-encrypted database using the provided passphrase. `closeDatabase` SHALL close the database connection. All note CRUD methods SHALL require an open database.
+The `NoteRepository` target SHALL provide a `NotesIndexStore` actor that owns the SQLCipher-encrypted notes index database at `Application Support/superSecureNotes/notes/notes.db`. It SHALL expose `open(passphrase: Data)` and `close()` async methods. It SHALL expose `isOpen` indicating whether a database connection is active. It SHALL NOT be part of the `NoteRepository` protocol.
 
-#### Scenario: openDatabase enables CRUD
+#### Scenario: open enables index queries
 
-- **WHEN** `openDatabase(passphrase:)` succeeds
-- **THEN** subsequent `listNotes()`, `readNote`, `writeNote`, and `deleteNote` calls succeed for valid inputs
+- **WHEN** `open(passphrase:)` succeeds
+- **THEN** `isOpen` is `true` and index query methods succeed for valid inputs
 
-#### Scenario: CRUD before open throws databaseNotOpen
+#### Scenario: close disables index queries
 
-- **WHEN** `listNotes()` is called before `openDatabase`
-- **THEN** `NoteRepositoryError.databaseNotOpen` is thrown
+- **WHEN** `close()` is called after a successful `open`
+- **THEN** `isOpen` is `false` and subsequent index queries throw a not-open error
 
-#### Scenario: closeDatabase prevents CRUD
+#### Scenario: Database file created on first open
 
-- **WHEN** `closeDatabase()` is called after a successful `openDatabase`
-- **THEN** subsequent `listNotes()` throws `NoteRepositoryError.databaseNotOpen`
+- **WHEN** `open(passphrase:)` is called and no database file exists
+- **THEN** `notes/notes.db` is created under `Application Support/superSecureNotes/`
+
+#### Scenario: Database requires correct passphrase
+
+- **WHEN** `notes.db` exists and `open` is called with an incorrect passphrase
+- **THEN** `open` throws an error
+
+### Requirement: NotesIndexStore schema
+
+`NotesIndexStore` SHALL persist note index rows with columns: `note_id`, `title`, `created_at`, `updated_at`, `attachment_count`, `attachments_total_size`, `wrapped_fek`, and `sync_state`.
+
+#### Scenario: Row roundtrip preserves fields
+
+- **WHEN** a note index row is upserted and fetched by `note_id`
+- **THEN** all column values match the written row
 
 ### Requirement: NoteRepositoryError databaseNotOpen case
 
@@ -46,19 +60,19 @@ The module SHALL add `databaseNotOpen` to `NoteRepositoryError`.
 - **WHEN** two `NoteRepositoryError.databaseNotOpen` values are compared
 - **THEN** they are equal
 
-### Requirement: LocalNoteRepository SQLCipher database
+### Requirement: LocalNoteRepository uses NotesIndexStore
 
-`LocalNoteRepository` SHALL persist note metadata and `wrapped_fek` in `Application Support/superSecureNotes/notes.db` using GRDB with SQLCipher encryption. The database SHALL be unreadable without the passphrase provided to `openDatabase`. Metadata columns SHALL include: `note_id`, `title`, `created_at`, `updated_at`, `attachment_count`, `attachments_total_size`, `wrapped_fek`, and `sync_state`.
+`LocalNoteRepository` SHALL depend on an injected `NotesIndexStore` for metadata and `wrapped_fek` persistence. It SHALL NOT expose or implement storage lifecycle methods. CRUD methods SHALL throw `NoteRepositoryError.databaseNotOpen` when `NotesIndexStore.isOpen` is `false`.
 
-#### Scenario: Database file created on first open
+#### Scenario: CRUD before index store open throws databaseNotOpen
 
-- **WHEN** `openDatabase(passphrase:)` is called and no database file exists
-- **THEN** `notes.db` is created under `Application Support/superSecureNotes/`
+- **WHEN** `listNotes()` is called while `NotesIndexStore` is not open
+- **THEN** `NoteRepositoryError.databaseNotOpen` is thrown
 
-#### Scenario: Database requires passphrase to read
+#### Scenario: CRUD succeeds when index store is open
 
-- **WHEN** `notes.db` exists and is opened with an incorrect passphrase
-- **THEN** `openDatabase` throws an error
+- **WHEN** `NotesIndexStore` is open and `writeNote` is called with a valid `StoredNote`
+- **THEN** a subsequent `readNote(noteID:)` returns an equal `StoredNote`
 
 ### Requirement: LocalNoteRepository payload file storage
 
@@ -69,62 +83,52 @@ The module SHALL add `databaseNotOpen` to `NoteRepositoryError`.
 - **WHEN** `writeNote` succeeds with a `StoredNote`
 - **THEN** `notes/{noteID}/payload` contains bytes identical to `storedNote.encryptedPayload` with no SSNT metadata header
 
-### Requirement: LocalNoteRepository write and read roundtrip
-
-#### Scenario: Write and read roundtrip via StoredNote
-
-- **WHEN** `writeNote` is called with a valid `StoredNote` whose `metadata.noteID` matches the note being stored
-- **THEN** a subsequent `readNote(noteID:)` returns a `StoredNote` equal to the written value
-
-#### Scenario: Write rejects noteID mismatch
-
-- **WHEN** `writeNote` is called with a `StoredNote` whose `metadata.noteID` does not match an existing row's ID on update
-- **THEN** the call throws `NoteRepositoryError.validationError` without corrupting storage
+### Requirement: LocalNoteRepository write validation
 
 #### Scenario: Write rejects empty encrypted payload
 
 - **WHEN** `writeNote` is called with empty `encryptedPayload`
 - **THEN** the call throws `NoteRepositoryError.validationError` without writing files
 
-#### Scenario: New write defaults sync state to pendingSync
+#### Scenario: New write persists sync state
 
 - **WHEN** `writeNote` is called with `syncState: .pendingSync`
-- **THEN** the stored row has `sync_state` equal to `pendingSync`
+- **THEN** the stored index row has `sync_state` equal to `pendingSync`
 
-### Requirement: LocalNoteRepository list notes from database
+### Requirement: LocalNoteRepository list notes from index store
 
-`LocalNoteRepository.listNotes()` SHALL query the database and return `NoteSummary` entries. It SHALL NOT scan note directories or read payload files.
+`LocalNoteRepository.listNotes()` SHALL query `NotesIndexStore` and return `NoteSummary` entries. It SHALL NOT scan payload directories for metadata.
 
-#### Scenario: List notes from database
+#### Scenario: List notes from index store
 
-- **WHEN** one or more notes exist in the database
-- **THEN** `listNotes()` returns `NoteSummary` values with `noteID`, `title`, and `updatedAt` from database rows
+- **WHEN** one or more notes exist in the index store
+- **THEN** `listNotes()` returns `NoteSummary` values with `noteID`, `title`, and `updatedAt` from index rows
 
 #### Scenario: List returns empty when no notes
 
-- **WHEN** the database contains no note rows
+- **WHEN** the index store contains no note rows
 - **THEN** `listNotes()` returns an empty array
 
-### Requirement: LocalNoteRepository delete
+### Requirement: LocalNoteRepository delete and corrupt note handling
 
-#### Scenario: Delete removes database row and payload directory
+#### Scenario: Delete removes index row and payload directory
 
 - **WHEN** `deleteNote(noteID: id)` is called for an existing note
-- **THEN** the database row is removed, `notes/{id}/` directory is removed, and subsequent `readNote` throws `noteNotFound`
+- **THEN** the index row is removed, `notes/{id}/` directory is removed, and subsequent `readNote` throws `noteNotFound`
 
 #### Scenario: Read missing note throws noteNotFound
 
-- **WHEN** `readNote(noteID:)` is called and no database row exists for that ID
+- **WHEN** `readNote(noteID:)` is called and no index row exists for that ID
 - **THEN** `NoteRepositoryError.noteNotFound` is thrown
 
 #### Scenario: Read incomplete note throws corruptNote
 
-- **WHEN** `readNote(noteID:)` is called and a database row exists but the `payload` file is missing
+- **WHEN** `readNote(noteID:)` is called and an index row exists but the `payload` file is missing
 - **THEN** `NoteRepositoryError.corruptNote` is thrown
 
-#### Scenario: Payload without database row throws corruptNote
+#### Scenario: Payload without index row throws corruptNote
 
-- **WHEN** `readNote(noteID:)` is called and a `payload` file exists but no database row exists
+- **WHEN** `readNote(noteID:)` is called and a `payload` file exists but no index row exists
 - **THEN** `NoteRepositoryError.corruptNote` is thrown
 
 ### Requirement: LocalNoteRepository atomic payload writes
@@ -143,20 +147,11 @@ The module SHALL add `databaseNotOpen` to `NoteRepositoryError`.
 #### Scenario: Repository stores ciphertext without decrypting
 
 - **WHEN** `writeNote` succeeds
-- **THEN** the on-disk `payload` file and database `wrapped_fek` column contain bytes identical to the input `StoredNote`
-
-### Requirement: NetworkNoteRepository database lifecycle no-op
-
-`NetworkNoteRepository.openDatabase` and `closeDatabase` SHALL complete without error and without side effects.
-
-#### Scenario: Network repository open is no-op
-
-- **WHEN** `openDatabase(passphrase:)` is called on `NetworkNoteRepository`
-- **THEN** the call completes without error
+- **THEN** the on-disk `payload` file and index `wrapped_fek` column contain bytes identical to the input `StoredNote`
 
 ### Requirement: NetworkNoteRepository StoredNote mapping
 
-`NetworkNoteRepository` SHALL map `StoredNote` to wire-format `.note` blobs on write using `assembleNoteFile`, and map wire blobs to `StoredNote` on read using `parseNoteFile` with `syncState: .synced`.
+`NetworkNoteRepository` SHALL map `StoredNote` to wire-format `.note` blobs on write using `assembleNoteFile`, and map wire blobs to `StoredNote` on read using `parseNoteFile` with `syncState: .synced`. It SHALL NOT use `NotesIndexStore`.
 
 #### Scenario: Network write assembles wire blob
 
@@ -172,7 +167,7 @@ The module SHALL add `databaseNotOpen` to `NoteRepositoryError`.
 
 ### Requirement: NoteRepository protocol
 
-The module SHALL provide a `NoteRepository` protocol implemented by an `actor` with async methods: `openDatabase(passphrase:)`, `closeDatabase()`, `listNotes()`, `readNote(noteID:)`, `writeNote(_:)`, and `deleteNote(noteID:)`. `readNote` SHALL return `StoredNote`. `writeNote` SHALL accept `StoredNote`. `listNotes()` SHALL return `[NoteSummary]`. `LocalNoteRepository` and `NetworkNoteRepository` SHALL both conform to this protocol.
+The module SHALL provide a `NoteRepository` protocol implemented by an `actor` with async CRUD methods only: `listNotes()`, `readNote(noteID:)`, `writeNote(_:)`, and `deleteNote(noteID:)`. The protocol SHALL NOT include storage lifecycle methods (`openDatabase`, `closeDatabase`, or equivalent). `readNote` SHALL return `StoredNote`. `writeNote` SHALL accept `StoredNote`. `listNotes()` SHALL return `[NoteSummary]`. `LocalNoteRepository` and `NetworkNoteRepository` SHALL both conform to this protocol.
 
 #### Scenario: List notes returns summaries
 
@@ -205,9 +200,26 @@ The module SHALL provide a `NoteRepository` protocol implemented by an `actor` w
 
 ## REMOVED Requirements
 
+### Requirement: NoteRepository database lifecycle
+
+**Reason**: Storage lifecycle moved to `NotesIndexStore`, owned and opened by auth/app layer — parallel to vault header pattern. `NoteRepository` is CRUD only.
+
+**Migration**: Auth/lock flows call `notesIndexStore.open`/`close` instead of `noteRepository.openDatabase`/`closeDatabase`. Remove lifecycle methods from `NoteRepository` protocol.
+
+#### Scenario: NoteRepository protocol has no lifecycle methods
+
+- **WHEN** the `NoteRepository` protocol public API is inspected
+- **THEN** it contains only `listNotes`, `readNote`, `writeNote`, and `deleteNote`
+
+### Requirement: NetworkNoteRepository database lifecycle no-op
+
+**Reason**: Lifecycle removed from `NoteRepository` protocol; network repository has no local index store.
+
+**Migration**: Delete no-op `openDatabase`/`closeDatabase` from `NetworkNoteRepository`.
+
 ### Requirement: LocalNoteRepository split note and fek files
 
-**Reason**: Replaced by SQLCipher database for metadata and wrapped FEK, with per-note `payload` file for encrypted content only.
+**Reason**: Replaced by SQLCipher index store for metadata and wrapped FEK, with per-note `payload` file for encrypted content only.
 
 **Migration**: Wipe app data; no automatic migration from `note` + `fek` layout.
 

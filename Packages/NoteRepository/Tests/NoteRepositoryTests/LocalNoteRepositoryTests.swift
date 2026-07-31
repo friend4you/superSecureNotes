@@ -23,12 +23,16 @@ final class LocalNoteRepositoryTests: XCTestCase {
     func testWriteThenReadNoteRoundtrip() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440000")!
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        let blob = try makeSampleNoteFile(noteID: noteID, title: "Roundtrip note")
+        let storedNote = NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Roundtrip note")
 
-        try await repository.writeNote(noteID: noteID, data: blob)
-        let readBlob = try await repository.readNote(noteID: noteID)
+        try await NoteTestSupport.openDatabase(repository)
+        try await repository.writeNote(storedNote)
+        let readNote = try await repository.readNote(noteID: noteID)
 
-        XCTAssertEqual(readBlob, blob)
+        XCTAssertEqual(readNote.metadata, storedNote.metadata)
+        XCTAssertEqual(readNote.wrappedFEK, storedNote.wrappedFEK)
+        XCTAssertEqual(readNote.encryptedPayload, storedNote.encryptedPayload)
+        XCTAssertEqual(readNote.syncState, .pendingSync)
     }
 
     func testListNotesFromStoredDirectories() async throws {
@@ -36,13 +40,20 @@ final class LocalNoteRepositoryTests: XCTestCase {
         let secondID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440002")!
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
 
+        try await NoteTestSupport.openDatabase(repository)
         try await repository.writeNote(
-            noteID: firstID,
-            data: try makeSampleNoteFile(noteID: firstID, title: "First note", updatedAt: 1_700_000_200)
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: firstID,
+                title: "First note",
+                updatedAt: 1_700_000_200
+            )
         )
         try await repository.writeNote(
-            noteID: secondID,
-            data: try makeSampleNoteFile(noteID: secondID, title: "Second note", updatedAt: 1_700_000_100)
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: secondID,
+                title: "Second note",
+                updatedAt: 1_700_000_100
+            )
         )
 
         let summaries = try await repository.listNotes()
@@ -55,9 +66,9 @@ final class LocalNoteRepositoryTests: XCTestCase {
     func testDeleteNoteRemovesDirectory() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440003")!
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openDatabase(repository)
         try await repository.writeNote(
-            noteID: noteID,
-            data: try makeSampleNoteFile(noteID: noteID, title: "Delete me")
+            NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Delete me")
         )
 
         try await repository.deleteNote(noteID: noteID)
@@ -65,21 +76,22 @@ final class LocalNoteRepositoryTests: XCTestCase {
         do {
             _ = try await repository.readNote(noteID: noteID)
             XCTFail("Expected noteNotFound after delete")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .noteNotFound)
+        } catch NoteRepositoryError.noteNotFound {
+            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
     }
 
-    func testReadNoteWhenDirectoryMissingThrowsNoteNotFound() async {
+    func testReadNoteWhenDirectoryMissingThrowsNoteNotFound() async throws {
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openDatabase(repository)
 
         do {
             _ = try await repository.readNote(noteID: UUID())
             XCTFail("Expected noteNotFound")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .noteNotFound)
+        } catch NoteRepositoryError.noteNotFound {
+            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -90,107 +102,100 @@ final class LocalNoteRepositoryTests: XCTestCase {
         let noteDirectory = temporaryDirectory.appendingPathComponent(noteID.uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: noteDirectory, withIntermediateDirectories: true)
         let localBody = try assembleLocalNoteBody(
-            metadata: makeSampleMetadata(noteID: noteID, title: "Incomplete"),
+            metadata: NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Incomplete").metadata,
             encryptedPayload: Data(repeating: 0xCD, count: 32)
         )
         try localBody.write(to: noteDirectory.appendingPathComponent("note"))
 
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openDatabase(repository)
 
         do {
             _ = try await repository.readNote(noteID: noteID)
             XCTFail("Expected corruptNote")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .corruptNote)
+        } catch NoteRepositoryError.corruptNote {
+            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
     }
 
-    func testWriteNoteRejectsEmptyData() async {
+    func testWriteNoteRejectsEmptyPayload() async throws {
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-
-        do {
-            try await repository.writeNote(noteID: UUID(), data: Data())
-            XCTFail("Expected validationError")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .validationError("Note must not be empty."))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testWriteNoteRejectsNoteIDMismatch() async throws {
-        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440005")!
-        let otherID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440006")!
-        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        let blob = try makeSampleNoteFile(noteID: otherID, title: "Mismatch")
-
-        do {
-            try await repository.writeNote(noteID: noteID, data: blob)
-            XCTFail("Expected validationError")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .validationError("Note ID mismatch."))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-
-        XCTAssertFalse(
-            FileManager.default.fileExists(
-                atPath: temporaryDirectory.appendingPathComponent(noteID.uuidString).path
-            )
+        try await NoteTestSupport.openDatabase(repository)
+        let noteID = UUID()
+        let emptyNote = StoredNote(
+            metadata: NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Empty").metadata,
+            wrappedFEK: Data([0x01]),
+            encryptedPayload: Data(),
+            syncState: .pendingSync
         )
+
+        do {
+            try await repository.writeNote(emptyNote)
+            XCTFail("Expected validationError")
+        } catch NoteRepositoryError.validationError("Note must not be empty.") {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testCRUDBeforeOpenThrowsDatabaseNotOpen() async throws {
+        let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        let noteID = UUID()
+
+        do {
+            _ = try await repository.listNotes()
+            XCTFail("Expected databaseNotOpen")
+        } catch NoteRepositoryError.databaseNotOpen {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        do {
+            _ = try await repository.readNote(noteID: noteID)
+            XCTFail("Expected databaseNotOpen")
+        } catch NoteRepositoryError.databaseNotOpen {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     func testAtomicDirectoryReplaceOnUpdate() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440007")!
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
-        let firstBlob = try makeSampleNoteFile(noteID: noteID, title: "First version", updatedAt: 1)
-        let secondBlob = try makeSampleNoteFile(noteID: noteID, title: "Second version", updatedAt: 2)
+        let firstNote = NoteTestSupport.makeSampleStoredNote(
+            noteID: noteID,
+            title: "First version",
+            updatedAt: 1
+        )
+        let secondNote = NoteTestSupport.makeSampleStoredNote(
+            noteID: noteID,
+            title: "Second version",
+            updatedAt: 2
+        )
 
-        try await repository.writeNote(noteID: noteID, data: firstBlob)
-        try await repository.writeNote(noteID: noteID, data: secondBlob)
-        let readBlob = try await repository.readNote(noteID: noteID)
+        try await NoteTestSupport.openDatabase(repository)
+        try await repository.writeNote(firstNote)
+        try await repository.writeNote(secondNote)
+        let readNote = try await repository.readNote(noteID: noteID)
 
-        XCTAssertEqual(readBlob, secondBlob)
+        XCTAssertEqual(readNote.metadata.title, "Second version")
+        XCTAssertEqual(readNote.metadata.updatedAt, 2)
     }
 
     func testNotesRootExcludedFromBackup() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440008")!
         let repository = LocalNoteRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openDatabase(repository)
         try await repository.writeNote(
-            noteID: noteID,
-            data: try makeSampleNoteFile(noteID: noteID, title: "Backup exclusion")
+            NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Backup exclusion")
         )
 
         let values = try temporaryDirectory.resourceValues(forKeys: [.isExcludedFromBackupKey])
         XCTAssertEqual(values.isExcludedFromBackup, true)
-    }
-
-    private func makeSampleNoteFile(
-        noteID: UUID,
-        title: String,
-        updatedAt: UInt64 = 1_700_000_100
-    ) throws -> Data {
-        try assembleNoteFile(
-            metadata: makeSampleMetadata(noteID: noteID, title: title, updatedAt: updatedAt),
-            wrappedFEK: Data(repeating: 0xAB, count: 60),
-            encryptedPayload: Data(repeating: 0xCD, count: 128)
-        )
-    }
-
-    private func makeSampleMetadata(
-        noteID: UUID,
-        title: String,
-        updatedAt: UInt64 = 1_700_000_100
-    ) -> NoteMetadata {
-        NoteMetadata(
-            noteID: noteID,
-            title: title,
-            createdAt: 1_700_000_000,
-            updatedAt: updatedAt,
-            attachmentCount: 0,
-            attachmentsTotalSize: 0
-        )
     }
 }

@@ -8,6 +8,7 @@ public actor LocalNoteRepository: NoteRepository {
 
     private let notesRootURL: URL
     private let fileManager: FileManager
+    private var isDatabaseOpen = false
 
     public init(notesRootURL: URL? = nil, fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -24,7 +25,17 @@ public actor LocalNoteRepository: NoteRepository {
         }
     }
 
+    public func openDatabase(passphrase: Data) async throws {
+        _ = passphrase
+        isDatabaseOpen = true
+    }
+
+    public func closeDatabase() async {
+        isDatabaseOpen = false
+    }
+
     public func listNotes() async throws -> [NoteSummary] {
+        try requireOpen()
         try ensureNotesRootDirectory()
 
         let directoryURLs = try fileManager.contentsOfDirectory(
@@ -53,7 +64,9 @@ public actor LocalNoteRepository: NoteRepository {
         return summaries
     }
 
-    public func readNote(noteID: UUID) async throws -> Data {
+    public func readNote(noteID: UUID) async throws -> StoredNote {
+        try requireOpen()
+
         let noteDirectoryURL = noteDirectoryURL(for: noteID)
         guard fileManager.fileExists(atPath: noteDirectoryURL.path) else {
             throw NoteRepositoryError.noteNotFound
@@ -71,26 +84,25 @@ public actor LocalNoteRepository: NoteRepository {
         let noteBody = try Data(contentsOf: noteFileURL)
         let wrappedFEK = try Data(contentsOf: fekFileURL)
         let sections = try parseLocalNoteBody(noteBody)
-        return try assembleNoteFile(
+        return StoredNote(
             metadata: sections.metadata,
             wrappedFEK: wrappedFEK,
-            encryptedPayload: sections.encryptedPayload
+            encryptedPayload: sections.encryptedPayload,
+            syncState: .pendingSync
         )
     }
 
-    public func writeNote(noteID: UUID, data: Data) async throws {
-        guard !data.isEmpty else {
+    public func writeNote(_ note: StoredNote) async throws {
+        try requireOpen()
+
+        guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
         }
 
-        let wireSections = try parseNoteFile(data)
-        guard wireSections.metadata.noteID == noteID else {
-            throw NoteRepositoryError.validationError("Note ID mismatch.")
-        }
-
+        let noteID = note.metadata.noteID
         let localNoteBody = try assembleLocalNoteBody(
-            metadata: wireSections.metadata,
-            encryptedPayload: wireSections.encryptedPayload
+            metadata: note.metadata,
+            encryptedPayload: note.encryptedPayload
         )
 
         try ensureNotesRootDirectory()
@@ -110,7 +122,7 @@ public actor LocalNoteRepository: NoteRepository {
             to: tempDirectoryURL.appendingPathComponent(Self.noteFileName, isDirectory: false),
             options: .atomic
         )
-        try wireSections.wrappedFEK.write(
+        try note.wrappedFEK.write(
             to: tempDirectoryURL.appendingPathComponent(Self.fekFileName, isDirectory: false),
             options: .atomic
         )
@@ -123,11 +135,19 @@ public actor LocalNoteRepository: NoteRepository {
     }
 
     public func deleteNote(noteID: UUID) async throws {
+        try requireOpen()
+
         let noteDirectoryURL = noteDirectoryURL(for: noteID)
         guard fileManager.fileExists(atPath: noteDirectoryURL.path) else {
             throw NoteRepositoryError.noteNotFound
         }
         try fileManager.removeItem(at: noteDirectoryURL)
+    }
+
+    private func requireOpen() throws {
+        guard isDatabaseOpen else {
+            throw NoteRepositoryError.databaseNotOpen
+        }
     }
 
     private func noteDirectoryURL(for noteID: UUID) -> URL {

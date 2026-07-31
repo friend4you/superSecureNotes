@@ -1,8 +1,29 @@
+## ADDED Requirements
+
+### Requirement: NotesFlow does not manage storage lifecycle
+
+`NotesFlow` ViewModels and views SHALL NOT call `NotesIndexStore.open`, `NotesIndexStore.close`, or any storage lifecycle API. Notes screens SHALL assume the notes index store was opened by the auth/app layer before navigation to the notes flow.
+
+#### Scenario: Note list view model does not open index store
+
+- **WHEN** `DefaultNoteListViewModel.refresh()` is called
+- **THEN** only `noteRepository.listNotes()` is invoked; no index store lifecycle methods are called
+
+#### Scenario: Create note view model does not open index store
+
+- **WHEN** `DefaultCreateNoteViewModel.save()` is called
+- **THEN** only `noteRepository.writeNote(_:)` is invoked; no index store lifecycle methods are called
+
+#### Scenario: Detail note view model does not open index store
+
+- **WHEN** `DefaultNoteDetailViewModel.load()` is called
+- **THEN** only `noteRepository.readNote(noteID:)` is invoked; no index store lifecycle methods are called
+
 ## MODIFIED Requirements
 
 ### Requirement: NoteDetailViewModel load and save
 
-`NotesFlow` SHALL provide `NoteDetailViewModel` and `DefaultNoteDetailViewModel` that load a note by ID, decrypt content using `VaultSession.udk()` and `SecureCrypto` note APIs, expose editable title and body strings, attachment filename list, `hasChanges`, `canSave`, loading and error state, and save via `writeNote(_:)` with a `StoredNote`.
+`NotesFlow` SHALL provide `NoteDetailViewModel` and `DefaultNoteDetailViewModel` that load a note by ID, decrypt content using `VaultSession.udk()` and `SecureCrypto` note APIs, expose editable title and body strings, attachment filename list, `hasChanges`, `canSave`, loading and error state, and save via `writeNote(_:)` with a `StoredNote`. ViewModels SHALL depend on `NoteRepository` for CRUD only.
 
 #### Scenario: Load decrypts note content
 

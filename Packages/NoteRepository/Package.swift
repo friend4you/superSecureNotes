@@ -24,7 +24,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "NoteRepositoryProtocol"
+            name: "NoteRepositoryProtocol",
+            dependencies: [
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
+            ]
         ),
         .target(
             name: "NoteRepository",
@@ -36,7 +39,10 @@ let package = Package(
         ),
         .testTarget(
             name: "NoteRepositoryProtocolTests",
-            dependencies: ["NoteRepositoryProtocol"]
+            dependencies: [
+                "NoteRepositoryProtocol",
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
+            ]
         ),
         .testTarget(
             name: "NoteRepositoryTests",

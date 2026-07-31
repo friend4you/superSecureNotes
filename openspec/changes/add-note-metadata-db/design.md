@@ -9,65 +9,132 @@ Exploration decisions (confirmed):
 - Plaintext metadata columns inside encrypted DB (fast list when unlocked)
 - Structured `StoredNote` at repository boundary (Option B — no opaque wire blob)
 - `NoteSyncState`: `pendingSync` | `synced` (two-state flag for future backend)
-- DB opened explicitly after vault unlock; closed on lock and logout (Option A)
+- Notes index store opened by auth/app layer after vault unlock; closed on lock/logout — parallel to vault header unlock, not inside NotesFlow
 - Wire `.note` format kept in SecureCrypto for future network sync
 - Payload stored as file per note (not DB BLOB)
 - No migration — wipe existing local notes
 - No recovery/export story
 - Notes flow only reached after unlock; `listNotes()` not called while locked
+- NotesFlow MUST NOT open or close encrypted local stores
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- `NoteRepository` protocol uses `StoredNote` instead of opaque `Data`
-- `LocalNoteRepository` with GRDB + SQLCipher at `Application Support/superSecureNotes/notes.db`
+- `NotesIndexStore` actor owns SQLCipher DB lifecycle and note-index queries (vault-like local encrypted store)
+- `NoteRepository` protocol: CRUD only (`listNotes`, `readNote`, `writeNote`, `deleteNote`) — no `openDatabase`/`closeDatabase`
+- `LocalNoteRepository` uses injected `NotesIndexStore` + payload files
+- `deriveNotesDatabaseKey(from: SymmetricKey)` in SecureCrypto (HKDF from UDK)
 - Per-note `notes/{uuid}/payload` file (encrypted payload bytes only)
-- `openDatabase(passphrase:)` derives SQLCipher key via HKDF from UDK; `closeDatabase()` closes connection
-- `listNotes()` queries DB; `readNote` / `writeNote` use DB row + payload file
-- New/updated notes set `syncState = .pendingSync`
-- Auth view models call `openDatabase` after `vaultSession.establish`
-- `LockCoordinator` and `LogoutReset` call `closeDatabase` before `vaultSession.clear`
+- Auth view models open `NotesIndexStore` after `vaultSession.establish`
+- `LockCoordinator` and `LogoutReset` close `NotesIndexStore` before `vaultSession.clear`
+- NotesFlow ViewModels call `NoteRepository` CRUD only; never touch index store lifecycle
 - SecureCrypto payload-only file helpers; remove `LocalNoteBody`
-- Update ViewModels to structured save/load
-- `NetworkNoteRepository` maps `StoredNote` ↔ wire blob (no-op `openDatabase`/`closeDatabase`)
+- `NetworkNoteRepository` maps `StoredNote` ↔ wire blob; no local index store
 - Strict TDD
 
 **Non-Goals:**
 
+- SQLCipher/GRDB inside SecureCrypto package
+- Opening notes index from NotesFlow or note ViewModels
+- Auto-open index store inside `LocalNoteRepository` on first CRUD call
+- `VaultSession` protocol changes (no DB connection on `establish`/`clear`)
 - Backend sync implementation
 - Migration from `note` + `fek` layout
-- `NoteSummary` field expansion
-- Attachment externalization (attachments stay in encrypted payload)
 - Recovery/export if DB is lost
-- Per-note FEK-encrypted metadata columns
-- `VaultSession` protocol changes
-- Composite local + network repository
 
 ## Decisions
 
-### 1. Storage layout
+### 1. Layered architecture (vault analogy)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  AUTH / APP LAYER                                               │
+│  unlock → establish(session) → notesIndexStore.open(udk)        │
+│  lock/logout → notesIndexStore.close() → session.clear()          │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         ▼                   ▼                   ▼
+  VaultRepository      NotesIndexStore     VaultSession
+  (vault-header.bin)   (notes.db)          (UDK in memory)
+         │                   │
+         └──────── SecureCrypto: unlock, HKDF, encrypt ──────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  NOTES FLOW (feature)                                           │
+│  listNotes / readNote / writeNote — assumes store already open  │
+│  NEVER calls notesIndexStore.open/close                         │
+└────────────────────────────┬────────────────────────────────────┘
+                             ▼
+                      NoteRepository (CRUD)
+                             │
+              ┌──────────────┴──────────────┐
+              ▼                             ▼
+       NotesIndexStore                 payload files
+       (metadata + wrapped_fek)        (ciphertext only)
+```
+
+**Rationale:** Same unlock moment as vault; feature flows stay ignorant of storage lifecycle. Mirrors `VaultRepository` + `VaultSession` separation.
+
+**Alternatives considered:**
+- `openDatabase` on `NoteRepository` protocol — rejected; exposes lifecycle on CRUD API; tempts misuse from NotesFlow; awkward for `NetworkNoteRepository`
+- Auto-open inside `LocalNoteRepository` — rejected; hides unlock contract
+- DB inside `VaultSession` — rejected; couples session to GRDB; out of scope for VaultSession changes
+
+### 2. Storage layout
 
 ```
 Application Support/superSecureNotes/
   vault/vault-header.bin
-  notes.db                         ← SQLCipher, key = HKDF(UDK)
-  notes/{uuid}/payload             ← raw encrypted payload bytes
+  notes/notes.db                   ← SQLCipher, key = HKDF(UDK)
+  notes/{uuid}/payload           ← raw encrypted payload bytes
 ```
 
-**Rationale:** DB holds index + keys; files hold large ciphertext. Matches exploration.
+**Rationale:** `notes/` directory groups index DB and payload files. DB holds index + keys; files hold large ciphertext.
 
-**Alternatives considered:**
-- Payload in DB BLOB — rejected; bloats DB with attachment bytes
-- Keep `fek` file — rejected; user wants FEK in DB only
+### 3. SQLCipher key derivation (SecureCrypto)
 
-### 2. SQLCipher key derivation
+```swift
+func deriveNotesDatabaseKey(from udk: SymmetricKey) -> Data
+// HKDF-SHA256, info: "superSecureNotes.notes.db.v1"
+```
 
-Derive database passphrase from UDK bytes using HKDF-SHA256 with info string `"superSecureNotes.notes.db.v1"`. Do not use raw UDK as SQLCipher key directly.
+Lives in SecureCrypto. `NotesIndexStore.open(passphrase:)` receives derived key bytes. SecureCrypto does not open SQLite.
 
-**Rationale:** Key separation; UDK remains vault master key.
+**Rationale:** Crypto primitive in crypto module; storage in repository module.
 
-### 3. Database schema
+### 4. NotesIndexStore
+
+```swift
+protocol NotesIndexStoreProtocol: Sendable {
+    var isOpen: Bool { get }
+    func open(passphrase: Data) async throws
+    func close() async
+    // internal query methods used by LocalNoteRepository
+}
+```
+
+Public to app/auth layer for lifecycle. `LocalNoteRepository` depends on it for index CRUD. Throws `NotesIndexStoreError.notOpen` (or `NoteRepositoryError.databaseNotOpen` mapped at repository boundary) when used before open.
+
+**Rationale:** Vault-like encrypted persistence separate from note CRUD protocol.
+
+### 5. NoteRepository protocol (CRUD only)
+
+```swift
+protocol NoteRepository {
+    func listNotes() async throws -> [NoteSummary]
+    func readNote(noteID: UUID) async throws -> StoredNote
+    func writeNote(_ note: StoredNote) async throws
+    func deleteNote(noteID: UUID) async throws
+}
+```
+
+No lifecycle methods. `LocalNoteRepository` requires open `NotesIndexStore` (injected); propagates `databaseNotOpen` when store closed. `NetworkNoteRepository` has no index store.
+
+**Rationale:** NotesFlow depends only on CRUD; cannot accidentally open DB.
+
+### 6. Database schema
 
 ```sql
 CREATE TABLE notes (
@@ -82,136 +149,75 @@ CREATE TABLE notes (
 );
 ```
 
-**Rationale:** Plaintext columns inside encrypted DB; `sync_state` ready for future backend.
+### 7. Payload-only on-disk format
 
-### 4. Structured repository API
+`payload` file stores raw encrypted payload bytes with no SSNT header or metadata. SecureCrypto helpers for validate/read/write payload bytes.
 
-```swift
-enum NoteSyncState: String, Sendable { case pendingSync, synced }
+### 8. Retire LocalNoteBody
 
-struct StoredNote: Sendable {
-    let metadata: NoteMetadata
-    let wrappedFEK: Data
-    let encryptedPayload: Data
-    let syncState: NoteSyncState
-}
+Remove `assembleLocalNoteBody`, `parseLocalNoteBody`, `NoteMetadata.fromLocalNoteBody`. Keep wire format helpers.
 
-protocol NoteRepository {
-    func openDatabase(passphrase: Data) async throws
-    func closeDatabase() async
-    func listNotes() async throws -> [NoteSummary]
-    func readNote(noteID: UUID) async throws -> StoredNote
-    func writeNote(_ note: StoredNote) async throws
-    func deleteNote(noteID: UUID) async throws
-}
-```
-
-`writeNote` validates `note.metadata.noteID` is consistent. New writes and updates set `syncState = .pendingSync` unless caller specifies otherwise (ViewModels always pass `pendingSync`).
-
-**Rationale:** Option B from exploration; ViewModels own crypto; repository owns persistence.
-
-### 5. Payload-only on-disk format
-
-`payload` file stores raw encrypted payload bytes with no SSNT header or metadata. Optional: length validation via DB consistency check on read.
-
-SecureCrypto helpers:
-
-- `readNotePayloadFile(_ data: Data) -> Data` — validate non-empty, return bytes
-- `writeNotePayloadFile(_ encryptedPayload: Data) -> Data` — identity or minimal magic wrapper TBD in implementation
-
-**Rationale:** Note file is ciphertext only; metadata lives in DB.
-
-**Alternatives considered:**
-- Magic byte wrapper — may add in implementation for corruption detection; not required in v1
-
-### 6. Retire LocalNoteBody
-
-Remove `assembleLocalNoteBody`, `parseLocalNoteBody`, and `NoteMetadata.fromLocalNoteBody`. Keep `assembleNoteFile` / `parseNoteFile` for wire format and `NetworkNoteRepository`.
-
-**Rationale:** Local metadata-in-file format superseded by DB.
-
-### 7. Save ordering and atomicity
+### 9. Save ordering and atomicity
 
 On `writeNote`:
 
-1. Write `notes/{uuid}/payload` to `notes/{uuid}.tmp/payload`
-2. Upsert DB row with `sync_state = pendingSync`
+1. Write `notes/{uuid}/payload` to temp directory
+2. Upsert index row via `NotesIndexStore`
 3. Atomically replace `notes/{uuid}/` directory via rename
 
-On failure after payload write but before DB commit: orphan payload file acceptable (wipe in dev; future cleanup).
+### 10. Unlock lifecycle (auth/app layer only)
 
-**Rationale:** Payload-first ensures ciphertext exists before index references it; sync flag supports future backend partial-state handling.
-
-### 8. DB lifecycle (Option A)
-
-**Open** — after successful vault unlock in `DefaultUnlockViewModel`, `DefaultLoginViewModel`, `DefaultRegisterViewModel`:
+**Open** — in `DefaultUnlockViewModel`, `DefaultLoginViewModel`, `DefaultRegisterViewModel` after `vaultSession.establish`:
 
 ```swift
 await vaultSession.establish(keys)
-let udk = keys.udk
-let dbKey = deriveNotesDatabaseKey(from: udk)
-try await noteRepository.openDatabase(passphrase: dbKey)
+let dbKey = deriveNotesDatabaseKey(from: keys.udk)
+try await notesIndexStore.open(passphrase: dbKey)
+// then navigate to notes
 ```
 
-**Close** — before `vaultSession.clear()` in `LockCoordinator.lock()` and `LogoutReset.perform()`.
+**Close** — in `LockCoordinator.lock()` and `LogoutReset.perform()` before `vaultSession.clear()`:
 
-**Rationale:** Explicit; auth flow controls when notes are accessible. Notes flow never reached while locked.
+```swift
+await notesIndexStore.close()
+await vaultSession.clear()
+```
 
-### 9. NetworkNoteRepository adaptation
+**NotesFlow:** never calls `notesIndexStore.open` or `close`. Navigation to notes only occurs after auth unlock completes both `establish` and `open`.
 
-- `openDatabase` / `closeDatabase` — no-op
-- `writeNote` — assemble wire blob from `StoredNote`, PUT as today
-- `readNote` — GET wire blob, parse into `StoredNote` with `syncState = .synced`
-- `listNotes` — unchanged (server JSON index)
+### 11. NetworkNoteRepository
 
-**Rationale:** Protocol conformance without network DB; wire format preserved for API.
+Maps `StoredNote` ↔ wire blob. No `NotesIndexStore`. Unchanged list endpoint.
 
-### 10. Errors
+### 12. Errors
 
-Add `NoteRepositoryError.databaseNotOpen` when DB methods called before `openDatabase`.
+`NoteRepositoryError.databaseNotOpen` when `LocalNoteRepository` CRUD called while `NotesIndexStore` is closed.
 
-Update `corruptNote`: DB row exists but `payload` file missing, or `payload` exists but no DB row, or `wrapped_fek` empty.
+### 13. Interim step-1 refactor
 
-**Rationale:** Clear failure modes for split storage.
+Step 1 introduced `openDatabase`/`closeDatabase` on `NoteRepository` as interim wiring. Implementation SHALL be refactored to `NotesIndexStore` lifecycle before task 8 (auth wiring). Remove lifecycle from `NoteRepository` protocol.
 
-### 11. No migration
+### 14. GRDB + SQLCipher
 
-Delete app data or reinstall. Old `note` + `fek` directories are not read.
-
-**Rationale:** User confirmed wipe.
-
-### 12. GRDB + SQLCipher
-
-Add dependencies to `NoteRepository` `Package.swift`:
-
-- `grdb.swift` with SQLCipher variant (or `GRDB` + `SQLCipher` product)
-
-Use `DatabaseQueue` with `PRAGMA key` at open.
-
-**Rationale:** Standard iOS encrypted SQLite stack.
+Dependency on `NoteRepository` package only (`NotesIndexStore` implementation).
 
 ## Risks / Trade-offs
 
-- **[DB is source of truth for metadata]** → Losing `notes.db` loses titles/dates; acceptable per decision; no recovery
-- **[Orphan payload files after failed write]** → Acceptable in v1; optional cleanup later
-- **[GRDB + SQLCipher dependency]** → Adds build complexity; standard trade-off for encrypted SQLite
-- **[Protocol breaking change]** → Touches ViewModels, both repository implementations, all tests; necessary for clean API
-- **[HKDF key derivation]** → Must be stable across app versions; version suffix in info string allows future rotation
-- **[NetworkNoteRepository unused locally]** → Still must compile and conform
+- **[DB is source of truth for metadata]** → No recovery; acceptable per decision
+- **[Two types to wire in AppComposition]** → `notesIndexStore` for auth/lock; `noteRepository` for NotesFlow — clearer boundaries than lifecycle on repository protocol
+- **[Interim protocol has lifecycle]** → Refactor task 1.3 before auth wiring
+- **[NotesFlow assumes store open]** → Defensive `databaseNotOpen` if auth wiring bug; should not happen in normal navigation
 
 ## Migration Plan
 
-1. Add GRDB + SQLCipher to `NoteRepository` package
-2. Add `StoredNote`, `NoteSyncState`, protocol changes, HKDF helper
-3. Implement `NoteDatabase` + rewritten `LocalNoteRepository`
-4. Add SecureCrypto payload helpers; remove `LocalNoteBody`
-5. Update ViewModels and auth/lock wiring
-6. Update `NetworkNoteRepository`
-7. Remove old tests referencing `note` + `fek` layout
-8. Manual verification: unlock → create note → list → lock → unlock → note persists; verify `notes.db` encrypted and no plaintext titles in payload files
-
-No rollback — wipe and reinstall.
+1. Refactor step-1 interim: `NotesIndexStore` + remove lifecycle from `NoteRepository` protocol
+2. Add GRDB + SQLCipher; implement `NotesIndexStore`
+3. Add SecureCrypto `deriveNotesDatabaseKey` + payload helpers; remove `LocalNoteBody`
+4. Rewrite `LocalNoteRepository` with index store + payload files
+5. Update ViewModels (CRUD only)
+6. Wire auth/lock/logout to `NotesIndexStore`
+7. Manual verification
 
 ## Open Questions
 
-None — all decisions confirmed during exploration.
+None.

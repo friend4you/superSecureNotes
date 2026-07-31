@@ -1,5 +1,19 @@
 ## ADDED Requirements
 
+### Requirement: deriveNotesDatabaseKey helper
+
+The `SecureCrypto` module SHALL provide `deriveNotesDatabaseKey(from udk: SymmetricKey) -> Data` that derives a 32-byte database passphrase using HKDF-SHA256 with info string `"superSecureNotes.notes.db.v1"`. The function SHALL be deterministic for the same UDK input and SHALL NOT return raw UDK bytes.
+
+#### Scenario: Derivation is deterministic
+
+- **WHEN** `deriveNotesDatabaseKey` is called twice with the same UDK
+- **THEN** both results are equal
+
+#### Scenario: Derived key differs from raw UDK bytes
+
+- **WHEN** `deriveNotesDatabaseKey` is called with a UDK
+- **THEN** the result is not equal to the raw UDK byte representation
+
 ### Requirement: Note payload file format
 
 The module SHALL define an on-disk note payload file format consisting of raw encrypted payload bytes only. The format SHALL NOT include magic bytes, version byte, metadata fields, or a wrapped FEK section.
@@ -18,7 +32,7 @@ The module SHALL define an on-disk note payload file format consisting of raw en
 
 ### Requirement: Local note body binary format
 
-**Reason**: Metadata and wrapped FEK moved to SQLCipher database; note files store encrypted payload only.
+**Reason**: Metadata and wrapped FEK moved to `NotesIndexStore`; note files store encrypted payload only.
 
 **Migration**: Remove `assembleLocalNoteBody`, `parseLocalNoteBody`, `LocalNoteBodySections`, and `NoteMetadata.fromLocalNoteBody`. Wipe existing local notes using the old layout.
 
@@ -29,7 +43,7 @@ The module SHALL define an on-disk note payload file format consisting of raw en
 
 ### Requirement: Parse metadata from local note body without decryption
 
-**Reason**: Metadata is no longer stored in note files; listing reads from encrypted database.
+**Reason**: Metadata is no longer stored in note files; listing reads from encrypted index store.
 
 **Migration**: Use `NoteRepository.listNotes()` or read metadata from `StoredNote` returned by `readNote`.
 
@@ -37,7 +51,7 @@ The module SHALL define an on-disk note payload file format consisting of raw en
 
 ### Requirement: Note file binary format
 
-The module SHALL define a versioned binary `.note` wire format with magic bytes `SSNT`, version byte, a length-prefixed plaintext metadata section, a wrapped FEK blob, and an encrypted payload blob. This wire format is retained for future backend sync and `NetworkNoteRepository` mapping. Local on-disk storage SHALL NOT use this format; local payload files contain encrypted payload bytes only and metadata lives in the encrypted database.
+The module SHALL define a versioned binary `.note` wire format with magic bytes `SSNT`, version byte, a length-prefixed plaintext metadata section, a wrapped FEK blob, and an encrypted payload blob. This wire format is retained for future backend sync and `NetworkNoteRepository` mapping. Local on-disk storage SHALL NOT use this format; local payload files contain encrypted payload bytes only and metadata lives in the encrypted index store.
 
 #### Scenario: Parse note file structure
 
