@@ -3,20 +3,13 @@ import NoteRepositoryProtocol
 import SwiftUI
 import VaultSessionProtocol
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 @MainActor
 final class LockCoordinator {
     private let vaultSession: any VaultSessionProtocol
     private let authRepository: any AuthRepository
     private let notesIndexStore: any NotesIndexStoreProtocol
     private let onLock: () -> Void
-
-    #if canImport(UIKit)
-    private var protectedDataObserver: NSObjectProtocol?
-    #endif
+    private var protectedDataObservation: Task<Void, Never>?
 
     init(
         vaultSession: any VaultSessionProtocol,
@@ -29,25 +22,17 @@ final class LockCoordinator {
         self.notesIndexStore = notesIndexStore
         self.onLock = onLock
 
-        #if canImport(UIKit)
-        protectedDataObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.protectedDataWillBecomeUnavailableNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
+        protectedDataObservation = Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(
+                named: .protectedDataWillBecomeUnavailable
+            ) {
                 self?.lock()
             }
         }
-        #endif
     }
 
     deinit {
-        #if canImport(UIKit)
-        if let protectedDataObserver {
-            NotificationCenter.default.removeObserver(protectedDataObserver)
-        }
-        #endif
+        protectedDataObservation?.cancel()
     }
 
     func handleScenePhase(_ phase: ScenePhase) {
@@ -64,4 +49,10 @@ final class LockCoordinator {
             onLock()
         }
     }
+}
+
+private extension Notification.Name {
+    static let protectedDataWillBecomeUnavailable = Notification.Name(
+        "UIApplicationProtectedDataWillBecomeUnavailableNotification"
+    )
 }

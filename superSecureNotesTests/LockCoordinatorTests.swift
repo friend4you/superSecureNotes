@@ -11,10 +11,6 @@ import VaultSession
 import VaultSessionProtocol
 import XCTest
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 @testable import superSecureNotes
 
 @MainActor
@@ -78,14 +74,13 @@ final class LockCoordinatorTests: XCTestCase {
         XCTAssertNil(currentSession)
     }
 
-    #if canImport(UIKit)
     func testLockOnDeviceLockScreen() async throws {
         let (coordinator, waiter, vaultSession, authRepository) = makeLockCoordinator()
         try await establishActiveSession(vaultSession: vaultSession, authRepository: authRepository)
 
         await triggerLockAndWait(coordinator: coordinator, waiter: waiter) {
             NotificationCenter.default.post(
-                name: UIApplication.protectedDataWillBecomeUnavailableNotification,
+                name: Notification.Name("UIApplicationProtectedDataWillBecomeUnavailableNotification"),
                 object: nil
             )
         }
@@ -95,7 +90,6 @@ final class LockCoordinatorTests: XCTestCase {
         XCTAssertFalse(isActive)
         XCTAssertNil(currentSession)
     }
-    #endif
 
     func testLockedOnForegroundReturn() async throws {
         let navigator = MockNavigating()
