@@ -62,7 +62,7 @@ final class AppCompositionTests: XCTestCase {
     func testAppCompositionPassesNoteRepositoryToNotesDependencies() async {
         let composition = AppComposition()
 
-        guard let infrastructureRepository = composition.infrastructure.noteRepository as? LocalNoteRepository,
+        guard let infrastructureRepository = composition.appDependencies.noteRepository as? LocalNoteRepository,
               let notesRepository = composition.notesDependencies.noteRepository as? LocalNoteRepository
         else {
             XCTFail("Expected LocalNoteRepository instances")
@@ -159,7 +159,7 @@ final class AppCompositionTests: XCTestCase {
         composition.syncRootRoute(hasLocalSetup: true, isVaultActive: false)
         XCTAssertEqual(router.rootRoute?.route.base as? AuthRoute, .unlock)
 
-        await composition.infrastructure.vaultSession.establish(keys)
+        await composition.appDependencies.vaultSession.establish(keys)
         composition.syncRootRoute(hasLocalSetup: true, isVaultActive: true)
         XCTAssertEqual(router.rootRoute?.route.base as? NotesRoute, .list)
     }

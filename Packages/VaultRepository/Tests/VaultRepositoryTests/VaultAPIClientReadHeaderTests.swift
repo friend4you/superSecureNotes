@@ -17,8 +17,8 @@ final class VaultAPIClientReadHeaderTests: XCTestCase {
             return (response, VaultFixtures.headerBytes)
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
-        let header = try await client.readHeader(accessToken: VaultFixtures.accessToken)
+        let client = VaultTestSupport.makeAPIClient()
+        let header = try await client.readHeader()
 
         XCTAssertEqual(captured.method, "GET")
         XCTAssertEqual(captured.path, "/v1/vault/header")
@@ -32,10 +32,10 @@ final class VaultAPIClientReadHeaderTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "header_not_found", message: "No vault."))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
+        let client = VaultTestSupport.makeAPIClient()
 
         do {
-            _ = try await client.readHeader(accessToken: VaultFixtures.accessToken)
+            _ = try await client.readHeader()
             XCTFail("Expected headerNotFound")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .headerNotFound)
@@ -50,13 +50,28 @@ final class VaultAPIClientReadHeaderTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "unauthorized", message: "Invalid token."))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
+        let client = VaultTestSupport.makeAPIClient()
 
         do {
-            _ = try await client.readHeader(accessToken: VaultFixtures.accessToken)
+            _ = try await client.readHeader()
             XCTFail("Expected notAuthenticated")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .notAuthenticated)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testReadHeaderPropagatesTokenProviderFailure() async {
+        let client = VaultTestSupport.makeAPIClient(
+            tokenProvider: MockTokenProvider(error: MockTokenProvider.Failure.missingToken)
+        )
+
+        do {
+            _ = try await client.readHeader()
+            XCTFail("Expected token provider error")
+        } catch is MockTokenProvider.Failure {
+            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

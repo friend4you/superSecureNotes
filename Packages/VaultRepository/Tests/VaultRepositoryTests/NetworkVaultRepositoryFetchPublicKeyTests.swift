@@ -16,11 +16,7 @@ final class NetworkVaultRepositoryFetchPublicKeyTests: XCTestCase {
             return (response, VaultFixtures.publicKeyJSON(publicKey: expectedKey))
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         let publicKey = try await repository.fetchPublicKey(userID: VaultFixtures.userID)
         XCTAssertEqual(publicKey, expectedKey)
@@ -33,11 +29,7 @@ final class NetworkVaultRepositoryFetchPublicKeyTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "public_key_not_found", message: "No key."))
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             _ = try await repository.fetchPublicKey(userID: VaultFixtures.userID)
@@ -50,34 +42,13 @@ final class NetworkVaultRepositoryFetchPublicKeyTests: XCTestCase {
     }
 
     func testFetchPublicKeyRejectsEmptyUserIDLocally() async {
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             _ = try await repository.fetchPublicKey(userID: "")
             XCTFail("Expected validationError")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .validationError("User ID must not be empty."))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testFetchPublicKeyPropagatesTokenProviderFailure() async {
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(error: MockTokenProvider.Failure.missingToken),
-            session: .stubbed()
-        )
-
-        do {
-            _ = try await repository.fetchPublicKey(userID: VaultFixtures.userID)
-            XCTFail("Expected token provider error")
-        } catch is MockTokenProvider.Failure {
-            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

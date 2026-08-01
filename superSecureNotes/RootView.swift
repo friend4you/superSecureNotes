@@ -11,12 +11,12 @@ struct RootView: View {
         NavigationHost(model: composition.navigation.hostModel)
             .task {
                 composition.syncRootRoute(
-                    hasLocalSetup: composition.infrastructure.credentialStore.hasLocalSetup,
-                    isVaultActive: await composition.infrastructure.vaultSession.isActive
+                    hasLocalSetup: composition.appDependencies.credentialStore.hasLocalSetup,
+                    isVaultActive: await composition.appDependencies.vaultSession.isActive
                 )
-                for await isVaultActive in composition.infrastructure.vaultSession.changes {
+                for await isVaultActive in composition.appDependencies.vaultSession.changes {
                     composition.syncRootRoute(
-                        hasLocalSetup: composition.infrastructure.credentialStore.hasLocalSetup,
+                        hasLocalSetup: composition.appDependencies.credentialStore.hasLocalSetup,
                         isVaultActive: isVaultActive
                     )
                 }

@@ -17,8 +17,8 @@ final class VaultAPIClientWriteHeaderTests: XCTestCase {
             return (response, nil)
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
-        try await client.writeHeader(VaultFixtures.headerBytes, accessToken: VaultFixtures.accessToken)
+        let client = VaultTestSupport.makeAPIClient()
+        try await client.writeHeader(VaultFixtures.headerBytes)
 
         XCTAssertEqual(captured.method, "PUT")
         XCTAssertEqual(captured.path, "/v1/vault/header")
@@ -33,10 +33,10 @@ final class VaultAPIClientWriteHeaderTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "validation_error", message: "Invalid header."))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
+        let client = VaultTestSupport.makeAPIClient()
 
         do {
-            try await client.writeHeader(VaultFixtures.headerBytes, accessToken: VaultFixtures.accessToken)
+            try await client.writeHeader(VaultFixtures.headerBytes)
             XCTFail("Expected validationError")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .validationError("Invalid header."))
@@ -51,13 +51,28 @@ final class VaultAPIClientWriteHeaderTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "unauthorized", message: "Invalid token."))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
+        let client = VaultTestSupport.makeAPIClient()
 
         do {
-            try await client.writeHeader(VaultFixtures.headerBytes, accessToken: VaultFixtures.accessToken)
+            try await client.writeHeader(VaultFixtures.headerBytes)
             XCTFail("Expected notAuthenticated")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .notAuthenticated)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testWriteHeaderPropagatesTokenProviderFailure() async {
+        let client = VaultTestSupport.makeAPIClient(
+            tokenProvider: MockTokenProvider(error: MockTokenProvider.Failure.missingToken)
+        )
+
+        do {
+            try await client.writeHeader(VaultFixtures.headerBytes)
+            XCTFail("Expected token provider error")
+        } catch is MockTokenProvider.Failure {
+            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

@@ -15,21 +15,13 @@ final class NetworkVaultRepositoryWriteHeaderTests: XCTestCase {
             return (response, nil)
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         try await repository.writeHeader(VaultFixtures.headerBytes)
     }
 
     func testWriteHeaderRejectsEmptyDataLocally() async {
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             try await repository.writeHeader(Data())
@@ -47,34 +39,13 @@ final class NetworkVaultRepositoryWriteHeaderTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "validation_error", message: "Invalid header."))
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             try await repository.writeHeader(VaultFixtures.headerBytes)
             XCTFail("Expected validationError")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .validationError("Invalid header."))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testWriteHeaderPropagatesTokenProviderFailure() async {
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(error: MockTokenProvider.Failure.missingToken),
-            session: .stubbed()
-        )
-
-        do {
-            try await repository.writeHeader(VaultFixtures.headerBytes)
-            XCTFail("Expected token provider error")
-        } catch is MockTokenProvider.Failure {
-            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

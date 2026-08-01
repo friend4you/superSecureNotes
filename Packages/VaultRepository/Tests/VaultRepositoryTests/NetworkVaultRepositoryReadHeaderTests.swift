@@ -15,11 +15,7 @@ final class NetworkVaultRepositoryReadHeaderTests: XCTestCase {
             return (response, VaultFixtures.headerBytes)
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         let header = try await repository.readHeader()
         XCTAssertEqual(header, VaultFixtures.headerBytes)
@@ -31,34 +27,13 @@ final class NetworkVaultRepositoryReadHeaderTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "header_not_found", message: "No vault."))
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             _ = try await repository.readHeader()
             XCTFail("Expected headerNotFound")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .headerNotFound)
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testReadHeaderPropagatesTokenProviderFailure() async {
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(error: MockTokenProvider.Failure.missingToken),
-            session: .stubbed()
-        )
-
-        do {
-            _ = try await repository.readHeader()
-            XCTFail("Expected token provider error")
-        } catch is MockTokenProvider.Failure {
-            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

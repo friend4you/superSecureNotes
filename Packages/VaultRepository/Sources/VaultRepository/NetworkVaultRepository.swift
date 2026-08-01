@@ -3,25 +3,13 @@ import VaultRepositoryProtocol
 
 public actor NetworkVaultRepository: VaultRepository {
     private let apiClient: VaultAPIClient
-    private let tokenProvider: any AccessTokenProviding
 
-    public init(
-        baseURL: URL,
-        tokenProvider: any AccessTokenProviding,
-        session: URLSession = .shared
-    ) {
-        self.apiClient = VaultAPIClient(baseURL: baseURL, session: session)
-        self.tokenProvider = tokenProvider
-    }
-
-    init(apiClient: VaultAPIClient, tokenProvider: any AccessTokenProviding) {
+    public init(apiClient: VaultAPIClient) {
         self.apiClient = apiClient
-        self.tokenProvider = tokenProvider
     }
 
     public func readHeader() async throws -> Data {
-        let accessToken = try await tokenProvider.accessToken()
-        return try await apiClient.readHeader(accessToken: accessToken)
+        try await apiClient.readHeader()
     }
 
     public func writeHeader(_ header: Data) async throws {
@@ -29,8 +17,7 @@ public actor NetworkVaultRepository: VaultRepository {
             throw VaultRepositoryError.validationError("Vault header must not be empty.")
         }
 
-        let accessToken = try await tokenProvider.accessToken()
-        try await apiClient.writeHeader(header, accessToken: accessToken)
+        try await apiClient.writeHeader(header)
     }
 
     public func fetchPublicKey(userID: String) async throws -> Data {
@@ -38,7 +25,6 @@ public actor NetworkVaultRepository: VaultRepository {
             throw VaultRepositoryError.validationError("User ID must not be empty.")
         }
 
-        let accessToken = try await tokenProvider.accessToken()
-        return try await apiClient.fetchPublicKey(userID: userID, accessToken: accessToken)
+        return try await apiClient.fetchPublicKey(userID: userID)
     }
 }

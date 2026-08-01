@@ -13,7 +13,7 @@ import SwiftUI
 @Observable
 @MainActor
 final class AppComposition {
-    let infrastructure: AppDependencies
+    let appDependencies: AppDependencies
     let authDependencies: AuthFlowDependencies
     let notesDependencies: NotesFlowDependencies
     let shareNoteDependencies: ShareNoteDependencies
@@ -24,32 +24,32 @@ final class AppComposition {
     private var lastSyncedVaultActive: Bool?
 
     init() {
-        let infrastructure = AppDependencies()
-        self.infrastructure = infrastructure
+        let dependencies = AppDependencies()
+        self.appDependencies = dependencies
         navigation = NavigationCoordinator()
         authDependencies = AuthFlowDependencies(
-            authRepository: infrastructure.authRepository,
-            vaultRepository: infrastructure.vaultRepository,
-            vaultAuthenticator: infrastructure.vaultAuthenticator,
-            vaultSession: infrastructure.vaultSession,
-            notesIndexStore: infrastructure.notesIndexStore,
+            authRepository: dependencies.authRepository,
+            vaultRepository: dependencies.vaultRepository,
+            vaultAuthenticator: dependencies.vaultAuthenticator,
+            vaultSession: dependencies.vaultSession,
+            notesIndexStore: dependencies.notesIndexStore,
             navigator: navigation.navigator,
-            credentialStore: infrastructure.credentialStore,
-            biometricAuthenticator: infrastructure.biometricAuthenticator,
-            networkReachability: infrastructure.networkReachability
+            credentialStore: dependencies.credentialStore,
+            biometricAuthenticator: dependencies.biometricAuthenticator,
+            networkReachability: dependencies.networkReachability
         )
         notesDependencies = NotesFlowDependencies(
-            authRepository: infrastructure.authRepository,
-            vaultSession: infrastructure.vaultSession,
+            authRepository: dependencies.authRepository,
+            vaultSession: dependencies.vaultSession,
             navigator: navigation.navigator,
-            noteRepository: infrastructure.noteRepository,
-            credentialStore: infrastructure.credentialStore,
+            noteRepository: dependencies.noteRepository,
+            credentialStore: dependencies.credentialStore,
             performLogout: {
                 await LogoutReset.perform(
-                    authRepository: infrastructure.authRepository,
-                    vaultSession: infrastructure.vaultSession,
-                    notesIndexStore: infrastructure.notesIndexStore,
-                    credentialStore: infrastructure.credentialStore
+                    authRepository: dependencies.authRepository,
+                    vaultSession: dependencies.vaultSession,
+                    notesIndexStore: dependencies.notesIndexStore,
+                    credentialStore: dependencies.credentialStore
                 )
             }
         )
@@ -57,11 +57,11 @@ final class AppComposition {
             navigator: navigation.navigator
         )
         let navigator = navigation.navigator
-        let credentialStore = infrastructure.credentialStore
+        let credentialStore = dependencies.credentialStore
         lockCoordinator = LockCoordinator(
-            vaultSession: infrastructure.vaultSession,
-            authRepository: infrastructure.authRepository,
-            notesIndexStore: infrastructure.notesIndexStore
+            vaultSession: dependencies.vaultSession,
+            authRepository: dependencies.authRepository,
+            notesIndexStore: dependencies.notesIndexStore
         ) {
             SessionRootNavigation.apply(
                 hasLocalSetup: credentialStore.hasLocalSetup,

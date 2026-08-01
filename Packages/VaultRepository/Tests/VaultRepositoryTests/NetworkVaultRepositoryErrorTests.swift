@@ -14,11 +14,7 @@ final class NetworkVaultRepositoryErrorTests: XCTestCase {
             throw URLError(.notConnectedToInternet)
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             _ = try await repository.readHeader()
@@ -36,11 +32,7 @@ final class NetworkVaultRepositoryErrorTests: XCTestCase {
             return (response, Data())
         }
 
-        let repository = NetworkVaultRepository(
-            baseURL: VaultFixtures.baseURL,
-            tokenProvider: MockTokenProvider(),
-            session: .stubbed()
-        )
+        let repository = VaultTestSupport.makeRepository()
 
         do {
             _ = try await repository.readHeader()

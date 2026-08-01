@@ -1,42 +1,45 @@
 import Foundation
 import VaultRepositoryProtocol
 
-struct VaultAPIClient {
+public struct VaultAPIClient {
     private let baseURL: URL
     private let session: URLSession
+    private let tokenProvider: any AccessTokenProviding
     private let decoder: JSONDecoder
 
-    init(baseURL: URL, session: URLSession) {
+    public init(
+        baseURL: URL,
+        tokenProvider: any AccessTokenProviding,
+        session: URLSession = .shared
+    ) {
         self.baseURL = baseURL
         self.session = session
+        self.tokenProvider = tokenProvider
         self.decoder = VaultJSON.makeDecoder()
     }
 
-    func readHeader(accessToken: String) async throws -> Data {
-        let request = try makeAuthorizedRequest(
+    func readHeader() async throws -> Data {
+        let request = try await makeAuthorizedRequest(
             path: "vault/header",
-            method: "GET",
-            accessToken: accessToken
+            method: "GET"
         )
         return try await perform(request, expectedSuccessCodes: [200])
     }
 
-    func writeHeader(_ header: Data, accessToken: String) async throws {
-        var request = try makeAuthorizedRequest(
+    func writeHeader(_ header: Data) async throws {
+        var request = try await makeAuthorizedRequest(
             path: "vault/header",
-            method: "PUT",
-            accessToken: accessToken
+            method: "PUT"
         )
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
         request.httpBody = header
         _ = try await perform(request, expectedSuccessCodes: [204])
     }
 
-    func fetchPublicKey(userID: String, accessToken: String) async throws -> Data {
-        let request = try makeAuthorizedRequest(
+    func fetchPublicKey(userID: String) async throws -> Data {
+        let request = try await makeAuthorizedRequest(
             path: "users/\(userID)/public-key",
-            method: "GET",
-            accessToken: accessToken
+            method: "GET"
         )
         let data = try await perform(request, expectedSuccessCodes: [200])
         let response = try decoder.decode(PublicKeyResponseDTO.self, from: data)
@@ -48,9 +51,9 @@ struct VaultAPIClient {
 
     private func makeAuthorizedRequest(
         path: String,
-        method: String,
-        accessToken: String
-    ) throws -> URLRequest {
+        method: String
+    ) async throws -> URLRequest {
+        let accessToken = try await tokenProvider.accessToken()
         let url = baseURL.appending(path: path)
         var request = URLRequest(url: url)
         request.httpMethod = method

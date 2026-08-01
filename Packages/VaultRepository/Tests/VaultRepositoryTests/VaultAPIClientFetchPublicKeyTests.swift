@@ -18,11 +18,8 @@ final class VaultAPIClientFetchPublicKeyTests: XCTestCase {
             return (response, VaultFixtures.publicKeyJSON(publicKey: expectedKey))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
-        let publicKey = try await client.fetchPublicKey(
-            userID: VaultFixtures.userID,
-            accessToken: VaultFixtures.accessToken
-        )
+        let client = VaultTestSupport.makeAPIClient()
+        let publicKey = try await client.fetchPublicKey(userID: VaultFixtures.userID)
 
         XCTAssertEqual(captured.method, "GET")
         XCTAssertEqual(captured.path, "/v1/users/\(VaultFixtures.userID)/public-key")
@@ -37,13 +34,10 @@ final class VaultAPIClientFetchPublicKeyTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "public_key_not_found", message: "No key."))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
+        let client = VaultTestSupport.makeAPIClient()
 
         do {
-            _ = try await client.fetchPublicKey(
-                userID: VaultFixtures.userID,
-                accessToken: VaultFixtures.accessToken
-            )
+            _ = try await client.fetchPublicKey(userID: VaultFixtures.userID)
             XCTFail("Expected publicKeyNotFound")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .publicKeyNotFound)
@@ -58,16 +52,28 @@ final class VaultAPIClientFetchPublicKeyTests: XCTestCase {
             return (response, VaultFixtures.errorJSON(error: "unauthorized", message: "Invalid token."))
         }
 
-        let client = VaultAPIClient(baseURL: VaultFixtures.baseURL, session: .stubbed())
+        let client = VaultTestSupport.makeAPIClient()
 
         do {
-            _ = try await client.fetchPublicKey(
-                userID: VaultFixtures.userID,
-                accessToken: VaultFixtures.accessToken
-            )
+            _ = try await client.fetchPublicKey(userID: VaultFixtures.userID)
             XCTFail("Expected notAuthenticated")
         } catch let error as VaultRepositoryError {
             XCTAssertEqual(error, .notAuthenticated)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testFetchPublicKeyPropagatesTokenProviderFailure() async {
+        let client = VaultTestSupport.makeAPIClient(
+            tokenProvider: MockTokenProvider(error: MockTokenProvider.Failure.missingToken)
+        )
+
+        do {
+            _ = try await client.fetchPublicKey(userID: VaultFixtures.userID)
+            XCTFail("Expected token provider error")
+        } catch is MockTokenProvider.Failure {
+            // expected
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
