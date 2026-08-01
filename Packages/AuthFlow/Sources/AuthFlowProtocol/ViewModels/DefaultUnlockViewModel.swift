@@ -105,10 +105,20 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
                 credentialStore: credentialStore,
                 authRepository: authRepository
             )
+        } catch let error as AuthRepositoryError where error == .networkError {
+            return
         } catch {
+            try await retryLoginAfterRestoreFailure(using: unlockPassword)
+        }
+    }
+
+    private func retryLoginAfterRestoreFailure(using unlockPassword: String) async throws {
+        do {
             _ = try await authRepository.login(
                 LoginCredentials(email: email, password: unlockPassword)
             )
+        } catch let error as AuthRepositoryError where error == .networkError {
+            return
         }
     }
 

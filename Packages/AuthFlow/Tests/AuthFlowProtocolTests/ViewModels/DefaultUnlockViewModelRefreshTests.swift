@@ -68,6 +68,62 @@ final class DefaultUnlockViewModelRefreshTests: XCTestCase {
         XCTAssertEqual(loginCallCount, 1)
     }
 
+    func testNetworkErrorDuringRefreshStillUnlocksVault() async throws {
+        let credentialStore = try makeConfiguredCredentialStore()
+        let authRepository = MockAuthRepository()
+        await authRepository.setRestoreError(.networkError)
+        await authRepository.setLoginError(.networkError)
+        let vaultSession = MockVaultSession()
+
+        let viewModel = AuthFlowTestSupport.makeUnlockViewModel(
+            credentialStore: credentialStore,
+            authRepository: authRepository,
+            vaultSession: vaultSession,
+            networkReachability: MockNetworkReachability(isOnline: true)
+        )
+        viewModel.password = "secret"
+
+        await viewModel.unlockWithPassword()
+
+        let restoreCallCount = await authRepository.restoreSessionCallCount
+        let loginCallCount = await authRepository.loginCallCount
+        let currentSession = await authRepository.currentSession
+        let establishedKeys = await vaultSession.establishedKeys
+
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertEqual(restoreCallCount, 1)
+        XCTAssertEqual(loginCallCount, 0)
+        XCTAssertNil(currentSession)
+        XCTAssertNotNil(establishedKeys)
+    }
+
+    func testNetworkErrorDuringLoginStillUnlocksVault() async throws {
+        let credentialStore = try makeConfiguredCredentialStore()
+        let authRepository = MockAuthRepository()
+        await authRepository.setRestoreError(.invalidCredentials)
+        await authRepository.setLoginError(.networkError)
+        let vaultSession = MockVaultSession()
+
+        let viewModel = AuthFlowTestSupport.makeUnlockViewModel(
+            credentialStore: credentialStore,
+            authRepository: authRepository,
+            vaultSession: vaultSession,
+            networkReachability: MockNetworkReachability(isOnline: true)
+        )
+        viewModel.password = "secret"
+
+        await viewModel.unlockWithPassword()
+
+        let loginCallCount = await authRepository.loginCallCount
+        let currentSession = await authRepository.currentSession
+        let establishedKeys = await vaultSession.establishedKeys
+
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertEqual(loginCallCount, 1)
+        XCTAssertNil(currentSession)
+        XCTAssertNotNil(establishedKeys)
+    }
+
     func testOfflineSkipsRefresh() async throws {
         let credentialStore = try makeConfiguredCredentialStore()
         let authRepository = MockAuthRepository()
