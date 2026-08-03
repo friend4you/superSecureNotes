@@ -50,8 +50,10 @@ public struct UnlockView: View {
             }
         }
         .navigationTitle(AuthFlowUILocalization.localized("unlock.title"))
-        .task {
-            await viewModel.onAppear()
+        .onAppear {
+            Task {
+                await viewModel.onAppear()
+            }
         }
     }
 

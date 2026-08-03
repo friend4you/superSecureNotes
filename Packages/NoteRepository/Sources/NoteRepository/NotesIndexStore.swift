@@ -41,25 +41,25 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             withIntermediateDirectories: true
         )
 
-        var connection: OpaquePointer?
-        let openResult = sqlite3_open(databaseURL.path, &connection)
-        guard openResult == SQLITE_OK, let connection else {
+        var pointer: OpaquePointer?
+        let openResult = sqlite3_open(databaseURL.path, &pointer)
+        guard openResult == SQLITE_OK, let pointer else {
             throw NotesIndexStoreError.openFailed(code: openResult)
         }
 
         do {
             try execute(
                 "PRAGMA key = \"x'\(passphrase.hexEncodedString())'\"",
-                on: connection
+                on: pointer
             )
-            try execute(Self.createTableSQL, on: connection)
-            try execute("SELECT count(*) FROM notes", on: connection)
+            try execute(Self.createTableSQL, on: pointer)
+            try execute("SELECT count(*) FROM notes", on: pointer)
         } catch {
-            sqlite3_close(connection)
+            sqlite3_close(pointer)
             throw error
         }
 
-        database = connection
+        database = pointer
         isOpen = true
     }
 

@@ -24,19 +24,22 @@ public struct NoteListView: View {
             }
 
             ForEach(viewModel.notes, id: \.noteID) { note in
-                Text(note.title)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.openDetail(noteID: note.noteID)
+                Group {
+                    Text(note.title)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .onTapGesture {
+                    viewModel.openDetail(noteID: note.noteID)
+                }
+                .contextMenu {
+                    Button(NotesFlowUILocalization.localized("common.share")) {
+                        viewModel.share(noteID: note.noteID)
                     }
-                    .contextMenu {
-                        Button(NotesFlowUILocalization.localized("common.share")) {
-                            viewModel.share(noteID: note.noteID)
-                        }
-                        Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
-                            pendingDeleteNoteID = note.noteID
-                        }
+                    Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                        pendingDeleteNoteID = note.noteID
                     }
+                }
             }
         }
         .navigationTitle(NotesFlowUILocalization.localized("notes.list.title"))
