@@ -73,6 +73,23 @@ extension NotesIndexStore {
         }
     }
 
+    func listRows(withSyncState syncState: NoteSyncState) async throws -> [NoteIndexRow] {
+        try withDatabase { database in
+            let rows = try queryRows(
+                """
+                SELECT note_id, title, created_at, updated_at,
+                       attachment_count, attachments_total_size, wrapped_fek, sync_state, etag
+                FROM notes
+                WHERE sync_state = ?
+                ORDER BY updated_at ASC
+                """,
+                bindings: [.text(syncState.rawValue)],
+                on: database
+            )
+            return rows.map(Self.makeRow)
+        }
+    }
+
     func deleteNote(noteID: UUID) async throws {
         try withDatabase { database in
             try execute(

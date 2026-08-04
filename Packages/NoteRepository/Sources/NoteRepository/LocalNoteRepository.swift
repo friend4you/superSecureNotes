@@ -5,7 +5,7 @@ import SecureCrypto
 public actor LocalNoteRepository: NoteRepository {
     private static let payloadFileName = "payload"
 
-    private let notesIndexStore: NotesIndexStore
+    let notesIndexStore: NotesIndexStore
     private let notesRootURL: URL
     private let fileManager: FileManager
 
@@ -125,7 +125,7 @@ public actor LocalNoteRepository: NoteRepository {
         )
     }
 
-    private func requireOpen() async throws {
+    func requireOpen() async throws {
         guard await notesIndexStore.isOpen else {
             throw NoteRepositoryError.databaseNotOpen
         }

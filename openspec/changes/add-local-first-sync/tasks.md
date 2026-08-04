@@ -22,12 +22,12 @@
 
 ## 5. Sync orchestrator — push and LWW
 
-- [ ] 5.1 Write failing tests: flush uploads `pendingSync` notes via network client; on 200 sets local `.synced` + etag; create/save path does not await network (`superSecureNotesTests/` or package tests for sync service)
-- [ ] 5.2 Implement sync orchestrator push path against injectable local + network deps; make tests pass
-- [ ] 5.3 Write failing tests: on 409, compare `updatedAt` — local newer retries upload; remote newer overwrites local as `.synced` (LWW scenarios)
-- [ ] 5.4 Implement conflict handling; make tests pass
-- [ ] 5.5 Write failing tests: flush performs enqueued remote DELETE; failure keeps delete pending without restoring list visibility
-- [ ] 5.6 Implement remote delete flush; make tests pass
+- [x] 5.1 Write failing tests: flush uploads `pendingSync` notes via network client; on 200 sets local `.synced` + etag; create/save path does not await network (`superSecureNotesTests/` or package tests for sync service)
+- [x] 5.2 Implement sync orchestrator push path against injectable local + network deps; make tests pass
+- [x] 5.3 Write failing tests: on 409, compare `updatedAt` — local newer retries upload; remote newer overwrites local as `.synced` (LWW scenarios)
+- [x] 5.4 Implement conflict handling; make tests pass
+- [x] 5.5 Write failing tests: flush performs enqueued remote DELETE; failure keeps delete pending without restoring list visibility
+- [x] 5.6 Implement remote delete flush; make tests pass
 
 ## 6. Sync orchestrator — empty-local pull and vault push
 
