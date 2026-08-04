@@ -91,6 +91,21 @@ enum NoteFixtures {
         ]
         return try! JSONSerialization.data(withJSONObject: payload)
     }
+
+    static func uploadInitResponseJSON(
+        uploadId: UUID,
+        chunkSize: Int,
+        totalChunks: Int
+    ) -> Data {
+        let payload: [String: Any] = [
+            "uploadId": uploadId.uuidString.lowercased(),
+            "chunkSize": chunkSize,
+            "totalChunks": totalChunks,
+        ]
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static let uploadID = UUID(uuidString: "660E8400-E29B-41D4-A716-446655440001")!
 }
 
 struct MockTokenProvider: AccessTokenProviding {

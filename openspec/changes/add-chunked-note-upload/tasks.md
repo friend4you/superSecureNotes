@@ -5,10 +5,10 @@
 
 ## 2. Chunked upload API client
 
-- [ ] 2.1 Write failing tests: over-threshold `uploadNote` calls `POST /notes/{id}/uploads` with `{ totalSize }`, then chunk PUTs for indices `0..<totalChunks`, then `POST .../complete` with optional `ifMatch`; complete parses `{ syncState, updatedAt, etag }` (`NoteAPIClientChunkedUploadTests`)
-- [ ] 2.2 Implement `initUpload`, `uploadChunk`, `completeUpload` on `NoteAPIClient`; branch in `NetworkNoteRepository.uploadNote`; make tests pass
-- [ ] 2.3 Write failing tests: failed chunk PUT is retried and previously successful chunk indices are not re-sent in the same session (`NetworkNoteRepositoryChunkedUploadTests`)
-- [ ] 2.4 Implement per-chunk retry loop in chunked upload helper; make tests pass
+- [x] 2.1 Write failing tests: over-threshold `uploadNote` calls `POST /notes/{id}/uploads` with `{ totalSize }`, then chunk PUTs for indices `0..<totalChunks`, then `POST .../complete` with optional `ifMatch`; complete parses `{ syncState, updatedAt, etag }` (`NoteAPIClientChunkedUploadTests`)
+- [x] 2.2 Implement `initUpload`, `uploadChunk`, `completeUpload` on `NoteAPIClient`; branch in `NetworkNoteRepository.uploadNote`; make tests pass
+- [x] 2.3 Write failing tests: failed chunk PUT is retried and previously successful chunk indices are not re-sent in the same session (`NetworkNoteRepositoryChunkedUploadTests`)
+- [x] 2.4 Implement per-chunk retry loop in chunked upload helper; make tests pass
 
 ## 3. Upload session persistence
 

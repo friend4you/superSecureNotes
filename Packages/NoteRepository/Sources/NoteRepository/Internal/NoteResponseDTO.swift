@@ -19,6 +19,18 @@ struct NoteWriteResponseDTO: Decodable {
     let etag: String
 }
 
+struct NoteUploadInitResponseDTO: Decodable {
+    let uploadId: String
+    let chunkSize: Int
+    let totalChunks: Int
+}
+
+struct NoteUploadSession: Equatable, Sendable {
+    let uploadID: UUID
+    let chunkSize: Int
+    let totalChunks: Int
+}
+
 enum NoteJSON {
     static func makeDecoder() -> JSONDecoder {
         JSONDecoder()

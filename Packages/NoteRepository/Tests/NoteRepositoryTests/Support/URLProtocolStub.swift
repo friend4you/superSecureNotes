@@ -44,6 +44,83 @@ enum TestHTTP {
     static func makeResponse(url: URL, statusCode: Int) -> HTTPURLResponse {
         HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
     }
+
+    static func bodyData(from request: URLRequest) -> Data? {
+        if let httpBody = request.httpBody, !httpBody.isEmpty {
+            return httpBody
+        }
+        guard let stream = request.httpBodyStream else { return nil }
+
+        stream.open()
+        defer { stream.close() }
+
+        var data = Data()
+        let bufferSize = 1024
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        while stream.hasBytesAvailable {
+            let read = stream.read(buffer, maxLength: bufferSize)
+            if read > 0 {
+                data.append(buffer, count: read)
+            }
+        }
+
+        return data.isEmpty ? nil : data
+    }
+}
+
+private func requestBodyData(from request: URLRequest) -> Data? {
+    TestHTTP.bodyData(from: request)
+}
+
+final class RequestLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var requests: [URLRequest] = []
+
+    func record(_ request: URLRequest) {
+        lock.lock()
+        requests.append(request)
+        lock.unlock()
+    }
+
+    var count: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return requests.count
+    }
+
+    var paths: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return requests.compactMap(\.url?.path)
+    }
+
+    func method(at index: Int) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard requests.indices.contains(index) else { return nil }
+        return requests[index].httpMethod
+    }
+
+    func path(at index: Int) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard requests.indices.contains(index) else { return nil }
+        return requests[index].url?.path
+    }
+
+    func bodyData(at index: Int) -> Data? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard requests.indices.contains(index) else { return nil }
+        return requestBodyData(from: requests[index])
+    }
+
+    func jsonObject(at index: Int) -> Any? {
+        guard let bodyData = bodyData(at: index) else { return nil }
+        return try? JSONSerialization.jsonObject(with: bodyData)
+    }
 }
 
 final class RequestCapture: @unchecked Sendable {
@@ -90,26 +167,6 @@ final class RequestCapture: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         guard let request else { return nil }
-        if let httpBody = request.httpBody, !httpBody.isEmpty {
-            return httpBody
-        }
-        guard let stream = request.httpBodyStream else { return nil }
-
-        stream.open()
-        defer { stream.close() }
-
-        var data = Data()
-        let bufferSize = 1024
-        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-        defer { buffer.deallocate() }
-
-        while stream.hasBytesAvailable {
-            let read = stream.read(buffer, maxLength: bufferSize)
-            if read > 0 {
-                data.append(buffer, count: read)
-            }
-        }
-
-        return data.isEmpty ? nil : data
+        return requestBodyData(from: request)
     }
 }

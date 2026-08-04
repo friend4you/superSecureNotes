@@ -61,13 +61,68 @@ public actor NetworkNoteRepository: NoteRepository {
                 ifMatch: etag
             )
         }
-        // Over-threshold chunked upload — task 2.2
-        return try await apiClient.writeNote(
+        return try await uploadNoteChunked(
             noteID: note.metadata.noteID,
-            data: data,
+            wireBlob: data,
             accessToken: accessToken,
             ifMatch: etag
         )
+    }
+
+    private func uploadNoteChunked(
+        noteID: UUID,
+        wireBlob: Data,
+        accessToken: String,
+        ifMatch etag: String?
+    ) async throws -> NoteUploadResult {
+        let session = try await apiClient.initUpload(
+            noteID: noteID,
+            totalSize: wireBlob.count,
+            accessToken: accessToken
+        )
+
+        for chunkIndex in 0..<session.totalChunks {
+            let start = chunkIndex * session.chunkSize
+            let end = min(start + session.chunkSize, wireBlob.count)
+            let chunkData = wireBlob.subdata(in: start..<end)
+            try await uploadChunkWithRetry(
+                noteID: noteID,
+                uploadID: session.uploadID,
+                chunkIndex: chunkIndex,
+                chunkData: chunkData,
+                accessToken: accessToken
+            )
+        }
+
+        return try await apiClient.completeUpload(
+            noteID: noteID,
+            uploadID: session.uploadID,
+            accessToken: accessToken,
+            ifMatch: etag
+        )
+    }
+
+    private func uploadChunkWithRetry(
+        noteID: UUID,
+        uploadID: UUID,
+        chunkIndex: Int,
+        chunkData: Data,
+        accessToken: String
+    ) async throws {
+        while true {
+            do {
+                try await apiClient.uploadChunk(
+                    noteID: noteID,
+                    uploadID: uploadID,
+                    chunkIndex: chunkIndex,
+                    data: chunkData,
+                    accessToken: accessToken
+                )
+                return
+            } catch NoteRepositoryError.networkError {
+                continue
+            }
+        }
     }
 
     public func deleteNote(noteID: UUID) async throws {
