@@ -8,8 +8,8 @@ extension NotesIndexStore {
                 """
                 INSERT INTO notes (
                     note_id, title, created_at, updated_at,
-                    attachment_count, attachments_total_size, wrapped_fek, sync_state
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    attachment_count, attachments_total_size, wrapped_fek, sync_state, etag
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(note_id) DO UPDATE SET
                     title = excluded.title,
                     created_at = excluded.created_at,
@@ -17,7 +17,8 @@ extension NotesIndexStore {
                     attachment_count = excluded.attachment_count,
                     attachments_total_size = excluded.attachments_total_size,
                     wrapped_fek = excluded.wrapped_fek,
-                    sync_state = excluded.sync_state
+                    sync_state = excluded.sync_state,
+                    etag = excluded.etag
                 """,
                 on: database,
                 bindings: [
@@ -29,6 +30,7 @@ extension NotesIndexStore {
                     .int64(Int64(row.attachmentsTotalSize)),
                     .blob(row.wrappedFEK),
                     .text(row.syncState.rawValue),
+                    row.etag.map(SQLiteBinding.text) ?? .text(""),
                 ]
             )
         }
@@ -39,7 +41,7 @@ extension NotesIndexStore {
             let rows = try queryRows(
                 """
                 SELECT note_id, title, created_at, updated_at,
-                       attachment_count, attachments_total_size, wrapped_fek, sync_state
+                       attachment_count, attachments_total_size, wrapped_fek, sync_state, etag
                 FROM notes
                 WHERE note_id = ?
                 """,
@@ -82,7 +84,8 @@ extension NotesIndexStore {
     }
 
     private static func makeRow(_ row: [String: SQLiteValue]) -> NoteIndexRow {
-        NoteIndexRow(
+        let etagText = NotesIndexStore.textValue(row["etag"])
+        return NoteIndexRow(
             noteID: UUID(uuidString: NotesIndexStore.textValue(row["note_id"]))!,
             title: NotesIndexStore.textValue(row["title"]),
             createdAt: UInt64(NotesIndexStore.int64Value(row["created_at"])),
@@ -90,7 +93,8 @@ extension NotesIndexStore {
             attachmentCount: UInt32(NotesIndexStore.int64Value(row["attachment_count"])),
             attachmentsTotalSize: UInt64(NotesIndexStore.int64Value(row["attachments_total_size"])),
             wrappedFEK: NotesIndexStore.blobValue(row["wrapped_fek"]),
-            syncState: NoteSyncState(rawValue: NotesIndexStore.textValue(row["sync_state"])) ?? .pendingSync
+            syncState: NoteSyncState(rawValue: NotesIndexStore.textValue(row["sync_state"])) ?? .pendingSync,
+            etag: etagText.isEmpty ? nil : etagText
         )
     }
 }

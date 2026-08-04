@@ -53,6 +53,7 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
                 on: pointer
             )
             try execute(Self.createTableSQL, on: pointer)
+            try migrateSchemaIfNeeded(on: pointer)
             try execute("SELECT count(*) FROM notes", on: pointer)
         } catch {
             sqlite3_close(pointer)
@@ -200,9 +201,48 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             attachment_count INTEGER NOT NULL,
             attachments_total_size INTEGER NOT NULL,
             wrapped_fek BLOB NOT NULL,
-            sync_state TEXT NOT NULL CHECK (sync_state IN ('pendingSync', 'synced'))
+            sync_state TEXT NOT NULL CHECK (sync_state IN ('pendingSync', 'synced', 'pendingDelete')),
+            etag TEXT
         )
         """
+
+    private func migrateSchemaIfNeeded(on database: OpaquePointer) throws {
+        let columns = try queryRows("PRAGMA table_info(notes)", on: database)
+        let hasEtag = columns.contains { Self.textValue($0["name"]) == "etag" }
+        guard !hasEtag else { return }
+
+        try execute(
+            """
+            CREATE TABLE notes_migrated (
+                note_id TEXT PRIMARY KEY NOT NULL,
+                title TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                attachment_count INTEGER NOT NULL,
+                attachments_total_size INTEGER NOT NULL,
+                wrapped_fek BLOB NOT NULL,
+                sync_state TEXT NOT NULL CHECK (sync_state IN ('pendingSync', 'synced', 'pendingDelete')),
+                etag TEXT
+            )
+            """,
+            on: database
+        )
+        try execute(
+            """
+            INSERT INTO notes_migrated (
+                note_id, title, created_at, updated_at,
+                attachment_count, attachments_total_size, wrapped_fek, sync_state, etag
+            )
+            SELECT
+                note_id, title, created_at, updated_at,
+                attachment_count, attachments_total_size, wrapped_fek, sync_state, NULL
+            FROM notes
+            """,
+            on: database
+        )
+        try execute("DROP TABLE notes", on: database)
+        try execute("ALTER TABLE notes_migrated RENAME TO notes", on: database)
+    }
 }
 
 extension NotesIndexStore {

@@ -5,8 +5,8 @@
 
 ## 2. NotesIndexStore etag and pendingDelete
 
-- [ ] 2.1 Write failing tests: index row roundtrip preserves `etag`; `sync_state` accepts `pendingDelete`; list/query helpers return sync state (`Packages/NoteRepository/Tests/NoteRepositoryTests/NotesIndexStoreTests.swift`)
-- [ ] 2.2 Extend `NotesIndexStore` schema/CHECK + upsert/fetch for `etag` and `pendingDelete`; migrate existing DBs safely; make tests pass
+- [x] 2.1 Write failing tests: index row roundtrip preserves `etag`; `sync_state` accepts `pendingDelete`; list/query helpers return sync state (`Packages/NoteRepository/Tests/NoteRepositoryTests/NotesIndexStoreTests.swift`)
+- [x] 2.2 Extend `NotesIndexStore` schema/CHECK + upsert/fetch for `etag` and `pendingDelete`; migrate existing DBs safely; make tests pass
 
 ## 3. LocalNoteRepository list/delete sync semantics
 

@@ -11,6 +11,7 @@ struct NoteIndexRow: Equatable, Sendable {
     let attachmentsTotalSize: UInt64
     let wrappedFEK: Data
     let syncState: NoteSyncState
+    let etag: String?
 
     init(storedNote: StoredNote) {
         noteID = storedNote.metadata.noteID
@@ -21,6 +22,7 @@ struct NoteIndexRow: Equatable, Sendable {
         attachmentsTotalSize = storedNote.metadata.attachmentsTotalSize
         wrappedFEK = storedNote.wrappedFEK
         syncState = storedNote.syncState
+        etag = nil
     }
 
     init(
@@ -31,7 +33,8 @@ struct NoteIndexRow: Equatable, Sendable {
         attachmentCount: UInt32,
         attachmentsTotalSize: UInt64,
         wrappedFEK: Data,
-        syncState: NoteSyncState
+        syncState: NoteSyncState,
+        etag: String? = nil
     ) {
         self.noteID = noteID
         self.title = title
@@ -41,6 +44,7 @@ struct NoteIndexRow: Equatable, Sendable {
         self.attachmentsTotalSize = attachmentsTotalSize
         self.wrappedFEK = wrappedFEK
         self.syncState = syncState
+        self.etag = etag
     }
 
     var metadata: NoteMetadata {

@@ -112,6 +112,107 @@ final class NotesIndexStoreTests: XCTestCase {
         XCTAssertEqual(NotesIndexStoreError.notOpen, .notOpen)
     }
 
+    func testRowRoundtripPreservesEtag() async throws {
+        let store = makeStore()
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440011")!
+        let row = NoteIndexRow(
+            noteID: noteID,
+            title: "Etag note",
+            createdAt: 1_700_000_000,
+            updatedAt: 1_700_000_100,
+            attachmentCount: 0,
+            attachmentsTotalSize: 0,
+            wrappedFEK: Data(repeating: 0xAB, count: 60),
+            syncState: .synced,
+            etag: "W/\"abc123\""
+        )
+        try await store.open(passphrase: NoteTestSupport.databasePassphrase)
+        try await store.upsertNote(row)
+
+        let fetched = try await store.fetchNote(noteID: noteID)
+
+        XCTAssertEqual(fetched, row)
+    }
+
+    func testSyncStateAcceptsPendingDelete() async throws {
+        let store = makeStore()
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440012")!
+        let row = NoteIndexRow(
+            noteID: noteID,
+            title: "Pending delete",
+            createdAt: 1_700_000_000,
+            updatedAt: 1_700_000_100,
+            attachmentCount: 0,
+            attachmentsTotalSize: 0,
+            wrappedFEK: Data(repeating: 0xAB, count: 60),
+            syncState: .pendingDelete
+        )
+        try await store.open(passphrase: NoteTestSupport.databasePassphrase)
+        try await store.upsertNote(row)
+
+        let fetched = try await store.fetchNote(noteID: noteID)
+
+        XCTAssertEqual(fetched?.syncState, .pendingDelete)
+    }
+
+    func testListSummariesReturnsSyncState() async throws {
+        let store = makeStore()
+        let syncedID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440013")!
+        let pendingID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440014")!
+        try await store.open(passphrase: NoteTestSupport.databasePassphrase)
+        try await store.upsertNote(
+            NoteIndexRow(
+                noteID: syncedID,
+                title: "Synced",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_200,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0,
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                syncState: .synced
+            )
+        )
+        try await store.upsertNote(
+            NoteIndexRow(
+                noteID: pendingID,
+                title: "Pending",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0,
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                syncState: .pendingSync
+            )
+        )
+
+        let summaries = try await store.listSummaries()
+
+        XCTAssertEqual(summaries.count, 2)
+        XCTAssertEqual(summaries[0].noteID, syncedID)
+        XCTAssertEqual(summaries[0].syncState, .synced)
+        XCTAssertEqual(summaries[1].noteID, pendingID)
+        XCTAssertEqual(summaries[1].syncState, .pendingSync)
+    }
+
+    func testMigrationPreservesExistingRowsWithoutEtag() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440015")!
+        try NoteTestSupport.seedLegacyIndexDatabase(
+            at: temporaryDirectory,
+            passphrase: NoteTestSupport.databasePassphrase,
+            noteID: noteID,
+            title: "Legacy note"
+        )
+
+        let store = makeStore()
+        try await store.open(passphrase: NoteTestSupport.databasePassphrase)
+
+        let fetched = try await store.fetchNote(noteID: noteID)
+
+        XCTAssertEqual(fetched?.title, "Legacy note")
+        XCTAssertEqual(fetched?.syncState, .synced)
+        XCTAssertNil(fetched?.etag)
+    }
+
     private func makeStore() -> NotesIndexStore {
         NotesIndexStore(notesDirectoryURL: temporaryDirectory)
     }
