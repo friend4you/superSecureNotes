@@ -53,6 +53,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     private let noteRepository: any NoteRepository
     private let vaultSession: any VaultSessionProtocol
     private let navigator: any Navigating
+    private let noteSync: any NoteSyncing
     private var loadedTitle = ""
     private var loadedBody = ""
     private var attachments: [NotePayload.Attachment] = []
@@ -65,12 +66,14 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         noteID: UUID,
         noteRepository: any NoteRepository,
         vaultSession: any VaultSessionProtocol,
-        navigator: any Navigating
+        navigator: any Navigating,
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.noteID = noteID
         self.noteRepository = noteRepository
         self.vaultSession = vaultSession
         self.navigator = navigator
+        self.noteSync = noteSync
     }
 
     public func load() async {
@@ -150,6 +153,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
                 syncState: .pendingSync
             )
             try await noteRepository.writeNote(storedNote)
+            noteSync.scheduleFlush()
 
             loadedTitle = title
             loadedBody = body

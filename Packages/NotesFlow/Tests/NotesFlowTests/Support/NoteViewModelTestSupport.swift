@@ -98,3 +98,25 @@ actor StoredNoteMockVaultSession: VaultSessionProtocol {
     func udk() throws -> SymmetricKey { key }
     func identityPrivateKey() throws -> Data { Data(repeating: 0x01, count: 32) }
 }
+
+actor RecordingNoteSyncService: NoteSyncing {
+    private(set) var scheduleFlushCallCount = 0
+
+    nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome> = AsyncStream { $0.finish() }
+
+    func flushPending() async {}
+
+    func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        nil
+    }
+
+    nonisolated func scheduleFlush() {
+        Task { await recordScheduleFlush() }
+    }
+
+    private func recordScheduleFlush() {
+        scheduleFlushCallCount += 1
+    }
+
+    nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
+}

@@ -40,16 +40,19 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
     private let noteRepository: any NoteRepository
     private let vaultSession: any VaultSessionProtocol
     private let navigator: any Navigating
+    private let noteSync: any NoteSyncing
     private var attachments: [NotePayload.Attachment] = []
 
     public init(
         noteRepository: any NoteRepository,
         vaultSession: any VaultSessionProtocol,
-        navigator: any Navigating
+        navigator: any Navigating,
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.noteRepository = noteRepository
         self.vaultSession = vaultSession
         self.navigator = navigator
+        self.noteSync = noteSync
     }
 
     public func addAttachment(_ attachment: NotePayload.Attachment) {
@@ -99,6 +102,7 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
                 syncState: .pendingSync
             )
             try await noteRepository.writeNote(storedNote)
+            noteSync.scheduleFlush()
             navigator.pop()
         } catch {
             errorMessage = error.localizedDescription

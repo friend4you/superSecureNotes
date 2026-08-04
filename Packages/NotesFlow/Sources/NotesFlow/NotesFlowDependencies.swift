@@ -64,7 +64,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: vaultSession,
-            navigator: navigator
+            navigator: navigator,
+            noteSync: noteSync
         )
     }
 
@@ -72,7 +73,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         DefaultCreateNoteViewModel(
             noteRepository: noteRepository,
             vaultSession: vaultSession,
-            navigator: navigator
+            navigator: navigator,
+            noteSync: noteSync
         )
     }
 }

@@ -122,9 +122,11 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
     func testSaveDoesNothingWhenCannotSave() async {
         let noteRepository = StoredNoteMockRepository()
         let navigator = MockNavigating()
+        let noteSync = RecordingNoteSyncService()
         let viewModel = makeViewModel(
             noteRepository: noteRepository,
-            navigator: navigator
+            navigator: navigator,
+            noteSync: noteSync
         )
 
         await viewModel.save()
@@ -132,18 +134,41 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
         let writtenNotes = await noteRepository.writtenNotes
         XCTAssertTrue(writtenNotes.isEmpty)
         XCTAssertEqual(navigator.popCount, 0)
+        let scheduleFlushCallCount = await noteSync.scheduleFlushCallCount
+        XCTAssertEqual(scheduleFlushCallCount, 0)
+    }
+
+    func testSaveCallsScheduleFlushAfterSuccessfulWrite() async throws {
+        let udk = SymmetricKey(size: .bits256)
+        let noteRepository = StoredNoteMockRepository()
+        let noteSync = RecordingNoteSyncService()
+        let viewModel = makeViewModel(
+            noteRepository: noteRepository,
+            vaultSession: StoredNoteMockVaultSession(udk: udk),
+            noteSync: noteSync
+        )
+        viewModel.title = "Scheduled sync"
+        viewModel.body = "Body"
+
+        await viewModel.save()
+        await Task.yield()
+
+        let scheduleFlushCallCount = await noteSync.scheduleFlushCallCount
+        XCTAssertEqual(scheduleFlushCallCount, 1)
     }
 
     @MainActor
     private func makeViewModel(
         noteRepository: StoredNoteMockRepository = StoredNoteMockRepository(),
         vaultSession: StoredNoteMockVaultSession = StoredNoteMockVaultSession(),
-        navigator: MockNavigating? = nil
+        navigator: MockNavigating? = nil,
+        noteSync: RecordingNoteSyncService = RecordingNoteSyncService()
     ) -> DefaultCreateNoteViewModel {
         DefaultCreateNoteViewModel(
             noteRepository: noteRepository,
             vaultSession: vaultSession,
-            navigator: navigator ?? MockNavigating()
+            navigator: navigator ?? MockNavigating(),
+            noteSync: noteSync
         )
     }
 

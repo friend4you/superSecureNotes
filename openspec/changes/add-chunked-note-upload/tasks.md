@@ -24,8 +24,8 @@
 
 ## 5. NotesFlow — sync on save
 
-- [ ] 5.1 Write failing tests: `DefaultCreateNoteViewModel.save()` calls `scheduleFlush()` after successful write; `DefaultNoteDetailViewModel.save()` same (`DefaultCreateNoteViewModelTests`, `DefaultNoteDetailViewModelTests`)
-- [ ] 5.2 Inject sync scheduler into create/detail view models via `NotesFlowDependencies`; make tests pass
+- [x] 5.1 Write failing tests: `DefaultCreateNoteViewModel.save()` calls `scheduleFlush()` after successful write; `DefaultNoteDetailViewModel.save()` same (`DefaultCreateNoteViewModelTests`, `DefaultNoteDetailViewModelTests`)
+- [x] 5.2 Inject sync scheduler into create/detail view models via `NotesFlowDependencies`; make tests pass
 
 ## 6. NotesFlow — UI updates on sync outcome
 

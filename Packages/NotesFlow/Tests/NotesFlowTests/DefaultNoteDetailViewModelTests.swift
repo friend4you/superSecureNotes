@@ -109,6 +109,33 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.syncState, .pendingSync)
     }
 
+    func testSaveCallsScheduleFlushAfterSuccessfulWrite() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            syncState: .synced
+        )
+        let noteSync = RecordingNoteSyncService()
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk),
+            noteSync: noteSync
+        )
+        await viewModel.load()
+        viewModel.body = "Changed body"
+
+        await viewModel.save()
+        await Task.yield()
+
+        let scheduleFlushCallCount = await noteSync.scheduleFlushCallCount
+        XCTAssertEqual(scheduleFlushCallCount, 1)
+    }
+
     func testAddAttachmentMarksDetailDirty() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
@@ -360,13 +387,15 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         noteID: UUID = UUID(),
         noteRepository: StoredNoteMockRepository = StoredNoteMockRepository(),
         vaultSession: StoredNoteMockVaultSession = StoredNoteMockVaultSession(),
-        navigator: MockNavigating? = nil
+        navigator: MockNavigating? = nil,
+        noteSync: RecordingNoteSyncService = RecordingNoteSyncService()
     ) -> DefaultNoteDetailViewModel {
         DefaultNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: vaultSession,
-            navigator: navigator ?? MockNavigating()
+            navigator: navigator ?? MockNavigating(),
+            noteSync: noteSync
         )
     }
 }
