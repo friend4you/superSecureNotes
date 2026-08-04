@@ -5,6 +5,7 @@ struct NoteSummaryResponseDTO: Decodable {
     let title: String
     let updatedAt: UInt64
     let syncState: String?
+    let etag: String?
 }
 
 struct ErrorResponseDTO: Decodable {

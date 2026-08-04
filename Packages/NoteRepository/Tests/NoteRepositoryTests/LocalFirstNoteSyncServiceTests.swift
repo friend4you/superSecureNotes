@@ -1,5 +1,6 @@
 import NoteRepositoryProtocol
 import SecureCrypto
+import VaultRepository
 import XCTest
 
 @testable import NoteRepository
@@ -23,12 +24,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
     func testFlushUploadsPendingSyncNoteAndMarksSyncedOn200() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440030")!
-        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
-        let remoteRepository = makeRemoteRepository()
-        let syncService = LocalFirstNoteSyncService(
-            localNotes: localRepository,
-            remoteNotes: remoteRepository
-        )
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
 
         URLProtocolStub.requestHandler = { request in
             XCTAssertEqual(request.httpMethod, "PUT")
@@ -62,12 +58,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
     func testWriteNoteDoesNotAwaitNetwork() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440031")!
-        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
-        let remoteRepository = makeRemoteRepository()
-        let syncService = LocalFirstNoteSyncService(
-            localNotes: localRepository,
-            remoteNotes: remoteRepository
-        )
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
         let requestCounter = RequestCounter()
 
         URLProtocolStub.requestHandler = { request in
@@ -90,12 +81,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
     func testFlushRetriesUploadWhenLocalNewerAfter409() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440032")!
-        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
-        let remoteRepository = makeRemoteRepository()
-        let syncService = LocalFirstNoteSyncService(
-            localNotes: localRepository,
-            remoteNotes: remoteRepository
-        )
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
         let remoteWireNote = try NoteTestSupport.makeSampleWireNote(
             noteID: noteID,
             title: "Remote older",
@@ -165,12 +151,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
     func testFlushOverwritesLocalWhenRemoteNewerAfter409() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440033")!
-        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
-        let remoteRepository = makeRemoteRepository()
-        let syncService = LocalFirstNoteSyncService(
-            localNotes: localRepository,
-            remoteNotes: remoteRepository
-        )
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
         let remoteWireNote = try NoteTestSupport.makeSampleWireNote(
             noteID: noteID,
             title: "Remote winner",
@@ -217,12 +198,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
     func testFlushDeletesRemotePendingDeleteNote() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440034")!
-        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
-        let remoteRepository = makeRemoteRepository()
-        let syncService = LocalFirstNoteSyncService(
-            localNotes: localRepository,
-            remoteNotes: remoteRepository
-        )
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
         let captured = RequestCapture()
 
         URLProtocolStub.requestHandler = { request in
@@ -250,12 +226,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
     func testFlushKeepsPendingDeleteOnRemoteFailure() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440035")!
-        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
-        let remoteRepository = makeRemoteRepository()
-        let syncService = LocalFirstNoteSyncService(
-            localNotes: localRepository,
-            remoteNotes: remoteRepository
-        )
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
 
         URLProtocolStub.requestHandler = { request in
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 500)
@@ -276,12 +247,123 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         XCTAssertEqual(row?.syncState, .pendingDelete)
     }
 
+    func testPullCatalogImportsVaultHeaderAndNotesWhenLocalVaultMissing() async throws {
+        let noteID = NoteFixtures.noteID
+        let (indexStore, localRepository, localVault, _, syncService) = makeSyncEnvironment()
+
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            switch request.url?.path {
+            case "/v1/vault/header":
+                return (response, NoteFixtures.vaultHeaderBytes)
+            case "/v1/notes":
+                return (
+                    response,
+                    NoteFixtures.pullListNotesJSON(
+                        noteID: noteID,
+                        title: "Remote note",
+                        updatedAt: 1_700_000_100,
+                        etag: #"W/"remote-etag""#
+                    )
+                )
+            case "/v1/notes/\(noteID.uuidString.lowercased())":
+                return (response, NoteFixtures.noteBytes)
+            default:
+                XCTFail("Unexpected path: \(request.url?.path ?? "")")
+                return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+            }
+        }
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        let header = try await syncService.pullCatalogIfLocalVaultMissing()
+
+        XCTAssertEqual(header, NoteFixtures.vaultHeaderBytes)
+        let localHeader = try await localVault.readHeader()
+        XCTAssertEqual(localHeader, NoteFixtures.vaultHeaderBytes)
+
+        let summaries = try await localRepository.listNotes()
+        XCTAssertEqual(summaries.count, 1)
+        XCTAssertEqual(summaries[0].noteID, noteID)
+        XCTAssertEqual(summaries[0].syncState, .synced)
+
+        let row = try await indexStore.fetchNote(noteID: noteID)
+        XCTAssertEqual(row?.syncState, .synced)
+        XCTAssertEqual(row?.etag, #"W/"remote-etag""#)
+    }
+
+    func testPullCatalogSkipsWhenLocalVaultExists() async throws {
+        let (_, _, localVault, _, syncService) = makeSyncEnvironment()
+        let requestCounter = RequestCounter()
+
+        URLProtocolStub.requestHandler = { request in
+            requestCounter.increment()
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, Data())
+        }
+
+        try await localVault.writeHeader(NoteFixtures.vaultHeaderBytes)
+        let result = try await syncService.pullCatalogIfLocalVaultMissing()
+
+        XCTAssertNil(result)
+        XCTAssertEqual(requestCounter.value, 0)
+    }
+
+    func testScheduleVaultHeaderUploadSendsPUTWithoutBlocking() async throws {
+        let header = Data([0xAA, 0xBB])
+        let captured = RequestCapture()
+        let uploadStarted = expectation(description: "vault upload started")
+
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            uploadStarted.fulfill()
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
+            return (response, nil)
+        }
+
+        let (_, _, _, _, syncService) = makeSyncEnvironment()
+        syncService.scheduleVaultHeaderUpload(header)
+
+        await fulfillment(of: [uploadStarted], timeout: 1.0)
+        XCTAssertEqual(captured.method, "PUT")
+        XCTAssertEqual(captured.path, "/v1/vault/header")
+        XCTAssertEqual(captured.contentType, "application/octet-stream")
+        XCTAssertEqual(captured.bodyData, header)
+    }
+
     private func makeRemoteRepository() -> NetworkNoteRepository {
         NetworkNoteRepository(
             baseURL: NoteFixtures.baseURL,
             tokenProvider: MockTokenProvider(),
             session: .stubbed()
         )
+    }
+
+    private func makeSyncEnvironment() -> (
+        NotesIndexStore,
+        LocalNoteRepository,
+        LocalVaultRepository,
+        NetworkVaultRepository,
+        LocalFirstNoteSyncService
+    ) {
+        let vaultDirectory = temporaryDirectory.appendingPathComponent("vault", isDirectory: true)
+        let localVault = LocalVaultRepository(vaultDirectoryURL: vaultDirectory)
+        let remoteVault = NetworkVaultRepository(
+            apiClient: VaultAPIClient(
+                baseURL: NoteFixtures.baseURL,
+                tokenProvider: MockTokenProvider(),
+                session: .stubbed()
+            )
+        )
+        let (indexStore, localRepository) = NoteTestSupport.makeLocalRepository(
+            notesRootURL: temporaryDirectory
+        )
+        let syncService = LocalFirstNoteSyncService(
+            localNotes: localRepository,
+            remoteNotes: makeRemoteRepository(),
+            localVault: localVault,
+            remoteVault: remoteVault
+        )
+        return (indexStore, localRepository, localVault, remoteVault, syncService)
     }
 }
 

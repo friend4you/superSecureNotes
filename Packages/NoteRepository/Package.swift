@@ -34,6 +34,7 @@ let package = Package(
             name: "NoteRepository",
             dependencies: [
                 "NoteRepositoryProtocol",
+                .product(name: "VaultRepository", package: "VaultRepository"),
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
                 .product(name: "SQLCipher", package: "SQLCipher.swift"),
@@ -48,7 +49,10 @@ let package = Package(
         ),
         .testTarget(
             name: "NoteRepositoryTests",
-            dependencies: ["NoteRepository"]
+            dependencies: [
+                "NoteRepository",
+                .product(name: "VaultRepository", package: "VaultRepository"),
+            ]
         ),
     ]
 )

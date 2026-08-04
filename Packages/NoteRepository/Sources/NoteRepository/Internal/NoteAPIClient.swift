@@ -29,7 +29,8 @@ struct NoteAPIClient {
                 noteID: noteID,
                 title: dto.title,
                 updatedAt: dto.updatedAt,
-                syncState: syncState
+                syncState: syncState,
+                etag: dto.etag
             )
         }
     }

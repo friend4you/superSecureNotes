@@ -1,5 +1,7 @@
 import Foundation
 import NoteRepositoryProtocol
+import VaultRepository
+import VaultRepositoryProtocol
 
 struct NoteSyncUploadCandidate: Sendable {
     let note: StoredNote
@@ -17,12 +19,24 @@ protocol NoteSyncLocalStoring: Actor {
     func markNoteSynced(noteID: UUID, updatedAt: UInt64, etag: String?) async throws
     func finalizeDeletedNote(noteID: UUID) async throws
     func replaceNoteWithRemote(_ note: StoredNote, etag: String?) async throws
+    func importSyncedNote(_ note: StoredNote, etag: String?) async throws
 }
 
 protocol NoteSyncRemoteStoring: Actor {
+    func listNotes() async throws -> [NoteSummary]
     func uploadNote(_ note: StoredNote, ifMatch etag: String?) async throws -> NoteUploadResult
     func readNote(noteID: UUID) async throws -> StoredNote
     func deleteNote(noteID: UUID) async throws
+}
+
+protocol NoteSyncLocalVaultStoring: Actor {
+    func readHeader() async throws -> Data
+    func writeHeader(_ header: Data) async throws
+}
+
+protocol NoteSyncRemoteVaultStoring: Actor {
+    func readHeader() async throws -> Data
+    func writeHeader(_ header: Data) async throws
 }
 
 extension LocalNoteRepository: NoteSyncLocalStoring {
@@ -82,6 +96,14 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
             etag: etag
         )
     }
+
+    func importSyncedNote(_ note: StoredNote, etag: String?) async throws {
+        try await replaceNoteWithRemote(note, etag: etag)
+    }
 }
 
 extension NetworkNoteRepository: NoteSyncRemoteStoring {}
+
+extension LocalVaultRepository: NoteSyncLocalVaultStoring {}
+
+extension NetworkVaultRepository: NoteSyncRemoteVaultStoring {}

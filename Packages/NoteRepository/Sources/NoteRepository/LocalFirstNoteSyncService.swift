@@ -1,29 +1,69 @@
 import Foundation
 import NoteRepositoryProtocol
+import VaultRepository
 
 public actor LocalFirstNoteSyncService: NoteSyncing {
     private let localNotes: any NoteSyncLocalStoring
     private let remoteNotes: any NoteSyncRemoteStoring
+    private let localVault: any NoteSyncLocalVaultStoring
+    private let remoteVault: any NoteSyncRemoteVaultStoring
 
     public init(
         localNotes: LocalNoteRepository,
-        remoteNotes: NetworkNoteRepository
+        remoteNotes: NetworkNoteRepository,
+        localVault: LocalVaultRepository,
+        remoteVault: NetworkVaultRepository
     ) {
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
+        self.localVault = localVault
+        self.remoteVault = remoteVault
     }
 
     init(
         localNotes: any NoteSyncLocalStoring,
-        remoteNotes: any NoteSyncRemoteStoring
+        remoteNotes: any NoteSyncRemoteStoring,
+        localVault: any NoteSyncLocalVaultStoring,
+        remoteVault: any NoteSyncRemoteVaultStoring
     ) {
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
+        self.localVault = localVault
+        self.remoteVault = remoteVault
     }
 
     public func flushPending() async {
         await flushUploads()
         await flushDeletes()
+    }
+
+    public func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        if (try? await localVault.readHeader()) != nil {
+            return nil
+        }
+
+        let header = try await remoteVault.readHeader()
+        try await localVault.writeHeader(header)
+        try await importRemoteNotes()
+        return header
+    }
+
+    public nonisolated func scheduleVaultHeaderUpload(_ header: Data) {
+        Task {
+            await uploadVaultHeader(header)
+        }
+    }
+
+    private func uploadVaultHeader(_ header: Data) async {
+        try? await remoteVault.writeHeader(header)
+    }
+
+    private func importRemoteNotes() async throws {
+        let summaries = try await remoteNotes.listNotes()
+        for summary in summaries {
+            let note = try await remoteNotes.readNote(noteID: summary.noteID)
+            try await localNotes.importSyncedNote(note, etag: summary.etag)
+        }
     }
 
     private func flushUploads() async {

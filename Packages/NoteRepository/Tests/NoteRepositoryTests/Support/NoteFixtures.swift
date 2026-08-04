@@ -24,13 +24,44 @@ enum NoteFixtures {
         syncState: .synced
     )
 
-    static func listNotesJSON(summaries: [NoteSummary] = [sampleSummary]) -> Data {
-        let entries = summaries.map { summary in
-            """
+    static func pullListNotesJSON(
+        noteID: UUID,
+        title: String,
+        updatedAt: UInt64,
+        etag: String
+    ) -> Data {
+        let payload: [[String: Any]] = [[
+            "noteId": noteID.uuidString.lowercased(),
+            "title": title,
+            "updatedAt": updatedAt,
+            "syncState": "synced",
+            "etag": etag,
+        ]]
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static let vaultHeaderBytes = Data([0x53, 0x53, 0x4E, 0x56, 0x02])
+
+    static func listNotesJSON(
+        summaries: [NoteSummary] = [sampleSummary],
+        etags: [String?] = []
+    ) -> Data {
+        let entries = summaries.enumerated().map { index, summary in
+            let etagField: String
+            if index < etags.count, let etag = etags[index] {
+                etagField = """
+                ,
+                      "etag": "\(etag)"
+                """
+            } else {
+                etagField = ""
+            }
+            return """
             {
               "noteId": "\(summary.noteID.uuidString.lowercased())",
               "title": "\(summary.title)",
-              "updatedAt": \(summary.updatedAt)
+              "updatedAt": \(summary.updatedAt),
+              "syncState": "\(summary.syncState.rawValue)"\(etagField)
             }
             """
         }

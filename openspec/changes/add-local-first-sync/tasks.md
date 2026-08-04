@@ -31,10 +31,10 @@
 
 ## 6. Sync orchestrator — empty-local pull and vault push
 
-- [ ] 6.1 Write failing tests: when local vault missing after auth, pull vault header + list/download notes into local as `.synced`; when local vault exists, skip full pull
-- [ ] 6.2 Implement empty-local pull; make tests pass
-- [ ] 6.3 Write failing tests: after local vault write on register, fire-and-forget `PUT /vault/header`; register success does not depend on upload completion
-- [ ] 6.4 Implement vault header push hook; make tests pass
+- [x] 6.1 Write failing tests: when local vault missing after auth, pull vault header + list/download notes into local as `.synced`; when local vault exists, skip full pull
+- [x] 6.2 Implement empty-local pull; make tests pass
+- [x] 6.3 Write failing tests: after local vault write on register, fire-and-forget `PUT /vault/header`; register success does not depend on upload completion
+- [x] 6.4 Implement vault header push hook; make tests pass
 
 ## 7. Retry triggers and composition
 
