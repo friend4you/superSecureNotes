@@ -38,11 +38,11 @@
 
 ## 7. Retry triggers and composition
 
-- [ ] 7.1 Write failing tests: unlock-online, note-list refresh, and network-online transition invoke flush (`AuthFlow` / `NotesFlow` / app tests as appropriate)
-- [ ] 7.2 Wire flush calls into unlock, `DefaultNoteListViewModel.refresh`, and reachability observer; make tests pass
-- [ ] 7.3 Write failing tests: `AppDependencies` uses `http://localhost:8000/v1`, always `NetworkAuthRepository`, no stub gate (`superSecureNotesTests/AppDependenciesTests.swift`)
-- [ ] 7.4 Update `AppDependencies` base URL, remove `StubBackendConfiguration` / `InMemoryAuthRepository` wiring, construct network clients + sync orchestrator; make tests pass
-- [ ] 7.5 Delete stub backend types/scheme argument and rewrite or remove obsolete stub-only tests
+- [x] 7.1 Write failing tests: unlock-online, note-list refresh, and network-online transition invoke flush (`AuthFlow` / `NotesFlow` / app tests as appropriate)
+- [x] 7.2 Wire flush calls into unlock, `DefaultNoteListViewModel.refresh`, and reachability observer; make tests pass
+- [x] 7.3 Write failing tests: `AppDependencies` uses `http://localhost:8000/v1`, always `NetworkAuthRepository`, no stub gate (`superSecureNotesTests/AppDependenciesTests.swift`)
+- [x] 7.4 Update `AppDependencies` base URL, remove `StubBackendConfiguration` / `InMemoryAuthRepository` wiring, construct network clients + sync orchestrator; make tests pass
+- [x] 7.5 Delete stub backend types/scheme argument and rewrite or remove obsolete stub-only tests
 
 ## 8. NotesFlow sync indicators
 

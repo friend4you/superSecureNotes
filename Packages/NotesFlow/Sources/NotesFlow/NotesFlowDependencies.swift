@@ -14,6 +14,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     internal let noteRepository: any NoteRepository
     private let credentialStore: any CredentialStore
     private let performLogout: () async -> Void
+    private let noteSync: any NoteSyncing
     private var noteListViewModel: DefaultNoteListViewModel?
 
     public init(
@@ -22,6 +23,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         navigator: any Navigating,
         noteRepository: any NoteRepository,
         credentialStore: any CredentialStore,
+        noteSync: any NoteSyncing = NoOpNoteSyncService(),
         performLogout: @escaping () async -> Void
     ) {
         self.authRepository = authRepository
@@ -29,6 +31,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         self.navigator = navigator
         self.noteRepository = noteRepository
         self.credentialStore = credentialStore
+        self.noteSync = noteSync
         self.performLogout = performLogout
 
         Task {
@@ -49,7 +52,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
             noteRepository: noteRepository,
             navigator: navigator,
             credentialStore: credentialStore,
-            performLogout: performLogout
+            performLogout: performLogout,
+            noteSync: noteSync
         )
         noteListViewModel = viewModel
         return viewModel

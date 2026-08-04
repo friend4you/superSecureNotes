@@ -66,7 +66,8 @@ enum AuthFlowTestSupport {
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
         notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         biometricAuthenticator: any BiometricAuthenticator = MockBiometricAuthenticator(),
-        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false)
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false),
+        noteSync: any NoteSyncing = MockNoteSyncService()
     ) -> DefaultUnlockViewModel {
         DefaultUnlockViewModel(
             credentialStore: credentialStore,
@@ -75,7 +76,8 @@ enum AuthFlowTestSupport {
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore,
             biometricAuthenticator: biometricAuthenticator,
-            networkReachability: networkReachability
+            networkReachability: networkReachability,
+            noteSync: noteSync
         )
     }
 }
@@ -389,6 +391,12 @@ final class MockCredentialStore: CredentialStore, @unchecked Sendable {
 
 struct MockNetworkReachability: NetworkReachability {
     let isOnline: Bool
+    var changes: AsyncStream<Bool> {
+        AsyncStream { continuation in
+            continuation.yield(isOnline)
+            continuation.finish()
+        }
+    }
 }
 
 final class MockVaultHeaderUploadScheduler: VaultHeaderUploadScheduling, @unchecked Sendable {
@@ -406,6 +414,20 @@ final class MockVaultHeaderUploadScheduler: VaultHeaderUploadScheduling, @unchec
         headers.append(header)
         lock.unlock()
     }
+}
+
+actor MockNoteSyncService: NoteSyncing {
+    private(set) var flushCallCount = 0
+
+    func flushPending() async {
+        flushCallCount += 1
+    }
+
+    func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        nil
+    }
+
+    nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 }
 
 actor MockNotesIndexStore: NotesIndexStoreProtocol {

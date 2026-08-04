@@ -37,6 +37,7 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     private let navigator: any Navigating
     private let credentialStore: any CredentialStore
     private let performLogout: () async -> Void
+    private let noteSync: any NoteSyncing
 
     public init(
         authRepository: any AuthRepository,
@@ -44,7 +45,8 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         noteRepository: any NoteRepository,
         navigator: any Navigating,
         credentialStore: any CredentialStore,
-        performLogout: @escaping () async -> Void
+        performLogout: @escaping () async -> Void,
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.authRepository = authRepository
         self.vaultSession = vaultSession
@@ -52,12 +54,15 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         self.navigator = navigator
         self.credentialStore = credentialStore
         self.performLogout = performLogout
+        self.noteSync = noteSync
     }
 
     public func refresh() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        await noteSync.flushPending()
 
         do {
             let loadedNotes = try await noteRepository.listNotes()

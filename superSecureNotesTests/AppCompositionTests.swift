@@ -1,5 +1,6 @@
 import AuthFlowProtocol
 import AuthFlowRoutes
+import AuthRepositoryProtocol
 import CryptoKit
 import CredentialStoreProtocol
 import Navigation
@@ -36,19 +37,9 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class AppCompositionTests: XCTestCase {
-    override func setUp() {
-        StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
-        super.setUp()
-    }
-
-    override func tearDown() {
-        StubBackendConfiguration.testLaunchArguments = nil
-        super.tearDown()
-    }
-
     func testAppUsesNotesFlowDependencies() {
         let notesDependencies = NotesFlowDependencies(
-            authRepository: InMemoryAuthRepository(),
+            authRepository: TestAuthRepository(),
             vaultSession: VaultSession(),
             navigator: MockNavigating(),
             noteRepository: MockNoteRepository(),
@@ -201,4 +192,28 @@ private final class TestCredentialStore: CredentialStore, @unchecked Sendable {
     func loadPasswordWithBiometrics() throws -> String { throw CredentialStoreError.itemNotFound }
     func saveSetup(email: String, refreshToken: String, vaultHeader: Data) throws {}
     func clearAll() throws {}
+}
+
+private actor TestAuthRepository: AuthRepository {
+    var currentSession: AuthSession? { nil }
+    var currentUser: User? { nil }
+
+    func register(_ credentials: RegisterCredentials) async throws -> AuthSession {
+        throw AuthRepositoryError.validationError("unused")
+    }
+
+    func login(_ credentials: LoginCredentials) async throws -> AuthSession {
+        throw AuthRepositoryError.validationError("unused")
+    }
+
+    func logout() async throws {}
+    func refreshSession() async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }

@@ -113,6 +113,12 @@ private final class PreviewCredentialStore: CredentialStore, @unchecked Sendable
 
 private struct PreviewNetworkReachability: NetworkReachability {
     let isOnline = true
+    var changes: AsyncStream<Bool> {
+        AsyncStream { continuation in
+            continuation.yield(true)
+            continuation.finish()
+        }
+    }
 }
 
 private struct PreviewBiometricAuthenticator: BiometricAuthenticator {

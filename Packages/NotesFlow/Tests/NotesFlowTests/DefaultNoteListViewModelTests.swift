@@ -30,6 +30,24 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class DefaultNoteListViewModelTests: XCTestCase {
+    func testRefreshFlushesPendingSyncBeforeLoadingNotes() async {
+        let noteSync = MockNoteSyncService()
+        let noteRepository = MockNoteRepository(
+            notes: [
+                NoteSummary(noteID: UUID(), title: "Synced", updatedAt: 100, syncState: .synced),
+            ]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository, noteSync: noteSync)
+
+        await viewModel.refresh()
+
+        let flushCallCount = await noteSync.flushCallCount
+        let listNotesCallCount = await noteRepository.listNotesCallCount
+        XCTAssertEqual(flushCallCount, 1)
+        XCTAssertEqual(listNotesCallCount, 1)
+        XCTAssertEqual(viewModel.notes.count, 1)
+    }
+
     func testRefreshLoadsNotesSortedByUpdatedAtDescending() async {
         let olderID = UUID()
         let newerID = UUID()
@@ -161,6 +179,7 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         noteRepository: MockNoteRepository = MockNoteRepository(),
         navigator: MockNavigating? = nil,
         credentialStore: MockCredentialStore = NotesFlowTestMocks.credentialStore(),
+        noteSync: MockNoteSyncService = MockNoteSyncService(),
         performLogout: (() async -> Void)? = nil
     ) -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
@@ -169,9 +188,24 @@ final class DefaultNoteListViewModelTests: XCTestCase {
             noteRepository: noteRepository,
             navigator: navigator ?? MockNavigating(),
             credentialStore: credentialStore,
-            performLogout: performLogout ?? NotesFlowTestMocks.noopLogout
+            performLogout: performLogout ?? NotesFlowTestMocks.noopLogout,
+            noteSync: noteSync
         )
     }
+}
+
+private actor MockNoteSyncService: NoteSyncing {
+    private(set) var flushCallCount = 0
+
+    func flushPending() async {
+        flushCallCount += 1
+    }
+
+    func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        nil
+    }
+
+    nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 }
 
 private actor MockNoteRepository: NoteRepository {

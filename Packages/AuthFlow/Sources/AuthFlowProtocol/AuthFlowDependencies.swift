@@ -18,6 +18,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let credentialStore: any CredentialStore
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
+    private let noteSync: any NoteSyncing
+    private let vaultHeaderUploader: any VaultHeaderUploadScheduling
 
     public init(
         authRepository: any AuthRepository,
@@ -28,7 +30,9 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         navigator: any Navigating,
         credentialStore: any CredentialStore,
         biometricAuthenticator: any BiometricAuthenticator,
-        networkReachability: any NetworkReachability
+        networkReachability: any NetworkReachability,
+        noteSync: any NoteSyncing = NoOpNoteSyncService(),
+        vaultHeaderUploader: any VaultHeaderUploadScheduling = NoOpVaultHeaderUploadScheduler()
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -39,6 +43,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         self.credentialStore = credentialStore
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
+        self.noteSync = noteSync
+        self.vaultHeaderUploader = vaultHeaderUploader
     }
 
     public func makeLoginViewModel() -> DefaultLoginViewModel {
@@ -62,7 +68,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
-            networkReachability: networkReachability
+            networkReachability: networkReachability,
+            vaultHeaderUploader: vaultHeaderUploader
         )
     }
 
@@ -74,7 +81,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore,
             biometricAuthenticator: biometricAuthenticator,
-            networkReachability: networkReachability
+            networkReachability: networkReachability,
+            noteSync: noteSync
         )
     }
 

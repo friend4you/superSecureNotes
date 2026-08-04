@@ -1,6 +1,7 @@
 import AuthFlowProtocol
 import AuthFlowRoutes
 import AuthRepository
+import AuthRepositoryProtocol
 import CredentialStore
 import CredentialStoreProtocol
 import CryptoKit
@@ -48,7 +49,7 @@ final class LogoutFlowTests: XCTestCase {
             service: "com.superSecureNotes.tests.\(UUID().uuidString)",
             passwordAccessMode: .standard
         )
-        let authRepository = InMemoryAuthRepository()
+        let authRepository = TestAuthRepository()
         let viewModel = DefaultNoteListViewModel(
             authRepository: authRepository,
             vaultSession: vaultSession,
@@ -90,6 +91,30 @@ final class LogoutFlowTests: XCTestCase {
         XCTAssertFalse(credentialStore.hasLocalSetup)
         XCTAssertEqual(navigator.setRootRoutes.last?.base as? AuthRoute, .login)
     }
+}
+
+private actor TestAuthRepository: AuthRepository {
+    var currentSession: AuthSession? { nil }
+    var currentUser: User? { nil }
+
+    func register(_ credentials: RegisterCredentials) async throws -> AuthSession {
+        throw AuthRepositoryError.validationError("unused")
+    }
+
+    func login(_ credentials: LoginCredentials) async throws -> AuthSession {
+        throw AuthRepositoryError.validationError("unused")
+    }
+
+    func logout() async throws {}
+    func refreshSession() async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }
 
 private actor MockNoteRepository: NoteRepository {

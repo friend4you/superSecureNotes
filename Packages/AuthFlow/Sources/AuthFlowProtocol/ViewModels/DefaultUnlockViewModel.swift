@@ -20,6 +20,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
     private let notesIndexStore: any NotesIndexStoreProtocol
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
+    private let noteSync: any NoteSyncing
 
     public init(
         credentialStore: any CredentialStore,
@@ -28,7 +29,8 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
         vaultSession: any VaultSessionProtocol,
         notesIndexStore: any NotesIndexStoreProtocol,
         biometricAuthenticator: any BiometricAuthenticator,
-        networkReachability: any NetworkReachability
+        networkReachability: any NetworkReachability,
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.credentialStore = credentialStore
         self.authRepository = authRepository
@@ -37,6 +39,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
         self.notesIndexStore = notesIndexStore
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
+        self.noteSync = noteSync
         self.email = credentialStore.email() ?? ""
     }
 
@@ -136,6 +139,9 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore
         )
+        if networkReachability.isOnline {
+            await noteSync.flushPending()
+        }
     }
 
     private func mapAuthError(_ error: AuthRepositoryError) -> AuthFlowError {

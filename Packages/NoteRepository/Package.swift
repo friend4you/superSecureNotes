@@ -21,6 +21,7 @@ let package = Package(
     dependencies: [
         .package(path: "../VaultRepository"),
         .package(path: "../SecureCrypto"),
+        .package(path: "../Network"),
         .package(url: "https://github.com/sqlcipher/SQLCipher.swift.git", from: "4.11.0"),
     ],
     targets: [
@@ -36,6 +37,7 @@ let package = Package(
                 "NoteRepositoryProtocol",
                 .product(name: "VaultRepository", package: "VaultRepository"),
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
+                .product(name: "NetworkProtocol", package: "Network"),
                 .product(name: "SecureCrypto", package: "SecureCrypto"),
                 .product(name: "SQLCipher", package: "SQLCipher.swift"),
             ]

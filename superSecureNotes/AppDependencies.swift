@@ -13,11 +13,16 @@ import VaultSession
 
 @MainActor
 final class AppDependencies {
-    static let apiBaseURL = URL(string: "https://api.example.com/v1")!
+    static let apiBaseURL = URL(string: "http://localhost:8000/v1")!
 
     let notesIndexStore: NotesIndexStore
+    let localNoteRepository: LocalNoteRepository
     let noteRepository: any NoteRepository
+    let localVaultRepository: LocalVaultRepository
     let vaultRepository: any VaultRepository
+    let networkVaultRepository: NetworkVaultRepository
+    let networkNoteRepository: NetworkNoteRepository
+    let noteSyncService: LocalFirstNoteSyncService
     let vaultSession: VaultSession
     let vaultAuthenticator: SecureCryptoVaultAuthenticator
     let credentialStore: KeychainCredentialStore
@@ -27,21 +32,32 @@ final class AppDependencies {
 
     init() {
         notesIndexStore = NotesIndexStore()
-        noteRepository = LocalNoteRepository(notesIndexStore: notesIndexStore)
-        vaultRepository = LocalVaultRepository()
+        localNoteRepository = LocalNoteRepository(notesIndexStore: notesIndexStore)
+        noteRepository = localNoteRepository
+        localVaultRepository = LocalVaultRepository()
+        vaultRepository = localVaultRepository
         vaultSession = VaultSession()
         vaultAuthenticator = SecureCryptoVaultAuthenticator()
         credentialStore = KeychainCredentialStore()
         biometricAuthenticator = LocalAuthenticationBiometricAuthenticator()
         networkReachability = NWPathNetworkReachability()
 
-        #if DEBUG
-        if StubBackendConfiguration.isEnabled {
-            authRepository = InMemoryAuthRepository()
-            return
-        }
-        #endif
-
         authRepository = NetworkAuthRepository(baseURL: Self.apiBaseURL)
+        let tokenProvider = AuthRepositoryAccessTokenProvider(repository: authRepository)
+        let vaultAPIClient = VaultAPIClient(
+            baseURL: Self.apiBaseURL,
+            tokenProvider: tokenProvider
+        )
+        networkVaultRepository = NetworkVaultRepository(apiClient: vaultAPIClient)
+        networkNoteRepository = NetworkNoteRepository(
+            baseURL: Self.apiBaseURL,
+            tokenProvider: tokenProvider
+        )
+        noteSyncService = LocalFirstNoteSyncService(
+            localNotes: localNoteRepository,
+            remoteNotes: networkNoteRepository,
+            localVault: localVaultRepository,
+            remoteVault: networkVaultRepository
+        )
     }
 }

@@ -1,4 +1,5 @@
 import AuthFlowProtocol
+import AuthRepositoryProtocol
 import CryptoKit
 import CredentialStoreProtocol
 import NoteRepository
@@ -72,7 +73,7 @@ final class NotesStorageIntegrationTests: XCTestCase {
         let udk = SymmetricKey(size: .bits256)
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440013")!
         let vaultSession = VaultSession()
-        let authRepository = InMemoryAuthRepository()
+        let authRepository = TestAuthRepository()
         let credentialStore = TestCredentialStore()
         let (indexStore, repository) = makeRepository()
         let passphrase = deriveNotesDatabaseKey(from: udk)
@@ -167,4 +168,28 @@ private final class TestCredentialStore: CredentialStore, @unchecked Sendable {
         hasLocalSetup = true
     }
     func clearAll() throws { hasLocalSetup = false }
+}
+
+private actor TestAuthRepository: AuthRepository {
+    var currentSession: AuthSession? { nil }
+    var currentUser: User? { nil }
+
+    func register(_ credentials: RegisterCredentials) async throws -> AuthSession {
+        throw AuthRepositoryError.validationError("unused")
+    }
+
+    func login(_ credentials: LoginCredentials) async throws -> AuthSession {
+        throw AuthRepositoryError.validationError("unused")
+    }
+
+    func logout() async throws {}
+    func refreshSession() async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+
+    func clearSession() async {}
 }

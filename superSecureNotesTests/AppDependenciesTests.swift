@@ -3,51 +3,44 @@ import AuthRepository
 import CredentialStore
 import NetworkMonitoring
 import NoteRepository
-import SecureCrypto
 import VaultRepository
-import VaultSession
 import XCTest
 
 @testable import superSecureNotes
 
 @MainActor
 final class AppDependenciesTests: XCTestCase {
-    override func tearDown() {
-        StubBackendConfiguration.testLaunchArguments = nil
-        super.tearDown()
+    func testUsesLocalhostAPIBaseURL() {
+        XCTAssertEqual(AppDependencies.apiBaseURL.absoluteString, "http://localhost:8000/v1")
     }
 
-    func testStubModeUsesInMemoryAuthAndLocalRepositories() async {
-        StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
-        let dependencies = AppDependencies()
-
-        XCTAssertTrue(dependencies.authRepository is InMemoryAuthRepository)
-        XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
-        XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
-        await Task.yield()
-    }
-
-    func testStubModeUsesRealCryptoAndVaultSession() async {
-        StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
-        let dependencies = AppDependencies()
-
-        XCTAssertTrue(dependencies.vaultAuthenticator is SecureCryptoVaultAuthenticator)
-        XCTAssertTrue(dependencies.vaultSession is VaultSession)
-        await Task.yield()
-    }
-
-    func testNetworkModeUsesNetworkAuthWithLocalRepositories() async {
-        StubBackendConfiguration.testLaunchArguments = []
+    func testUsesNetworkAuthRepository() async {
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.authRepository is NetworkAuthRepository)
+        await Task.yield()
+    }
+
+    func testUsesLocalRepositoriesAsSourceOfTruth() async {
+        let dependencies = AppDependencies()
+
         XCTAssertTrue(dependencies.vaultRepository is LocalVaultRepository)
         XCTAssertTrue(dependencies.noteRepository is LocalNoteRepository)
+        XCTAssertTrue(dependencies.localVaultRepository === dependencies.vaultRepository as? LocalVaultRepository)
+        XCTAssertTrue(dependencies.localNoteRepository === dependencies.noteRepository as? LocalNoteRepository)
+        await Task.yield()
+    }
+
+    func testConstructsNetworkClientsAndSyncService() async {
+        let dependencies = AppDependencies()
+
+        XCTAssertTrue(dependencies.networkVaultRepository is NetworkVaultRepository)
+        XCTAssertTrue(dependencies.networkNoteRepository is NetworkNoteRepository)
+        XCTAssertTrue(dependencies.noteSyncService is LocalFirstNoteSyncService)
         await Task.yield()
     }
 
     func testAppDependenciesProvidesSessionPersistenceServices() async {
-        StubBackendConfiguration.testLaunchArguments = ["-UseStubBackend"]
         let dependencies = AppDependencies()
 
         XCTAssertTrue(dependencies.credentialStore is KeychainCredentialStore)

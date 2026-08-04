@@ -3,6 +3,7 @@ import AuthFlowProtocol
 import AuthFlowUI
 import CredentialStore
 import Navigation
+import NoteRepository
 import NotesFlow
 import NotesFlowRoutes
 import Observation
@@ -22,6 +23,7 @@ final class AppComposition {
 
     private var lastSyncedHasLocalSetup: Bool?
     private var lastSyncedVaultActive: Bool?
+    private var syncRetryObservationTask: Task<Void, Never>?
 
     init() {
         let dependencies = AppDependencies()
@@ -36,7 +38,9 @@ final class AppComposition {
             navigator: navigation.navigator,
             credentialStore: dependencies.credentialStore,
             biometricAuthenticator: dependencies.biometricAuthenticator,
-            networkReachability: dependencies.networkReachability
+            networkReachability: dependencies.networkReachability,
+            noteSync: dependencies.noteSyncService,
+            vaultHeaderUploader: dependencies.noteSyncService
         )
         notesDependencies = NotesFlowDependencies(
             authRepository: dependencies.authRepository,
@@ -44,6 +48,7 @@ final class AppComposition {
             navigator: navigation.navigator,
             noteRepository: dependencies.noteRepository,
             credentialStore: dependencies.credentialStore,
+            noteSync: dependencies.noteSyncService,
             performLogout: {
                 await LogoutReset.perform(
                     authRepository: dependencies.authRepository,
@@ -75,6 +80,7 @@ final class AppComposition {
         #if DEBUG
         navigation.registry.verifyRegistered([AuthRoute.self, NotesRoute.self, ShareNoteRoute.self])
         #endif
+        startSyncRetryObservation()
     }
 
     func syncRootRoute(hasLocalSetup: Bool, isVaultActive: Bool) {
@@ -92,5 +98,12 @@ final class AppComposition {
 
     func handleScenePhase(_ phase: ScenePhase) {
         lockCoordinator.handleScenePhase(phase)
+    }
+
+    private func startSyncRetryObservation() {
+        syncRetryObservationTask = NoteSyncRetryObserver.start(
+            reachability: appDependencies.networkReachability,
+            noteSync: appDependencies.noteSyncService
+        )
     }
 }

@@ -6,6 +6,7 @@ import CryptoKit
 import NavigationProtocol
 import NoteRepository
 import NoteRepositoryProtocol
+import SecureCrypto
 import SwiftUI
 import VaultSession
 import VaultSessionProtocol
@@ -142,8 +143,14 @@ final class LockCoordinatorTests: XCTestCase {
     }
 
     func testLockClosesNotesIndexStoreBeforeClearingVaultSession() async throws {
-        let notesIndexStore = NotesIndexStore()
-        try await notesIndexStore.open(passphrase: Data([0x01]))
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+
+        let udk = SymmetricKey(size: .bits256)
+        let notesIndexStore = NotesIndexStore(notesDirectoryURL: temporaryDirectory)
+        try await notesIndexStore.open(passphrase: deriveNotesDatabaseKey(from: udk))
         let (coordinator, waiter, vaultSession, _) = makeLockCoordinator(
             notesIndexStore: notesIndexStore
         )
