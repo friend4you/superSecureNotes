@@ -35,7 +35,7 @@ final class NoteListViewTests: XCTestCase {
     func testViewModelNotesAreAvailableForListDisplay() async {
         let noteID = UUID()
         let noteRepository = MockNoteRepository(
-            notes: [NoteSummary(noteID: noteID, title: "Meeting notes", updatedAt: 100)]
+            notes: [NoteSummary(noteID: noteID, title: "Meeting notes", updatedAt: 100, syncState: .synced)]
         )
         let viewModel = makeViewModel(noteRepository: noteRepository)
 
@@ -67,7 +67,7 @@ final class NoteListViewTests: XCTestCase {
     func testDeleteConfirmationUsesViewModelDeleteNote() async {
         let noteID = UUID()
         let noteRepository = MockNoteRepository(
-            notes: [NoteSummary(noteID: noteID, title: "Delete me", updatedAt: 100)]
+            notes: [NoteSummary(noteID: noteID, title: "Delete me", updatedAt: 100, syncState: .synced)]
         )
         let viewModel = makeViewModel(noteRepository: noteRepository)
 

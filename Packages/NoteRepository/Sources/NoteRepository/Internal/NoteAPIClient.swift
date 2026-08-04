@@ -24,7 +24,13 @@ struct NoteAPIClient {
             guard let noteID = UUID(uuidString: dto.noteId) else {
                 throw NoteRepositoryError.validationError("Invalid note ID in list response.")
             }
-            return NoteSummary(noteID: noteID, title: dto.title, updatedAt: dto.updatedAt)
+            let syncState = dto.syncState.flatMap(NoteSyncState.init(rawValue:)) ?? .synced
+            return NoteSummary(
+                noteID: noteID,
+                title: dto.title,
+                updatedAt: dto.updatedAt,
+                syncState: syncState
+            )
         }
     }
 

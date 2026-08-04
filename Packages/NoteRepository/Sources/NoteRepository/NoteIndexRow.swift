@@ -55,6 +55,6 @@ struct NoteIndexRow: Equatable, Sendable {
     }
 
     var summary: NoteSummary {
-        NoteSummary(noteID: noteID, title: title, updatedAt: updatedAt)
+        NoteSummary(noteID: noteID, title: title, updatedAt: updatedAt, syncState: syncState)
     }
 }

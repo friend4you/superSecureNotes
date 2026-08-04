@@ -1,7 +1,7 @@
 ## 1. NoteSyncState and NoteSummary
 
-- [ ] 1.1 Write failing tests: `pendingDelete` equatable and distinct from `synced`/`pendingSync`; `NoteSummary` includes `syncState` (`Packages/NoteRepository/Tests/NoteRepositoryProtocolTests/StoredNoteTests.swift`, `NoteSummaryTests.swift`)
-- [ ] 1.2 Add `NoteSyncState.pendingDelete` and `NoteSummary.syncState`; update call sites that construct `NoteSummary`; make tests pass
+- [x] 1.1 Write failing tests: `pendingDelete` equatable and distinct from `synced`/`pendingSync`; `NoteSummary` includes `syncState` (`Packages/NoteRepository/Tests/NoteRepositoryProtocolTests/StoredNoteTests.swift`, `NoteSummaryTests.swift`)
+- [x] 1.2 Add `NoteSyncState.pendingDelete` and `NoteSummary.syncState`; update call sites that construct `NoteSummary`; make tests pass
 
 ## 2. NotesIndexStore etag and pendingDelete
 

@@ -7,7 +7,12 @@ final class NoteRepositoryTests: XCTestCase {
     func testMockActorSatisfiesContract() async throws {
         let repository = MockNoteRepository()
         let noteID = UUID(uuidString: "550E8400-E29B-41D4-A716-446655440000")!
-        let summary = NoteSummary(noteID: noteID, title: "My note", updatedAt: 1_700_000_000)
+        let summary = NoteSummary(
+            noteID: noteID,
+            title: "My note",
+            updatedAt: 1_700_000_000,
+            syncState: .synced
+        )
         let storedNote = makeStoredNote(noteID: noteID)
 
         await repository.setNotes([summary])

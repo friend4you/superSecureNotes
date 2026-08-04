@@ -20,7 +20,8 @@ enum NoteFixtures {
     static let sampleSummary = NoteSummary(
         noteID: noteID,
         title: "My note",
-        updatedAt: 1_700_000_000
+        updatedAt: 1_700_000_000,
+        syncState: .synced
     )
 
     static func listNotesJSON(summaries: [NoteSummary] = [sampleSummary]) -> Data {

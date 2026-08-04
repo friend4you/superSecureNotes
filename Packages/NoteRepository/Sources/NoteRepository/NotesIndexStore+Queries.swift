@@ -54,7 +54,7 @@ extension NotesIndexStore {
         try withDatabase { database in
             let rows = try queryRows(
                 """
-                SELECT note_id, title, updated_at
+                SELECT note_id, title, updated_at, sync_state
                 FROM notes
                 ORDER BY updated_at DESC
                 """,
@@ -64,7 +64,8 @@ extension NotesIndexStore {
                 NoteSummary(
                     noteID: UUID(uuidString: Self.textValue(row["note_id"]))!,
                     title: Self.textValue(row["title"]),
-                    updatedAt: UInt64(Self.int64Value(row["updated_at"]))
+                    updatedAt: UInt64(Self.int64Value(row["updated_at"])),
+                    syncState: NoteSyncState(rawValue: Self.textValue(row["sync_state"])) ?? .pendingSync
                 )
             }
         }

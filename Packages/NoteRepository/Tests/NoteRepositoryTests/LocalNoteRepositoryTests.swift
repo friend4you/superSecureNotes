@@ -59,8 +59,22 @@ final class LocalNoteRepositoryTests: XCTestCase {
         let summaries = try await repository.listNotes()
 
         XCTAssertEqual(summaries.count, 2)
-        XCTAssertTrue(summaries.contains(NoteSummary(noteID: firstID, title: "First note", updatedAt: 1_700_000_200)))
-        XCTAssertTrue(summaries.contains(NoteSummary(noteID: secondID, title: "Second note", updatedAt: 1_700_000_100)))
+        XCTAssertTrue(summaries.contains(
+            NoteSummary(
+                noteID: firstID,
+                title: "First note",
+                updatedAt: 1_700_000_200,
+                syncState: .pendingSync
+            )
+        ))
+        XCTAssertTrue(summaries.contains(
+            NoteSummary(
+                noteID: secondID,
+                title: "Second note",
+                updatedAt: 1_700_000_100,
+                syncState: .pendingSync
+            )
+        ))
     }
 
     func testDeleteNoteRemovesDirectory() async throws {

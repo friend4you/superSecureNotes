@@ -35,8 +35,8 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         let newerID = UUID()
         let noteRepository = MockNoteRepository(
             notes: [
-                NoteSummary(noteID: olderID, title: "Older", updatedAt: 100),
-                NoteSummary(noteID: newerID, title: "Newer", updatedAt: 200),
+                NoteSummary(noteID: olderID, title: "Older", updatedAt: 100, syncState: .synced),
+                NoteSummary(noteID: newerID, title: "Newer", updatedAt: 200, syncState: .synced),
             ]
         )
         let viewModel = makeViewModel(noteRepository: noteRepository)
@@ -101,8 +101,8 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         let deletedID = UUID()
         let noteRepository = MockNoteRepository(
             notes: [
-                NoteSummary(noteID: deletedID, title: "Delete me", updatedAt: 100),
-                NoteSummary(noteID: remainingID, title: "Keep", updatedAt: 200),
+                NoteSummary(noteID: deletedID, title: "Delete me", updatedAt: 100, syncState: .synced),
+                NoteSummary(noteID: remainingID, title: "Keep", updatedAt: 200, syncState: .synced),
             ]
         )
         let viewModel = makeViewModel(noteRepository: noteRepository)

@@ -52,7 +52,8 @@ actor StoredNoteMockRepository: NoteRepository {
             NoteSummary(
                 noteID: $0.metadata.noteID,
                 title: $0.metadata.title,
-                updatedAt: $0.metadata.updatedAt
+                updatedAt: $0.metadata.updatedAt,
+                syncState: $0.syncState
             )
         }
     }

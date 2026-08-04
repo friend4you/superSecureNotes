@@ -7,7 +7,10 @@ final class StoredNoteTests: XCTestCase {
     func testNoteSyncStateCasesAreEquatable() {
         XCTAssertEqual(NoteSyncState.pendingSync, .pendingSync)
         XCTAssertEqual(NoteSyncState.synced, .synced)
+        XCTAssertEqual(NoteSyncState.pendingDelete, .pendingDelete)
         XCTAssertNotEqual(NoteSyncState.pendingSync, .synced)
+        XCTAssertNotEqual(NoteSyncState.pendingDelete, .synced)
+        XCTAssertNotEqual(NoteSyncState.pendingDelete, .pendingSync)
     }
 
     func testStoredNoteIsEquatable() {
