@@ -19,8 +19,8 @@
 
 ## 4. Sync outcome events and scheduleFlush
 
-- [ ] 4.1 Write failing tests: `NoteSyncing.scheduleFlush()` starts flush without blocking caller; `LocalFirstNoteSyncService` emits success/failure outcome per note after push attempt (`NoteSyncOutcomeTests`)
-- [ ] 4.2 Add `NoteSyncOutcome`, outcome stream on sync service, and `scheduleFlush()` on protocol + `NoOp` stub; make tests pass
+- [x] 4.1 Write failing tests: `NoteSyncing.scheduleFlush()` starts flush without blocking caller; `LocalFirstNoteSyncService` emits success/failure outcome per note after push attempt (`NoteSyncOutcomeTests`)
+- [x] 4.2 Add `NoteSyncOutcome`, outcome stream on sync service, and `scheduleFlush()` on protocol + `NoOp` stub; make tests pass
 
 ## 5. NotesFlow — sync on save
 

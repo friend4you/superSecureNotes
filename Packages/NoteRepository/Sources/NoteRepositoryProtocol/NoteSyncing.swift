@@ -15,5 +15,7 @@ public protocol NoteCatalogPulling: Sendable {
 }
 
 public protocol NoteSyncing: Actor, VaultHeaderUploadScheduling, NoteCatalogPulling {
+    nonisolated var syncOutcomes: AsyncStream<NoteSyncOutcome> { get }
     func flushPending() async
+    nonisolated func scheduleFlush()
 }

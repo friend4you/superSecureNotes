@@ -3,6 +3,9 @@ import NoteRepositoryProtocol
 import VaultRepository
 
 public actor LocalFirstNoteSyncService: NoteSyncing {
+    public nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome>
+    private let outcomeContinuation: AsyncStream<NoteSyncOutcome>.Continuation
+
     private let localNotes: any NoteSyncLocalStoring
     private let remoteNotes: any NoteSyncRemoteStoring
     private let localVault: any NoteSyncLocalVaultStoring
@@ -14,6 +17,9 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         localVault: LocalVaultRepository,
         remoteVault: NetworkVaultRepository
     ) {
+        var continuation: AsyncStream<NoteSyncOutcome>.Continuation!
+        syncOutcomes = AsyncStream { continuation = $0 }
+        outcomeContinuation = continuation
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
         self.localVault = localVault
@@ -26,10 +32,19 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         localVault: any NoteSyncLocalVaultStoring,
         remoteVault: any NoteSyncRemoteVaultStoring
     ) {
+        var continuation: AsyncStream<NoteSyncOutcome>.Continuation!
+        syncOutcomes = AsyncStream { continuation = $0 }
+        outcomeContinuation = continuation
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
         self.localVault = localVault
         self.remoteVault = remoteVault
+    }
+
+    public nonisolated func scheduleFlush() {
+        Task {
+            await flushPending()
+        }
     }
 
     public func flushPending() async {
@@ -76,29 +91,41 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     }
 
     private func pushNote(_ candidate: NoteSyncUploadCandidate) async {
+        let noteID = candidate.note.metadata.noteID
         do {
             let result = try await remoteNotes.uploadNote(
                 candidate.note,
                 ifMatch: candidate.etag,
                 uploadSessionStore: localNotes
             )
+            let updatedAt = resolvedUpdatedAt(
+                server: result.updatedAt,
+                local: candidate.note.metadata.updatedAt
+            )
             try await localNotes.markNoteSynced(
-                noteID: candidate.note.metadata.noteID,
-                updatedAt: resolvedUpdatedAt(
-                    server: result.updatedAt,
-                    local: candidate.note.metadata.updatedAt
-                ),
+                noteID: noteID,
+                updatedAt: updatedAt,
                 etag: result.etag
+            )
+            emitOutcome(
+                .uploaded(
+                    noteID: noteID,
+                    syncState: result.syncState,
+                    updatedAt: updatedAt,
+                    etag: result.etag
+                )
             )
         } catch NoteRepositoryError.serverError(statusCode: 409) {
             await resolveConflict(candidate)
         } catch {
-            return
+            emitOutcome(.uploadFailed(noteID: noteID))
         }
     }
 
     private func resolveConflict(_ candidate: NoteSyncUploadCandidate) async {
-        guard let remote = try? await remoteNotes.readNote(noteID: candidate.note.metadata.noteID) else {
+        let noteID = candidate.note.metadata.noteID
+        guard let remote = try? await remoteNotes.readNote(noteID: noteID) else {
+            emitOutcome(.uploadFailed(noteID: noteID))
             return
         }
 
@@ -109,24 +136,43 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
             await retryUploadWithoutConditionalMatch(candidate)
         } else if remoteUpdatedAt > localUpdatedAt {
             try? await localNotes.replaceNoteWithRemote(remote, etag: candidate.etag)
+            emitOutcome(
+                .uploaded(
+                    noteID: noteID,
+                    syncState: .synced,
+                    updatedAt: remote.metadata.updatedAt,
+                    etag: candidate.etag
+                )
+            )
         }
     }
 
     private func retryUploadWithoutConditionalMatch(_ candidate: NoteSyncUploadCandidate) async {
+        let noteID = candidate.note.metadata.noteID
         guard let result = try? await remoteNotes.uploadNote(
             candidate.note,
             ifMatch: nil,
             uploadSessionStore: localNotes
         ) else {
+            emitOutcome(.uploadFailed(noteID: noteID))
             return
         }
+        let updatedAt = resolvedUpdatedAt(
+            server: result.updatedAt,
+            local: candidate.note.metadata.updatedAt
+        )
         try? await localNotes.markNoteSynced(
-            noteID: candidate.note.metadata.noteID,
-            updatedAt: resolvedUpdatedAt(
-                server: result.updatedAt,
-                local: candidate.note.metadata.updatedAt
-            ),
+            noteID: noteID,
+            updatedAt: updatedAt,
             etag: result.etag
+        )
+        emitOutcome(
+            .uploaded(
+                noteID: noteID,
+                syncState: result.syncState,
+                updatedAt: updatedAt,
+                etag: result.etag
+            )
         )
     }
 
@@ -142,6 +188,10 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
                 continue
             }
         }
+    }
+
+    private func emitOutcome(_ outcome: NoteSyncOutcome) {
+        outcomeContinuation.yield(outcome)
     }
 
     private func resolvedUpdatedAt(server: UInt64, local: UInt64) -> UInt64 {

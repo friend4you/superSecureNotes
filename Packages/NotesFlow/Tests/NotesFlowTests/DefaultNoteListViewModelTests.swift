@@ -197,12 +197,18 @@ final class DefaultNoteListViewModelTests: XCTestCase {
 private actor MockNoteSyncService: NoteSyncing {
     private(set) var flushCallCount = 0
 
+    nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome> = AsyncStream { $0.finish() }
+
     func flushPending() async {
         flushCallCount += 1
     }
 
     func pullCatalogIfLocalVaultMissing() async throws -> Data? {
         nil
+    }
+
+    nonisolated func scheduleFlush() {
+        Task { await flushPending() }
     }
 
     nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
