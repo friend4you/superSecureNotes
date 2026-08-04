@@ -53,6 +53,8 @@
 
 ## 9. Manual verification
 
+Run `./Tools/verify-local-first-sync.sh` (API + package tests + app build). Then complete the printed simulator checklist.
+
 - [ ] 9.1 With API on `:8000`: register → create note → pending then synced indicator; kill app → unlock → note still local
 - [ ] 9.2 Delete note → disappears immediately; confirm remote DELETE via API/docs after flush
 - [ ] 9.3 Fresh install / cleared local data → login existing account → vault + notes pulled and usable offline afterward
