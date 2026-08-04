@@ -79,7 +79,8 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         do {
             let result = try await remoteNotes.uploadNote(
                 candidate.note,
-                ifMatch: candidate.etag
+                ifMatch: candidate.etag,
+                uploadSessionStore: localNotes
             )
             try await localNotes.markNoteSynced(
                 noteID: candidate.note.metadata.noteID,
@@ -112,7 +113,11 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     }
 
     private func retryUploadWithoutConditionalMatch(_ candidate: NoteSyncUploadCandidate) async {
-        guard let result = try? await remoteNotes.uploadNote(candidate.note, ifMatch: nil) else {
+        guard let result = try? await remoteNotes.uploadNote(
+            candidate.note,
+            ifMatch: nil,
+            uploadSessionStore: localNotes
+        ) else {
             return
         }
         try? await localNotes.markNoteSynced(

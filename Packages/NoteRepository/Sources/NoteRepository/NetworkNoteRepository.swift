@@ -43,6 +43,14 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func uploadNote(_ note: StoredNote, ifMatch etag: String? = nil) async throws -> NoteUploadResult {
+        try await uploadNote(note, ifMatch: etag, uploadSessionStore: nil)
+    }
+
+    func uploadNote(
+        _ note: StoredNote,
+        ifMatch etag: String?,
+        uploadSessionStore: (any NoteUploadSessionStoring)?
+    ) async throws -> NoteUploadResult {
         guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
         }
@@ -65,7 +73,8 @@ public actor NetworkNoteRepository: NoteRepository {
             noteID: note.metadata.noteID,
             wireBlob: data,
             accessToken: accessToken,
-            ifMatch: etag
+            ifMatch: etag,
+            uploadSessionStore: uploadSessionStore
         )
     }
 
@@ -73,7 +82,44 @@ public actor NetworkNoteRepository: NoteRepository {
         noteID: UUID,
         wireBlob: Data,
         accessToken: String,
-        ifMatch etag: String?
+        ifMatch etag: String?,
+        uploadSessionStore: (any NoteUploadSessionStoring)?
+    ) async throws -> NoteUploadResult {
+        if let uploadSessionStore,
+           let persisted = try await uploadSessionStore.fetchUploadSession(noteID: noteID) {
+            if persisted.wireSize == wireBlob.count {
+                do {
+                    return try await resumeChunkedUpload(
+                        persisted: persisted,
+                        noteID: noteID,
+                        wireBlob: wireBlob,
+                        accessToken: accessToken,
+                        ifMatch: etag,
+                        uploadSessionStore: uploadSessionStore
+                    )
+                } catch let error where Self.isExpiredUploadSession(error) {
+                    try await uploadSessionStore.deleteUploadSession(noteID: noteID)
+                }
+            } else {
+                try await uploadSessionStore.deleteUploadSession(noteID: noteID)
+            }
+        }
+
+        return try await startChunkedUpload(
+            noteID: noteID,
+            wireBlob: wireBlob,
+            accessToken: accessToken,
+            ifMatch: etag,
+            uploadSessionStore: uploadSessionStore
+        )
+    }
+
+    private func startChunkedUpload(
+        noteID: UUID,
+        wireBlob: Data,
+        accessToken: String,
+        ifMatch etag: String?,
+        uploadSessionStore: (any NoteUploadSessionStoring)?
     ) async throws -> NoteUploadResult {
         let session = try await apiClient.initUpload(
             noteID: noteID,
@@ -81,25 +127,92 @@ public actor NetworkNoteRepository: NoteRepository {
             accessToken: accessToken
         )
 
-        for chunkIndex in 0..<session.totalChunks {
-            let start = chunkIndex * session.chunkSize
-            let end = min(start + session.chunkSize, wireBlob.count)
-            let chunkData = wireBlob.subdata(in: start..<end)
-            try await uploadChunkWithRetry(
-                noteID: noteID,
-                uploadID: session.uploadID,
-                chunkIndex: chunkIndex,
-                chunkData: chunkData,
-                accessToken: accessToken
+        if let uploadSessionStore {
+            try await uploadSessionStore.upsertUploadSession(
+                NoteUploadSessionRecord(
+                    noteID: noteID,
+                    uploadID: session.uploadID,
+                    wireSize: wireBlob.count,
+                    chunkSize: session.chunkSize,
+                    totalChunks: session.totalChunks,
+                    ifMatch: etag
+                )
             )
         }
 
-        return try await apiClient.completeUpload(
+        try await uploadRemainingChunks(
+            noteID: noteID,
+            uploadID: session.uploadID,
+            wireBlob: wireBlob,
+            chunkSize: session.chunkSize,
+            totalChunks: session.totalChunks,
+            completedChunkIndices: [],
+            accessToken: accessToken,
+            uploadSessionStore: uploadSessionStore
+        )
+
+        let result = try await apiClient.completeUpload(
             noteID: noteID,
             uploadID: session.uploadID,
             accessToken: accessToken,
             ifMatch: etag
         )
+        try await uploadSessionStore?.deleteUploadSession(noteID: noteID)
+        return result
+    }
+
+    private func resumeChunkedUpload(
+        persisted: NoteUploadSessionRecord,
+        noteID: UUID,
+        wireBlob: Data,
+        accessToken: String,
+        ifMatch etag: String?,
+        uploadSessionStore: any NoteUploadSessionStoring
+    ) async throws -> NoteUploadResult {
+        try await uploadRemainingChunks(
+            noteID: noteID,
+            uploadID: persisted.uploadID,
+            wireBlob: wireBlob,
+            chunkSize: persisted.chunkSize,
+            totalChunks: persisted.totalChunks,
+            completedChunkIndices: persisted.completedChunkIndices,
+            accessToken: accessToken,
+            uploadSessionStore: uploadSessionStore
+        )
+
+        let result = try await apiClient.completeUpload(
+            noteID: noteID,
+            uploadID: persisted.uploadID,
+            accessToken: accessToken,
+            ifMatch: etag ?? persisted.ifMatch
+        )
+        try await uploadSessionStore.deleteUploadSession(noteID: noteID)
+        return result
+    }
+
+    private func uploadRemainingChunks(
+        noteID: UUID,
+        uploadID: UUID,
+        wireBlob: Data,
+        chunkSize: Int,
+        totalChunks: Int,
+        completedChunkIndices: Set<Int>,
+        accessToken: String,
+        uploadSessionStore: (any NoteUploadSessionStoring)?
+    ) async throws {
+        for chunkIndex in 0..<totalChunks where !completedChunkIndices.contains(chunkIndex) {
+            let start = chunkIndex * chunkSize
+            let end = min(start + chunkSize, wireBlob.count)
+            let chunkData = wireBlob.subdata(in: start..<end)
+            try await uploadChunkWithRetry(
+                noteID: noteID,
+                uploadID: uploadID,
+                chunkIndex: chunkIndex,
+                chunkData: chunkData,
+                accessToken: accessToken
+            )
+            try await uploadSessionStore?.markUploadChunkCompleted(noteID: noteID, chunkIndex: chunkIndex)
+        }
     }
 
     private func uploadChunkWithRetry(
@@ -122,6 +235,20 @@ public actor NetworkNoteRepository: NoteRepository {
             } catch NoteRepositoryError.networkError {
                 continue
             }
+        }
+    }
+
+    private static func isExpiredUploadSession(_ error: Error) -> Bool {
+        guard let error = error as? NoteRepositoryError else {
+            return false
+        }
+        switch error {
+        case .noteNotFound:
+            return true
+        case let .serverError(statusCode):
+            return statusCode == 404 || statusCode == 410
+        default:
+            return false
         }
     }
 

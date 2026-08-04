@@ -12,10 +12,10 @@
 
 ## 3. Upload session persistence
 
-- [ ] 3.1 Write failing tests: `NotesIndexStore` persists upload session row (uploadId, wireSize, chunkSize, totalChunks, completed indices, ifMatch); survives close/reopen; deletes on successful complete (`NotesIndexStoreUploadSessionTests`)
-- [ ] 3.2 Add `note_upload_sessions` schema + CRUD; migrate on open; make tests pass
-- [ ] 3.3 Write failing tests: resume skips completed chunk indices; wire size mismatch deletes session and re-inits; server session not-found clears session and restarts (`LocalFirstNoteSyncServiceChunkedUploadTests`)
-- [ ] 3.4 Integrate session load/save/invalidate into sync flush chunked path; make tests pass
+- [x] 3.1 Write failing tests: `NotesIndexStore` persists upload session row (uploadId, wireSize, chunkSize, totalChunks, completed indices, ifMatch); survives close/reopen; deletes on successful complete (`NotesIndexStoreUploadSessionTests`)
+- [x] 3.2 Add `note_upload_sessions` schema + CRUD; migrate on open; make tests pass
+- [x] 3.3 Write failing tests: resume skips completed chunk indices; wire size mismatch deletes session and re-inits; server session not-found clears session and restarts (`LocalFirstNoteSyncServiceChunkedUploadTests`)
+- [x] 3.4 Integrate session load/save/invalidate into sync flush chunked path; make tests pass
 
 ## 4. Sync outcome events and scheduleFlush
 

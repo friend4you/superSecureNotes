@@ -54,6 +54,7 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             )
             try execute(Self.createTableSQL, on: pointer)
             try migrateSchemaIfNeeded(on: pointer)
+            try migrateUploadSessionsIfNeeded(on: pointer)
             try execute("SELECT count(*) FROM notes", on: pointer)
         } catch {
             sqlite3_close(pointer)
@@ -242,6 +243,23 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
         )
         try execute("DROP TABLE notes", on: database)
         try execute("ALTER TABLE notes_migrated RENAME TO notes", on: database)
+    }
+
+    private func migrateUploadSessionsIfNeeded(on database: OpaquePointer) throws {
+        try execute(
+            """
+            CREATE TABLE IF NOT EXISTS note_upload_sessions (
+                note_id TEXT PRIMARY KEY NOT NULL,
+                upload_id TEXT NOT NULL,
+                wire_size INTEGER NOT NULL,
+                chunk_size INTEGER NOT NULL,
+                total_chunks INTEGER NOT NULL,
+                completed_chunk_indices TEXT NOT NULL,
+                if_match TEXT
+            )
+            """,
+            on: database
+        )
     }
 }
 

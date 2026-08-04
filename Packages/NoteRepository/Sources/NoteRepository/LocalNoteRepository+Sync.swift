@@ -13,7 +13,7 @@ struct NoteDeleteSyncEntry: Sendable {
     let etag: String?
 }
 
-protocol NoteSyncLocalStoring: Actor {
+protocol NoteSyncLocalStoring: Actor, NoteUploadSessionStoring {
     func uploadCandidates() async throws -> [NoteSyncUploadCandidate]
     func pendingDeleteEntries() async throws -> [NoteDeleteSyncEntry]
     func markNoteSynced(noteID: UUID, updatedAt: UInt64, etag: String?) async throws
@@ -22,9 +22,20 @@ protocol NoteSyncLocalStoring: Actor {
     func importSyncedNote(_ note: StoredNote, etag: String?) async throws
 }
 
+protocol NoteUploadSessionStoring: Actor {
+    func fetchUploadSession(noteID: UUID) async throws -> NoteUploadSessionRecord?
+    func upsertUploadSession(_ record: NoteUploadSessionRecord) async throws
+    func markUploadChunkCompleted(noteID: UUID, chunkIndex: Int) async throws
+    func deleteUploadSession(noteID: UUID) async throws
+}
+
 protocol NoteSyncRemoteStoring: Actor {
     func listNotes() async throws -> [NoteSummary]
-    func uploadNote(_ note: StoredNote, ifMatch etag: String?) async throws -> NoteUploadResult
+    func uploadNote(
+        _ note: StoredNote,
+        ifMatch etag: String?,
+        uploadSessionStore: (any NoteUploadSessionStoring)?
+    ) async throws -> NoteUploadResult
     func readNote(noteID: UUID) async throws -> StoredNote
     func deleteNote(noteID: UUID) async throws
 }
@@ -75,6 +86,27 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
                 etag: etag
             )
         )
+        try await notesIndexStore.deleteUploadSession(noteID: noteID)
+    }
+
+    func fetchUploadSession(noteID: UUID) async throws -> NoteUploadSessionRecord? {
+        try await requireOpen()
+        return try await notesIndexStore.fetchUploadSession(noteID: noteID)
+    }
+
+    func upsertUploadSession(_ record: NoteUploadSessionRecord) async throws {
+        try await requireOpen()
+        try await notesIndexStore.upsertUploadSession(record)
+    }
+
+    func markUploadChunkCompleted(noteID: UUID, chunkIndex: Int) async throws {
+        try await requireOpen()
+        try await notesIndexStore.markUploadChunkCompleted(noteID: noteID, chunkIndex: chunkIndex)
+    }
+
+    func deleteUploadSession(noteID: UUID) async throws {
+        try await requireOpen()
+        try await notesIndexStore.deleteUploadSession(noteID: noteID)
     }
 
     func finalizeDeletedNote(noteID: UUID) async throws {
