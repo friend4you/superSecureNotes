@@ -53,6 +53,15 @@ public actor NetworkNoteRepository: NoteRepository {
             encryptedPayload: note.encryptedPayload
         )
         let accessToken = try await tokenProvider.accessToken()
+        if data.count <= NoteUploadSizeThreshold {
+            return try await apiClient.writeNote(
+                noteID: note.metadata.noteID,
+                data: data,
+                accessToken: accessToken,
+                ifMatch: etag
+            )
+        }
+        // Over-threshold chunked upload — task 2.2
         return try await apiClient.writeNote(
             noteID: note.metadata.noteID,
             data: data,

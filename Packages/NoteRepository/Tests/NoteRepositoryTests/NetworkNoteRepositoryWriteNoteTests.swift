@@ -96,6 +96,54 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
         }
     }
 
+    func testUploadNoteUsesSinglePUTForSubThresholdBlob() async throws {
+        let captured = RequestCapture()
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.writeNoteResponseJSON())
+        }
+
+        let repository = NetworkNoteRepository(
+            baseURL: NoteFixtures.baseURL,
+            tokenProvider: MockTokenProvider(),
+            session: .stubbed()
+        )
+
+        _ = try await repository.uploadNote(NoteFixtures.sampleStoredNote)
+
+        XCTAssertEqual(captured.method, "PUT")
+        XCTAssertEqual(captured.path, "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())")
+        XCTAssertFalse(captured.path?.contains("/uploads") ?? true)
+    }
+
+    func testUploadNoteUsesSinglePUTAtThresholdWireBlobSize() async throws {
+        let captured = RequestCapture()
+        let note = try NoteTestSupport.makeStoredNoteWithWireBlobSize(
+            noteID: NoteFixtures.noteID,
+            title: "Threshold note",
+            wireBlobSize: NoteUploadSizeThreshold
+        )
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.writeNoteResponseJSON())
+        }
+
+        let repository = NetworkNoteRepository(
+            baseURL: NoteFixtures.baseURL,
+            tokenProvider: MockTokenProvider(),
+            session: .stubbed()
+        )
+
+        _ = try await repository.uploadNote(note)
+
+        XCTAssertEqual(captured.method, "PUT")
+        XCTAssertEqual(captured.path, "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())")
+        XCTAssertFalse(captured.path?.contains("/uploads") ?? true)
+        XCTAssertEqual(captured.bodyData?.count, NoteUploadSizeThreshold)
+    }
+
     func testWriteNotePropagatesTokenProviderFailure() async {
         let repository = NetworkNoteRepository(
             baseURL: NoteFixtures.baseURL,

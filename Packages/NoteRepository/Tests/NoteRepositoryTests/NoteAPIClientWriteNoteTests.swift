@@ -144,6 +144,33 @@ final class NoteAPIClientWriteNoteTests: XCTestCase {
         XCTAssertEqual(captured.ifMatch, etag)
     }
 
+    func testNoteUploadSizeThresholdIsTenMegabytes() {
+        XCTAssertEqual(NoteUploadSizeThreshold, 10_000_000)
+    }
+
+    func testWriteNoteUsesSinglePUTForThresholdSizedBlob() async throws {
+        let captured = RequestCapture()
+        let noteID = NoteFixtures.noteID
+        let thresholdData = Data(repeating: 0x01, count: NoteUploadSizeThreshold)
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.writeNoteResponseJSON())
+        }
+
+        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
+        _ = try await client.writeNote(
+            noteID: noteID,
+            data: thresholdData,
+            accessToken: NoteFixtures.accessToken
+        )
+
+        XCTAssertEqual(captured.method, "PUT")
+        XCTAssertEqual(captured.path, "/v1/notes/\(noteID.uuidString.lowercased())")
+        XCTAssertFalse(captured.path?.contains("/uploads") ?? true)
+        XCTAssertEqual(captured.bodyData?.count, NoteUploadSizeThreshold)
+    }
+
     func testWriteNoteOmitsIfMatchHeaderWhenEtagNotProvided() async throws {
         let captured = RequestCapture()
         URLProtocolStub.requestHandler = { request in

@@ -44,6 +44,44 @@ enum NoteTestSupport {
         )
     }
 
+    static func makeStoredNoteWithWireBlobSize(
+        noteID: UUID,
+        title: String,
+        wireBlobSize: Int,
+        updatedAt: UInt64 = 1_700_000_100,
+        syncState: NoteSyncState = .pendingSync
+    ) throws -> StoredNote {
+        let metadata = NoteMetadata(
+            noteID: noteID,
+            title: title,
+            createdAt: 1_700_000_000,
+            updatedAt: updatedAt,
+            attachmentCount: 0,
+            attachmentsTotalSize: 0
+        )
+        let wrappedFEK = Data(repeating: 0xAB, count: 60)
+        let baseWireSize = try assembleNoteFile(
+            metadata: metadata,
+            wrappedFEK: wrappedFEK,
+            encryptedPayload: Data()
+        ).count
+        let payloadSize = wireBlobSize - baseWireSize
+        precondition(payloadSize >= 0, "wireBlobSize must fit metadata and wrapped FEK overhead")
+        let encryptedPayload = Data(repeating: 0xCD, count: payloadSize)
+        let actualWireSize = try assembleNoteFile(
+            metadata: metadata,
+            wrappedFEK: wrappedFEK,
+            encryptedPayload: encryptedPayload
+        ).count
+        precondition(actualWireSize == wireBlobSize, "expected wire blob size \(wireBlobSize), got \(actualWireSize)")
+        return StoredNote(
+            metadata: metadata,
+            wrappedFEK: wrappedFEK,
+            encryptedPayload: encryptedPayload,
+            syncState: syncState
+        )
+    }
+
     static func makeSampleWireNote(
         noteID: UUID,
         title: String,

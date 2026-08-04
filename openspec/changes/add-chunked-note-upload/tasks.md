@@ -1,7 +1,7 @@
 ## 1. Upload size threshold and API client — single PUT path
 
-- [ ] 1.1 Write failing tests: `NoteUploadSizeThreshold` is `10_000_000`; `uploadNote` with assembled blob `<= threshold` sends one PUT to `/notes/{id}` and no upload-session endpoints (`NoteAPIClientWriteNoteTests`, `NetworkNoteRepositoryWriteNoteTests`)
-- [ ] 1.2 Add threshold constant; ensure existing PUT path unchanged for sub-threshold blobs; make tests pass
+- [x] 1.1 Write failing tests: `NoteUploadSizeThreshold` is `10_000_000`; `uploadNote` with assembled blob `<= threshold` sends one PUT to `/notes/{id}` and no upload-session endpoints (`NoteAPIClientWriteNoteTests`, `NetworkNoteRepositoryWriteNoteTests`)
+- [x] 1.2 Add threshold constant; ensure existing PUT path unchanged for sub-threshold blobs; make tests pass
 
 ## 2. Chunked upload API client
 
