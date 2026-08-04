@@ -29,10 +29,10 @@
 
 ## 6. NotesFlow — UI updates on sync outcome
 
-- [ ] 6.1 Write failing tests: list VM reloads/patches row on successful sync outcome; detail VM sets `syncState` to synced for matching note ID; list includes new note after create return (`DefaultNoteListViewModelTests`, `DefaultNoteDetailViewModelTests`)
-- [ ] 6.2 Wire outcome subscription in list/detail VMs; trigger list reload on navigation return from create; make tests pass
-- [ ] 6.3 Write failing tests: `NoteListView` / `NoteDetailView` sources still expose sync indicators driven by updated VM state (`NoteListViewTests`, `NoteDetailViewTests`)
-- [ ] 6.4 Adjust views if needed for navigation reload hook; make tests pass
+- [x] 6.1 Write failing tests: list VM reloads/patches row on successful sync outcome; detail VM sets `syncState` to synced for matching note ID; list includes new note after create return (`DefaultNoteListViewModelTests`, `DefaultNoteDetailViewModelTests`)
+- [x] 6.2 Wire outcome subscription in list/detail VMs; trigger list reload on navigation return from create; make tests pass
+- [x] 6.3 Write failing tests: `NoteListView` / `NoteDetailView` sources still expose sync indicators driven by updated VM state (`NoteListViewTests`, `NoteDetailViewTests`)
+- [x] 6.4 Adjust views if needed for navigation reload hook; make tests pass
 
 ## 7. App composition
 

@@ -61,6 +61,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     private var createdAt: UInt64 = 0
     private var fek: SymmetricKey?
     private var didLoad = false
+    private nonisolated(unsafe) var syncOutcomeObservation: Task<Void, Never>?
 
     public init(
         noteID: UUID,
@@ -74,6 +75,16 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         self.vaultSession = vaultSession
         self.navigator = navigator
         self.noteSync = noteSync
+        syncOutcomeObservation = Task { [weak self] in
+            guard let self else { return }
+            for await outcome in noteSync.syncOutcomes {
+                self.handleSyncOutcome(outcome)
+            }
+        }
+    }
+
+    deinit {
+        syncOutcomeObservation?.cancel()
     }
 
     public func load() async {
@@ -165,6 +176,14 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         }
 
         isLoading = false
+    }
+
+    private func handleSyncOutcome(_ outcome: NoteSyncOutcome) {
+        guard case let .uploaded(outcomeNoteID, syncState, _, _) = outcome,
+              outcomeNoteID == noteID else {
+            return
+        }
+        self.syncState = syncState
     }
 
     public func share() {

@@ -120,3 +120,28 @@ actor RecordingNoteSyncService: NoteSyncing {
 
     nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 }
+
+actor ControllableNoteSyncService: NoteSyncing {
+    private let outcomeContinuation: AsyncStream<NoteSyncOutcome>.Continuation
+    nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome>
+
+    init() {
+        var continuation: AsyncStream<NoteSyncOutcome>.Continuation!
+        syncOutcomes = AsyncStream { continuation = $0 }
+        outcomeContinuation = continuation
+    }
+
+    func emit(_ outcome: NoteSyncOutcome) {
+        outcomeContinuation.yield(outcome)
+    }
+
+    func flushPending() async {}
+
+    func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        nil
+    }
+
+    nonisolated func scheduleFlush() {}
+
+    nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
+}

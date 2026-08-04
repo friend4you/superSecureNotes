@@ -16,6 +16,7 @@ public protocol NoteListViewModel: Observable {
     var errorMessage: String? { get }
 
     func refresh() async
+    func reloadSummaries() async
     func openDetail(noteID: UUID)
     func createNote()
     func share(noteID: UUID)
@@ -38,6 +39,7 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     private let credentialStore: any CredentialStore
     private let performLogout: () async -> Void
     private let noteSync: any NoteSyncing
+    private nonisolated(unsafe) var syncOutcomeObservation: Task<Void, Never>?
 
     public init(
         authRepository: any AuthRepository,
@@ -55,6 +57,16 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         self.credentialStore = credentialStore
         self.performLogout = performLogout
         self.noteSync = noteSync
+        syncOutcomeObservation = Task { [weak self] in
+            guard let self else { return }
+            for await outcome in noteSync.syncOutcomes {
+                await self.handleSyncOutcome(outcome)
+            }
+        }
+    }
+
+    deinit {
+        syncOutcomeObservation?.cancel()
     }
 
     public func refresh() async {
@@ -64,12 +76,23 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
 
         await noteSync.flushPending()
 
+        await reloadSummaries()
+    }
+
+    public func reloadSummaries() async {
         do {
             let loadedNotes = try await noteRepository.listNotes()
             notes = loadedNotes.sorted { $0.updatedAt > $1.updatedAt }
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func handleSyncOutcome(_ outcome: NoteSyncOutcome) async {
+        guard case .uploaded = outcome else {
+            return
+        }
+        await reloadSummaries()
     }
 
     public func openDetail(noteID: UUID) {

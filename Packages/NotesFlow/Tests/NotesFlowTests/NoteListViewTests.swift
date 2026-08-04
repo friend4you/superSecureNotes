@@ -134,6 +134,13 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: note.syncState)"))
     }
 
+    func testNoteListViewSourceReloadsSummariesOnAppear() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains(".onAppear"))
+        XCTAssertTrue(source.contains("viewModel.reloadSummaries()"))
+    }
+
     func testRefreshInvokesSyncFlushBeforeReloadingNotes() async {
         let noteSync = MockNoteSyncService()
         let noteRepository = MockNoteRepository(

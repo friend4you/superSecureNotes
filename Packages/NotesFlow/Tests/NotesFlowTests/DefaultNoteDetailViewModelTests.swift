@@ -136,6 +136,36 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         XCTAssertEqual(scheduleFlushCallCount, 1)
     }
 
+    func testUpdatesSyncStateOnSuccessfulSyncOutcome() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            syncState: .synced
+        )
+        let noteSync = ControllableNoteSyncService()
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk),
+            noteSync: noteSync
+        )
+        await viewModel.load()
+        viewModel.body = "Changed body"
+        await viewModel.save()
+        XCTAssertEqual(viewModel.syncState, .pendingSync)
+
+        await noteSync.emit(
+            .uploaded(noteID: noteID, syncState: .synced, updatedAt: 1_800_000_200, etag: #"W/"synced""#)
+        )
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.syncState, .synced)
+    }
+
     func testAddAttachmentMarksDetailDirty() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)
@@ -388,7 +418,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         noteRepository: StoredNoteMockRepository = StoredNoteMockRepository(),
         vaultSession: StoredNoteMockVaultSession = StoredNoteMockVaultSession(),
         navigator: MockNavigating? = nil,
-        noteSync: RecordingNoteSyncService = RecordingNoteSyncService()
+        noteSync: any NoteSyncing = RecordingNoteSyncService()
     ) -> DefaultNoteDetailViewModel {
         DefaultNoteDetailViewModel(
             noteID: noteID,

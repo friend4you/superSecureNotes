@@ -160,6 +160,15 @@ final class NoteDetailViewTests: XCTestCase {
         XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: viewModel.syncState)"))
     }
 
+    func testNoteDetailViewSourceObservesSyncStateFromViewModel() throws {
+        let detailSource = try Self.noteDetailViewSource()
+        let statusLabelSource = try Self.noteSyncStatusLabelSource()
+
+        XCTAssertTrue(detailSource.contains("viewModel.syncState"))
+        XCTAssertTrue(statusLabelSource.contains("notes.sync.pending"))
+        XCTAssertTrue(statusLabelSource.contains("notes.sync.synced"))
+    }
+
     func testNoteSyncStatusLabelSourceUsesLocalizedStrings() throws {
         let source = try Self.noteSyncStatusLabelSource()
 

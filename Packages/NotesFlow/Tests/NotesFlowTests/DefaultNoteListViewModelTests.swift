@@ -172,6 +172,46 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         XCTAssertFalse(credentialStore.hasLocalSetup)
     }
 
+    func testReloadSummariesIncludesNewNoteAfterCreate() async {
+        let noteID = UUID()
+        let noteRepository = MockNoteRepository(notes: [])
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+        await viewModel.refresh()
+        XCTAssertTrue(viewModel.notes.isEmpty)
+
+        await noteRepository.setNotes([
+            NoteSummary(noteID: noteID, title: "New note", updatedAt: 100, syncState: .pendingSync),
+        ])
+        await viewModel.reloadSummaries()
+
+        XCTAssertEqual(viewModel.notes.count, 1)
+        XCTAssertEqual(viewModel.notes[0].noteID, noteID)
+        XCTAssertEqual(viewModel.notes[0].syncState, .pendingSync)
+    }
+
+    func testReloadsListOnSuccessfulSyncOutcome() async {
+        let noteID = UUID()
+        let noteSync = ControllableNoteSyncService()
+        let noteRepository = MockNoteRepository(
+            notes: [NoteSummary(noteID: noteID, title: "Pending note", updatedAt: 100, syncState: .pendingSync)]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository, noteSync: noteSync)
+        await viewModel.refresh()
+        XCTAssertEqual(viewModel.notes[0].syncState, .pendingSync)
+
+        await noteRepository.setNotes([
+            NoteSummary(noteID: noteID, title: "Pending note", updatedAt: 200, syncState: .synced),
+        ])
+        await noteSync.emit(
+            .uploaded(noteID: noteID, syncState: .synced, updatedAt: 200, etag: #"W/"synced""#)
+        )
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.notes.count, 1)
+        XCTAssertEqual(viewModel.notes[0].syncState, .synced)
+        XCTAssertEqual(viewModel.notes[0].updatedAt, 200)
+    }
+
     @MainActor
     private func makeViewModel(
         authRepository: MockAuthRepository = MockAuthRepository(),
@@ -179,7 +219,7 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         noteRepository: MockNoteRepository = MockNoteRepository(),
         navigator: MockNavigating? = nil,
         credentialStore: MockCredentialStore = NotesFlowTestMocks.credentialStore(),
-        noteSync: MockNoteSyncService = MockNoteSyncService(),
+        noteSync: any NoteSyncing = MockNoteSyncService(),
         performLogout: (() async -> Void)? = nil
     ) -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
@@ -220,6 +260,10 @@ private actor MockNoteRepository: NoteRepository {
     private(set) var deletedNoteIDs: [UUID] = []
 
     init(notes: [NoteSummary] = []) {
+        self.notes = notes
+    }
+
+    func setNotes(_ notes: [NoteSummary]) {
         self.notes = notes
     }
 

@@ -53,6 +53,11 @@ public struct NoteListView: View {
         .refreshable {
             await viewModel.refresh()
         }
+        .onAppear {
+            Task {
+                await viewModel.reloadSummaries()
+            }
+        }
         .task {
             await viewModel.refresh()
         }
