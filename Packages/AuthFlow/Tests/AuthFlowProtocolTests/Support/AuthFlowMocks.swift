@@ -44,7 +44,8 @@ enum AuthFlowTestSupport {
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
         notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         credentialStore: any CredentialStore = MockCredentialStore(),
-        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true)
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
+        vaultHeaderUploader: any VaultHeaderUploadScheduling = MockVaultHeaderUploadScheduler()
     ) -> DefaultRegisterViewModel {
         DefaultRegisterViewModel(
             authRepository: authRepository,
@@ -53,7 +54,8 @@ enum AuthFlowTestSupport {
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
-            networkReachability: networkReachability
+            networkReachability: networkReachability,
+            vaultHeaderUploader: vaultHeaderUploader
         )
     }
 
@@ -387,6 +389,23 @@ final class MockCredentialStore: CredentialStore, @unchecked Sendable {
 
 struct MockNetworkReachability: NetworkReachability {
     let isOnline: Bool
+}
+
+final class MockVaultHeaderUploadScheduler: VaultHeaderUploadScheduling, @unchecked Sendable {
+    private let lock = NSLock()
+    private var headers: [Data] = []
+
+    var scheduledHeaders: [Data] {
+        lock.lock()
+        defer { lock.unlock() }
+        return headers
+    }
+
+    func scheduleVaultHeaderUpload(_ header: Data) {
+        lock.lock()
+        headers.append(header)
+        lock.unlock()
+    }
 }
 
 actor MockNotesIndexStore: NotesIndexStoreProtocol {

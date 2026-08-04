@@ -29,4 +29,19 @@ final class DefaultRegisterViewModelSuccessTests: XCTestCase {
         let establishedKeys = await vaultSession.establishedKeys
         XCTAssertNotNil(establishedKeys)
     }
+
+    func testRegisterSchedulesVaultHeaderUploadWithoutBlocking() async {
+        let vaultHeaderUploader = MockVaultHeaderUploadScheduler()
+        let viewModel = AuthFlowTestSupport.makeRegisterViewModel(
+            vaultHeaderUploader: vaultHeaderUploader
+        )
+        viewModel.email = "user@example.com"
+        viewModel.password = "secret"
+
+        await viewModel.register()
+
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertEqual(vaultHeaderUploader.scheduledHeaders.count, 1)
+        XCTAssertEqual(vaultHeaderUploader.scheduledHeaders[0], Data([0x0A]))
+    }
 }

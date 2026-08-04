@@ -22,6 +22,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
     private let notesIndexStore: any NotesIndexStoreProtocol
     private let credentialStore: any CredentialStore
     private let networkReachability: any NetworkReachability
+    private let vaultHeaderUploader: any VaultHeaderUploadScheduling
 
     public init(
         authRepository: any AuthRepository,
@@ -30,7 +31,8 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
         vaultSession: any VaultSessionProtocol,
         notesIndexStore: any NotesIndexStoreProtocol,
         credentialStore: any CredentialStore,
-        networkReachability: any NetworkReachability
+        networkReachability: any NetworkReachability,
+        vaultHeaderUploader: any VaultHeaderUploadScheduling = NoOpVaultHeaderUploadScheduler()
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -39,6 +41,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
         self.notesIndexStore = notesIndexStore
         self.credentialStore = credentialStore
         self.networkReachability = networkReachability
+        self.vaultHeaderUploader = vaultHeaderUploader
     }
 
     public func register() async {
@@ -61,6 +64,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
             )
             let creationOutcome = try vaultAuthenticator.createVault(password: password)
             try await vaultRepository.writeHeader(creationOutcome.headerData)
+            vaultHeaderUploader.scheduleVaultHeaderUpload(creationOutcome.headerData)
             let unlockOutcome = try vaultAuthenticator.unlockVault(
                 headerData: creationOutcome.headerData,
                 password: password
