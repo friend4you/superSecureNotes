@@ -8,6 +8,8 @@ import VaultSession
 import VaultSessionProtocol
 import XCTest
 
+@testable import NotesFlow
+
 @MainActor
 private final class MockNavigating: Navigating {
     func setRoot<R: Route>(_ route: R) {}
@@ -118,6 +120,114 @@ final class NotesFlowDependenciesTests: XCTestCase {
         XCTAssertTrue(viewModel is DefaultCreateNoteViewModel)
     }
 
+    func testNotesFlowDependenciesStoresInjectedNoteSyncService() {
+        let noteSync = ControllableNoteSyncService()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            noteSync: noteSync,
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let storedSync = dependencies.noteSync as? ControllableNoteSyncService
+        XCTAssertTrue(storedSync === noteSync)
+    }
+
+    func testNotesFlowDependenciesPassesNoteSyncOutcomeStreamToListViewModel() async {
+        let noteID = UUID()
+        let noteSync = ControllableNoteSyncService()
+        let noteRepository = MockNoteRepository(
+            notes: [NoteSummary(noteID: noteID, title: "Pending note", updatedAt: 100, syncState: .pendingSync)]
+        )
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: noteRepository,
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            noteSync: noteSync,
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let viewModel = dependencies.makeNoteListViewModel()
+        await viewModel.refresh()
+        XCTAssertEqual(viewModel.notes[0].syncState, .pendingSync)
+
+        await noteRepository.setNotes([
+            NoteSummary(noteID: noteID, title: "Pending note", updatedAt: 200, syncState: .synced),
+        ])
+        await noteSync.emit(
+            .uploaded(noteID: noteID, syncState: .synced, updatedAt: 200, etag: #"W/"synced""#)
+        )
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.notes[0].syncState, .synced)
+        XCTAssertEqual(viewModel.notes[0].updatedAt, 200)
+    }
+
+    func testNotesFlowDependenciesPassesNoteSyncOutcomeStreamToDetailViewModel() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            syncState: .synced
+        )
+        let noteSync = ControllableNoteSyncService()
+        let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: StoredNoteMockVaultSession(udk: udk),
+            navigator: MockNavigating(),
+            noteRepository: noteRepository,
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            noteSync: noteSync,
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let viewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
+        await viewModel.load()
+        viewModel.body = "Changed body"
+        await viewModel.save()
+        XCTAssertEqual(viewModel.syncState, .pendingSync)
+
+        await noteSync.emit(
+            .uploaded(noteID: noteID, syncState: .synced, updatedAt: 1_800_000_200, etag: #"W/"synced""#)
+        )
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.syncState, .synced)
+    }
+
+    func testNotesFlowDependenciesPassesNoteSyncSchedulerToCreateViewModel() async throws {
+        let noteSync = RecordingNoteSyncService()
+        let udk = SymmetricKey(size: .bits256)
+        let noteRepository = StoredNoteMockRepository()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: StoredNoteMockVaultSession(udk: udk),
+            navigator: MockNavigating(),
+            noteRepository: noteRepository,
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            noteSync: noteSync,
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let viewModel = dependencies.makeCreateNoteViewModel()
+        viewModel.title = "New note"
+        viewModel.body = "Body"
+        await viewModel.save()
+        await Task.yield()
+
+        let scheduleFlushCallCount = await noteSync.scheduleFlushCallCount
+        XCTAssertEqual(scheduleFlushCallCount, 1)
+    }
+
     func testNotesFlowDependenciesDoesNotReceiveNotesIndexStore() {
         let dependencies = NotesFlowDependencies(
             authRepository: MockAuthRepository(),
@@ -166,7 +276,17 @@ private actor MockVaultSession: VaultSessionProtocol {
 }
 
 private actor MockNoteRepository: NoteRepository {
-    func listNotes() async throws -> [NoteSummary] { [] }
+    private var notes: [NoteSummary]
+
+    init(notes: [NoteSummary] = []) {
+        self.notes = notes
+    }
+
+    func setNotes(_ notes: [NoteSummary]) {
+        self.notes = notes
+    }
+
+    func listNotes() async throws -> [NoteSummary] { notes }
     func readNote(noteID: UUID) async throws -> StoredNote {
         StoredNote(
             metadata: NoteMetadata(

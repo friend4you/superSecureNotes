@@ -14,7 +14,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     internal let noteRepository: any NoteRepository
     private let credentialStore: any CredentialStore
     private let performLogout: () async -> Void
-    private let noteSync: any NoteSyncing
+    internal let noteSync: any NoteSyncing
     private var noteListViewModel: DefaultNoteListViewModel?
 
     public init(

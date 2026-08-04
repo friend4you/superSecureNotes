@@ -37,7 +37,17 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class AppCompositionTests: XCTestCase {
-    func testAppUsesNotesFlowDependencies() {
+    func testAppCompositionPassesNoteSyncServiceToNotesDependencies() async {
+        let composition = AppComposition()
+
+        let appSync = composition.appDependencies.noteSyncService
+        let notesSync = composition.notesDependencies.noteSync as? LocalFirstNoteSyncService
+
+        XCTAssertTrue(notesSync === appSync)
+        await Task.yield()
+    }
+
+    func testAppCompositionUsesNotesFlowDependencies() {
         let notesDependencies = NotesFlowDependencies(
             authRepository: TestAuthRepository(),
             vaultSession: VaultSession(),

@@ -36,8 +36,8 @@
 
 ## 7. App composition
 
-- [ ] 7.1 Write failing tests: `NotesFlowDependencies` passes sync service with outcome stream to list/create/detail factories (`NotesFlowDependenciesTests`)
-- [ ] 7.2 Wire outcome stream and sync scheduler in `AppComposition` / `NotesFlowDependencies`; make tests pass
+- [x] 7.1 Write failing tests: `NotesFlowDependencies` passes sync service with outcome stream to list/create/detail factories (`NotesFlowDependenciesTests`)
+- [x] 7.2 Wire outcome stream and sync scheduler in `AppComposition` / `NotesFlowDependencies`; make tests pass
 
 ## 8. Manual verification
 
