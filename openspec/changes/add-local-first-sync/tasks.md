@@ -10,8 +10,8 @@
 
 ## 3. LocalNoteRepository list/delete sync semantics
 
-- [ ] 3.1 Write failing tests: `listNotes` returns `syncState` on summaries; notes with `pendingDelete` (or outbox-hidden deletes) are omitted; delete enqueues remote-delete intent while removing visible local note (`Packages/NoteRepository/Tests/NoteRepositoryTests/LocalNoteRepositoryTests.swift`)
-- [ ] 3.2 Implement list filtering + delete enqueue/outbox behavior on `LocalNoteRepository`; make tests pass
+- [x] 3.1 Write failing tests: `listNotes` returns `syncState` on summaries; notes with `pendingDelete` (or outbox-hidden deletes) are omitted; delete enqueues remote-delete intent while removing visible local note (`Packages/NoteRepository/Tests/NoteRepositoryTests/LocalNoteRepositoryTests.swift`)
+- [x] 3.2 Implement list filtering + delete enqueue/outbox behavior on `LocalNoteRepository`; make tests pass
 
 ## 4. Network note PUT 200 + etag
 

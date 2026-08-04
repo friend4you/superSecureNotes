@@ -31,13 +31,17 @@ public actor LocalNoteRepository: NoteRepository {
 
     public func listNotes() async throws -> [NoteSummary] {
         try await requireOpen()
-        return try await notesIndexStore.listSummaries()
+        let summaries = try await notesIndexStore.listSummaries()
+        return summaries.filter { $0.syncState != .pendingDelete }
     }
 
     public func readNote(noteID: UUID) async throws -> StoredNote {
         try await requireOpen()
 
         guard let row = try await notesIndexStore.fetchNote(noteID: noteID) else {
+            throw NoteRepositoryError.noteNotFound
+        }
+        guard row.syncState != .pendingDelete else {
             throw NoteRepositoryError.noteNotFound
         }
 
@@ -94,16 +98,31 @@ public actor LocalNoteRepository: NoteRepository {
     public func deleteNote(noteID: UUID) async throws {
         try await requireOpen()
 
-        guard try await notesIndexStore.fetchNote(noteID: noteID) != nil else {
+        guard let row = try await notesIndexStore.fetchNote(noteID: noteID) else {
             throw NoteRepositoryError.noteNotFound
         }
-
-        try await notesIndexStore.deleteNote(noteID: noteID)
+        guard row.syncState != .pendingDelete else {
+            throw NoteRepositoryError.noteNotFound
+        }
 
         let noteDirectoryURL = noteDirectoryURL(for: noteID)
         if fileManager.fileExists(atPath: noteDirectoryURL.path) {
             try fileManager.removeItem(at: noteDirectoryURL)
         }
+
+        try await notesIndexStore.upsertNote(
+            NoteIndexRow(
+                noteID: row.noteID,
+                title: row.title,
+                createdAt: row.createdAt,
+                updatedAt: row.updatedAt,
+                attachmentCount: row.attachmentCount,
+                attachmentsTotalSize: row.attachmentsTotalSize,
+                wrappedFEK: row.wrappedFEK,
+                syncState: .pendingDelete,
+                etag: row.etag
+            )
+        )
     }
 
     private func requireOpen() async throws {

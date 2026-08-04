@@ -35,6 +35,109 @@ final class LocalNoteRepositoryTests: XCTestCase {
         XCTAssertEqual(readNote.syncState, .pendingSync)
     }
 
+    func testListNotesReturnsSyncStateOnSummaries() async throws {
+        let syncedID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440020")!
+        let pendingID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440021")!
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: syncedID,
+                title: "Synced note",
+                syncState: .synced
+            )
+        )
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: pendingID,
+                title: "Pending note"
+            )
+        )
+
+        let summaries = try await repository.listNotes()
+
+        XCTAssertEqual(summaries.count, 2)
+        XCTAssertEqual(
+            summaries.first { $0.noteID == syncedID }?.syncState,
+            .synced
+        )
+        XCTAssertEqual(
+            summaries.first { $0.noteID == pendingID }?.syncState,
+            .pendingSync
+        )
+    }
+
+    func testListNotesOmitsPendingDeleteNotes() async throws {
+        let visibleID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440022")!
+        let deletedID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440023")!
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(noteID: visibleID, title: "Visible")
+        )
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(noteID: deletedID, title: "Gone")
+        )
+        try await repository.deleteNote(noteID: deletedID)
+
+        let summaries = try await repository.listNotes()
+
+        XCTAssertEqual(summaries.count, 1)
+        XCTAssertEqual(summaries[0].noteID, visibleID)
+        XCTAssertFalse(summaries.contains { $0.noteID == deletedID })
+    }
+
+    func testDeleteNoteEnqueuesRemoteDeleteIntent() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440024")!
+        let etag = "W/\"delete-me\""
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: noteID,
+                title: "Delete me",
+                syncState: .synced
+            )
+        )
+        try await indexStore.upsertNote(
+            NoteIndexRow(
+                noteID: noteID,
+                title: "Delete me",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0,
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                syncState: .synced,
+                etag: etag
+            )
+        )
+
+        try await repository.deleteNote(noteID: noteID)
+
+        let summaries = try await repository.listNotes()
+        XCTAssertTrue(summaries.isEmpty)
+
+        let pendingRow = try await indexStore.fetchNote(noteID: noteID)
+        XCTAssertEqual(pendingRow?.syncState, .pendingDelete)
+        XCTAssertEqual(pendingRow?.etag, etag)
+
+        let noteDirectoryURL = temporaryDirectory.appendingPathComponent(noteID.uuidString, isDirectory: true)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: noteDirectoryURL.path))
+
+        do {
+            _ = try await repository.readNote(noteID: noteID)
+            XCTFail("Expected noteNotFound after delete")
+        } catch NoteRepositoryError.noteNotFound {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testListNotesFromStoredDirectories() async throws {
         let firstID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440001")!
         let secondID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440002")!
