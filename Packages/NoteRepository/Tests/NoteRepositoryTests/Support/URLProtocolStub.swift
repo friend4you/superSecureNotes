@@ -80,6 +80,12 @@ final class RequestCapture: @unchecked Sendable {
         return request?.value(forHTTPHeaderField: "Authorization")
     }
 
+    var ifMatch: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return request?.value(forHTTPHeaderField: "If-Match")
+    }
+
     var bodyData: Data? {
         lock.lock()
         defer { lock.unlock() }

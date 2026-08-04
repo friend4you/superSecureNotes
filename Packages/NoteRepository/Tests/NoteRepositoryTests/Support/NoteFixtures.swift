@@ -47,6 +47,19 @@ enum NoteFixtures {
             """.utf8
         )
     }
+
+    static func writeNoteResponseJSON(
+        syncState: String = "synced",
+        updatedAt: UInt64 = 1_700_000_100,
+        etag: String = #"W/"abc123""#
+    ) -> Data {
+        let payload: [String: Any] = [
+            "syncState": syncState,
+            "updatedAt": updatedAt,
+            "etag": etag,
+        ]
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
 }
 
 struct MockTokenProvider: AccessTokenProviding {

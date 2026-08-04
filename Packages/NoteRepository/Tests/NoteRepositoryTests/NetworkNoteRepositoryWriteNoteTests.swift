@@ -9,6 +9,32 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWriteNoteSucceedsOn200WithUploadResponse() async throws {
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (
+                response,
+                NoteFixtures.writeNoteResponseJSON(
+                    syncState: "synced",
+                    updatedAt: 1_800_000_000,
+                    etag: #"W/"repo-etag""#
+                )
+            )
+        }
+
+        let repository = NetworkNoteRepository(
+            baseURL: NoteFixtures.baseURL,
+            tokenProvider: MockTokenProvider(),
+            session: .stubbed()
+        )
+
+        let result = try await repository.uploadNote(NoteFixtures.sampleStoredNote)
+
+        XCTAssertEqual(result.syncState, .synced)
+        XCTAssertEqual(result.updatedAt, 1_800_000_000)
+        XCTAssertEqual(result.etag, #"W/"repo-etag""#)
+    }
+
     func testWriteNoteSucceedsOnNoContent() async throws {
         URLProtocolStub.requestHandler = { request in
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)

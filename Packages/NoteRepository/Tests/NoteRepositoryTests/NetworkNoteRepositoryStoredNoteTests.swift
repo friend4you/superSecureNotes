@@ -14,8 +14,8 @@ final class NetworkNoteRepositoryStoredNoteTests: XCTestCase {
         let captured = RequestCapture()
         URLProtocolStub.requestHandler = { request in
             captured.record(request)
-            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
-            return (response, nil)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.writeNoteResponseJSON())
         }
 
         let repository = NetworkNoteRepository(

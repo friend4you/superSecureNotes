@@ -43,15 +43,35 @@ struct NoteAPIClient {
         return try await perform(request, expectedSuccessCodes: [200])
     }
 
-    func writeNote(noteID: UUID, data: Data, accessToken: String) async throws {
+    func writeNote(
+        noteID: UUID,
+        data: Data,
+        accessToken: String,
+        ifMatch etag: String? = nil
+    ) async throws -> NoteUploadResult {
         var request = try makeAuthorizedRequest(
             path: "notes/\(noteID.uuidString.lowercased())",
             method: "PUT",
             accessToken: accessToken
         )
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-Match")
+        }
         request.httpBody = data
-        _ = try await perform(request, expectedSuccessCodes: [204])
+        let responseData = try await perform(request, expectedSuccessCodes: [200, 204])
+        if responseData.isEmpty {
+            return NoteUploadResult(syncState: .synced, updatedAt: 0, etag: nil)
+        }
+        let response = try decoder.decode(NoteWriteResponseDTO.self, from: responseData)
+        guard let syncState = NoteSyncState(rawValue: response.syncState) else {
+            throw NoteRepositoryError.validationError("Invalid sync state in upload response.")
+        }
+        return NoteUploadResult(
+            syncState: syncState,
+            updatedAt: response.updatedAt,
+            etag: response.etag
+        )
     }
 
     func deleteNote(noteID: UUID, accessToken: String) async throws {

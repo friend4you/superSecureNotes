@@ -12,6 +12,12 @@ struct ErrorResponseDTO: Decodable {
     let message: String
 }
 
+struct NoteWriteResponseDTO: Decodable {
+    let syncState: String
+    let updatedAt: UInt64
+    let etag: String
+}
+
 enum NoteJSON {
     static func makeDecoder() -> JSONDecoder {
         JSONDecoder()

@@ -15,10 +15,10 @@
 
 ## 4. Network note PUT 200 + etag
 
-- [ ] 4.1 Write failing tests: `NoteAPIClient.writeNote` succeeds on HTTP 200 with `{syncState,updatedAt,etag}` body; still maps 401; rejects unexpected codes (`Packages/NoteRepository/Tests/NoteRepositoryTests/NoteAPIClientWriteNoteTests.swift`)
-- [ ] 4.2 Update `NoteAPIClient.writeNote` expected success codes and response parsing; plumb etag to `NetworkNoteRepository` callers; make tests pass
-- [ ] 4.3 Write failing tests: optional `If-Match` header sent when etag provided (`NoteAPIClientWriteNoteTests`)
-- [ ] 4.4 Add If-Match support to write API; make tests pass
+- [x] 4.1 Write failing tests: `NoteAPIClient.writeNote` succeeds on HTTP 200 with `{syncState,updatedAt,etag}` body; still maps 401; rejects unexpected codes (`Packages/NoteRepository/Tests/NoteRepositoryTests/NoteAPIClientWriteNoteTests.swift`)
+- [x] 4.2 Update `NoteAPIClient.writeNote` expected success codes and response parsing; plumb etag to `NetworkNoteRepository` callers; make tests pass
+- [x] 4.3 Write failing tests: optional `If-Match` header sent when etag provided (`NoteAPIClientWriteNoteTests`)
+- [x] 4.4 Add If-Match support to write API; make tests pass
 
 ## 5. Sync orchestrator — push and LWW
 

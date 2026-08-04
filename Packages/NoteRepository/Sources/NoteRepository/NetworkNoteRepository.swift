@@ -39,6 +39,10 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func writeNote(_ note: StoredNote) async throws {
+        _ = try await uploadNote(note)
+    }
+
+    public func uploadNote(_ note: StoredNote, ifMatch etag: String? = nil) async throws -> NoteUploadResult {
         guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
         }
@@ -49,10 +53,11 @@ public actor NetworkNoteRepository: NoteRepository {
             encryptedPayload: note.encryptedPayload
         )
         let accessToken = try await tokenProvider.accessToken()
-        try await apiClient.writeNote(
+        return try await apiClient.writeNote(
             noteID: note.metadata.noteID,
             data: data,
-            accessToken: accessToken
+            accessToken: accessToken,
+            ifMatch: etag
         )
     }
 
