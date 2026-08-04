@@ -181,6 +181,26 @@
           }
         }
       }
+    },
+    "notes.sync.pending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pending sync"
+          }
+        }
+      }
+    },
+    "notes.sync.synced" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synced"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

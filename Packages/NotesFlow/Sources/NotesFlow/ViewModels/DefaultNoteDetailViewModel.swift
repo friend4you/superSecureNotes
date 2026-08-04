@@ -17,6 +17,7 @@ public protocol NoteDetailViewModel: Observable {
     var canSave: Bool { get }
     var isLoading: Bool { get }
     var errorMessage: String? { get }
+    var syncState: NoteSyncState { get }
 
     func load() async
     func addAttachment(_ attachment: NotePayload.Attachment)
@@ -37,6 +38,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     public private(set) var attachmentItems: [NoteAttachmentItem] = []
     public private(set) var isLoading = false
     public private(set) var errorMessage: String?
+    public private(set) var syncState: NoteSyncState = .pendingSync
 
     public var hasChanges: Bool {
         title != loadedTitle
@@ -94,6 +96,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
             syncAttachmentItems()
             loadedTitle = title
             loadedBody = body
+            syncState = storedNote.syncState
             didLoad = true
         } catch {
             errorMessage = error.localizedDescription
@@ -151,6 +154,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
             loadedTitle = title
             loadedBody = body
             loadedAttachments = attachments
+            syncState = .pendingSync
             syncAttachmentItems()
         } catch {
             errorMessage = error.localizedDescription

@@ -46,10 +46,10 @@
 
 ## 8. NotesFlow sync indicators
 
-- [ ] 8.1 Write failing tests: note list source/UI exposes pending vs synced indicator from `NoteSummary.syncState`; detail view model exposes `syncState` after load (`Packages/NotesFlow/Tests/...`)
-- [ ] 8.2 Implement list + detail sync indicators and localization strings; make tests pass
-- [ ] 8.3 Write failing tests: `refresh()` invokes sync flush then reloads local list
-- [ ] 8.4 Wire refresh → flush; make tests pass
+- [x] 8.1 Write failing tests: note list source/UI exposes pending vs synced indicator from `NoteSummary.syncState`; detail view model exposes `syncState` after load (`Packages/NotesFlow/Tests/...`)
+- [x] 8.2 Implement list + detail sync indicators and localization strings; make tests pass
+- [x] 8.3 Write failing tests: `refresh()` invokes sync flush then reloads local list
+- [x] 8.4 Wire refresh → flush; make tests pass
 
 ## 9. Manual verification
 

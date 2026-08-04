@@ -127,10 +127,33 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("NotesFlowUILocalization.localized"))
     }
 
+    func testNoteListViewSourceShowsSyncStatusFromSyncState() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("note.syncState"))
+        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: note.syncState)"))
+    }
+
+    func testRefreshInvokesSyncFlushBeforeReloadingNotes() async {
+        let noteSync = MockNoteSyncService()
+        let noteRepository = MockNoteRepository(
+            notes: [NoteSummary(noteID: UUID(), title: "Note", updatedAt: 100, syncState: .synced)]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository, noteSync: noteSync)
+
+        await viewModel.refresh()
+
+        let flushCallCount = await noteSync.flushCallCount
+        let listNotesCallCount = await noteRepository.listNotesCallCount
+        XCTAssertEqual(flushCallCount, 1)
+        XCTAssertEqual(listNotesCallCount, 1)
+    }
+
     @MainActor
     private func makeViewModel(
         noteRepository: MockNoteRepository = MockNoteRepository(),
-        navigator: MockNavigating? = nil
+        navigator: MockNavigating? = nil,
+        noteSync: MockNoteSyncService = MockNoteSyncService()
     ) -> DefaultNoteListViewModel {
         DefaultNoteListViewModel(
             authRepository: MockAuthRepository(),
@@ -138,7 +161,8 @@ final class NoteListViewTests: XCTestCase {
             noteRepository: noteRepository,
             navigator: navigator ?? MockNavigating(),
             credentialStore: NotesFlowTestMocks.credentialStore(),
-            performLogout: NotesFlowTestMocks.noopLogout
+            performLogout: NotesFlowTestMocks.noopLogout,
+            noteSync: noteSync
         )
     }
 
@@ -217,4 +241,18 @@ private actor MockVaultSession: VaultSessionProtocol {
     func clear() {}
     func udk() throws -> SymmetricKey { .init(size: .bits256) }
     func identityPrivateKey() throws -> Data { Data() }
+}
+
+private actor MockNoteSyncService: NoteSyncing {
+    private(set) var flushCallCount = 0
+
+    func flushPending() async {
+        flushCallCount += 1
+    }
+
+    func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        nil
+    }
+
+    nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 }

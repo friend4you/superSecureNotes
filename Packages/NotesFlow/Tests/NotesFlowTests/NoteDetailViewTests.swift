@@ -153,6 +153,21 @@ final class NoteDetailViewTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.errorMessage"))
     }
 
+    func testNoteDetailViewSourceShowsSyncStatus() throws {
+        let source = try Self.noteDetailViewSource()
+
+        XCTAssertTrue(source.contains("viewModel.syncState"))
+        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: viewModel.syncState)"))
+    }
+
+    func testNoteSyncStatusLabelSourceUsesLocalizedStrings() throws {
+        let source = try Self.noteSyncStatusLabelSource()
+
+        XCTAssertTrue(source.contains("notes.sync.pending"))
+        XCTAssertTrue(source.contains("notes.sync.synced"))
+        XCTAssertTrue(source.contains("NotesFlowUILocalization.localized"))
+    }
+
     @MainActor
     private func makeViewModel(
         noteID: UUID = UUID(),
@@ -175,6 +190,16 @@ final class NoteDetailViewTests: XCTestCase {
             .deletingLastPathComponent()
         let sourceURL = packageRoot
             .appendingPathComponent("Sources/NotesFlow/NoteDetailView.swift")
+        return try String(contentsOf: sourceURL, encoding: .utf8)
+    }
+
+    private static func noteSyncStatusLabelSource() throws -> String {
+        let packageRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sourceURL = packageRoot
+            .appendingPathComponent("Sources/NotesFlow/NoteSyncStatusLabel.swift")
         return try String(contentsOf: sourceURL, encoding: .utf8)
     }
 }

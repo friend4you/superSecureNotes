@@ -35,6 +35,11 @@ public struct NoteDetailView: View {
             }
 
             Section {
+                NoteSyncStatusLabel(syncState: viewModel.syncState)
+                    .font(.subheadline)
+            }
+
+            Section {
                 TextField(
                     NotesFlowUILocalization.localized("notes.detail.titleField"),
                     text: $viewModel.title

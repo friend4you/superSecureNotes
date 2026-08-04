@@ -65,6 +65,50 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.errorMessage)
     }
 
+    func testLoadExposesSyncStateFromStoredNote() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
+            noteID: noteID,
+            title: "Synced note",
+            body: "Body",
+            udk: udk,
+            syncState: .synced
+        )
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
+        )
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.syncState, .synced)
+    }
+
+    func testSaveUpdatesSyncStateToPendingSync() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            syncState: .synced
+        )
+        let viewModel = makeViewModel(
+            noteID: noteID,
+            noteRepository: StoredNoteMockRepository(notes: [noteID: noteData]),
+            vaultSession: StoredNoteMockVaultSession(udk: udk)
+        )
+        await viewModel.load()
+        viewModel.body = "Changed body"
+
+        await viewModel.save()
+
+        XCTAssertEqual(viewModel.syncState, .pendingSync)
+    }
+
     func testAddAttachmentMarksDetailDirty() async throws {
         let noteID = UUID()
         let udk = SymmetricKey(size: .bits256)

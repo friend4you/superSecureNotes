@@ -15,6 +15,8 @@ final class LocalizationTests: XCTestCase {
             "notes.attachments.remove",
             "notes.attachments.preview",
             "notes.detail.attachments",
+            "notes.sync.pending",
+            "notes.sync.synced",
             "common.close",
         ]
 

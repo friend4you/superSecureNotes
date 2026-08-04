@@ -25,9 +25,16 @@ public struct NoteListView: View {
 
             ForEach(viewModel.notes, id: \.noteID) { note in
                 Group {
-                    Text(note.title)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(note.title)
+                            NoteSyncStatusLabel(syncState: note.syncState)
+                                .font(.caption)
+                        }
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .onTapGesture {
                     viewModel.openDetail(noteID: note.noteID)
