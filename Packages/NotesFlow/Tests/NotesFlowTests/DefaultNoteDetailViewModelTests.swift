@@ -1,3 +1,4 @@
+import AuthRepositoryProtocol
 import CryptoKit
 import NavigationProtocol
 import NoteRepositoryProtocol
@@ -164,6 +165,49 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 50_000_000)
 
         XCTAssertEqual(viewModel.syncState, .synced)
+    }
+
+    func testUpdatesSyncStateWhenListViewModelAlsoSubscribesToOutcomes() async throws {
+        let noteID = UUID()
+        let udk = SymmetricKey(size: .bits256)
+        let noteData = try NoteViewModelTestSupport.makeStoredNote(
+            noteID: noteID,
+            title: "Title",
+            body: "Body",
+            udk: udk,
+            syncState: .synced
+        )
+        let noteSync = ControllableNoteSyncService()
+        let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
+        let vaultSession = StoredNoteMockVaultSession(udk: udk)
+        let listViewModel = DefaultNoteListViewModel(
+            authRepository: MockAuthRepository(),
+            vaultSession: vaultSession,
+            noteRepository: noteRepository,
+            navigator: MockNavigating(),
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout,
+            noteSync: noteSync
+        )
+        let detailViewModel = DefaultNoteDetailViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: vaultSession,
+            navigator: MockNavigating(),
+            noteSync: noteSync
+        )
+        await detailViewModel.load()
+        detailViewModel.body = "Changed body"
+        await detailViewModel.save()
+        XCTAssertEqual(detailViewModel.syncState, .pendingSync)
+
+        await noteSync.emit(
+            .uploaded(noteID: noteID, syncState: .synced, updatedAt: 1_800_000_200, etag: #"W/"synced""#)
+        )
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(detailViewModel.syncState, .synced)
+        _ = listViewModel
     }
 
     func testAddAttachmentMarksDetailDirty() async throws {
@@ -428,4 +472,23 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
             noteSync: noteSync
         )
     }
+}
+
+private actor MockAuthRepository: AuthRepository {
+    var currentSession: AuthSession? { nil }
+    var currentUser: User? { nil }
+    func register(_ credentials: RegisterCredentials) async throws -> AuthSession {
+        AuthSession(accessToken: "", refreshToken: "", expiresAt: .distantFuture)
+    }
+    func login(_ credentials: LoginCredentials) async throws -> AuthSession {
+        AuthSession(accessToken: "", refreshToken: "", expiresAt: .distantFuture)
+    }
+    func logout() async throws {}
+    func refreshSession() async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+    func restoreSession(refreshToken: String) async throws -> AuthSession {
+        throw AuthRepositoryError.notAuthenticated
+    }
+    func clearSession() async {}
 }

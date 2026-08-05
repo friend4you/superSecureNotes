@@ -122,17 +122,30 @@ actor RecordingNoteSyncService: NoteSyncing {
 }
 
 actor ControllableNoteSyncService: NoteSyncing {
-    private let outcomeContinuation: AsyncStream<NoteSyncOutcome>.Continuation
-    nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome>
+    private var outcomeSubscribers: [UUID: AsyncStream<NoteSyncOutcome>.Continuation] = [:]
 
-    init() {
-        var continuation: AsyncStream<NoteSyncOutcome>.Continuation!
-        syncOutcomes = AsyncStream { continuation = $0 }
-        outcomeContinuation = continuation
+    nonisolated var syncOutcomes: AsyncStream<NoteSyncOutcome> {
+        AsyncStream { continuation in
+            Task { await self.addOutcomeSubscriber(continuation) }
+        }
+    }
+
+    private func addOutcomeSubscriber(_ continuation: AsyncStream<NoteSyncOutcome>.Continuation) {
+        let id = UUID()
+        outcomeSubscribers[id] = continuation
+        continuation.onTermination = { @Sendable [weak self] _ in
+            Task { await self?.removeOutcomeSubscriber(id) }
+        }
+    }
+
+    private func removeOutcomeSubscriber(_ id: UUID) {
+        outcomeSubscribers.removeValue(forKey: id)
     }
 
     func emit(_ outcome: NoteSyncOutcome) {
-        outcomeContinuation.yield(outcome)
+        for continuation in outcomeSubscribers.values {
+            continuation.yield(outcome)
+        }
     }
 
     func flushPending() async {}

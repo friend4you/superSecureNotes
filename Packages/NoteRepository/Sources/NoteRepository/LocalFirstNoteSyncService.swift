@@ -3,8 +3,11 @@ import NoteRepositoryProtocol
 import VaultRepository
 
 public actor LocalFirstNoteSyncService: NoteSyncing {
-    public nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome>
-    private let outcomeContinuation: AsyncStream<NoteSyncOutcome>.Continuation
+    private let outcomeMulticaster = NoteSyncOutcomeMulticaster()
+
+    public nonisolated var syncOutcomes: AsyncStream<NoteSyncOutcome> {
+        outcomeMulticaster.stream()
+    }
 
     private let localNotes: any NoteSyncLocalStoring
     private let remoteNotes: any NoteSyncRemoteStoring
@@ -17,9 +20,6 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         localVault: LocalVaultRepository,
         remoteVault: NetworkVaultRepository
     ) {
-        var continuation: AsyncStream<NoteSyncOutcome>.Continuation!
-        syncOutcomes = AsyncStream { continuation = $0 }
-        outcomeContinuation = continuation
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
         self.localVault = localVault
@@ -32,9 +32,6 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         localVault: any NoteSyncLocalVaultStoring,
         remoteVault: any NoteSyncRemoteVaultStoring
     ) {
-        var continuation: AsyncStream<NoteSyncOutcome>.Continuation!
-        syncOutcomes = AsyncStream { continuation = $0 }
-        outcomeContinuation = continuation
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
         self.localVault = localVault
@@ -191,7 +188,7 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     }
 
     private func emitOutcome(_ outcome: NoteSyncOutcome) {
-        outcomeContinuation.yield(outcome)
+        outcomeMulticaster.yield(outcome)
     }
 
     private func resolvedUpdatedAt(server: UInt64, local: UInt64) -> UInt64 {

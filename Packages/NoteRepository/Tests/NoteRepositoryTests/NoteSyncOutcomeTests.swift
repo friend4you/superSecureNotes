@@ -82,6 +82,44 @@ final class NoteSyncOutcomeTests: XCTestCase {
         )
     }
 
+    func testSyncOutcomesDeliverToMultipleSubscribers() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440063")!
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
+
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.writeNoteResponseJSON())
+        }
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await localRepository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Broadcast outcome")
+        )
+
+        let firstOutcomeTask = Task {
+            var iterator = syncService.syncOutcomes.makeAsyncIterator()
+            return await iterator.next()
+        }
+        let secondOutcomeTask = Task {
+            var iterator = syncService.syncOutcomes.makeAsyncIterator()
+            return await iterator.next()
+        }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        await syncService.flushPending()
+
+        let expected: NoteSyncOutcome = .uploaded(
+            noteID: noteID,
+            syncState: .synced,
+            updatedAt: 1_700_000_100,
+            etag: #"W/"abc123""#
+        )
+        let firstOutcome = await firstOutcomeTask.value
+        let secondOutcome = await secondOutcomeTask.value
+        XCTAssertEqual(firstOutcome, expected)
+        XCTAssertEqual(secondOutcome, expected)
+    }
+
     func testFlushEmitsUploadFailedOutcomeOnNetworkError() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440062")!
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()

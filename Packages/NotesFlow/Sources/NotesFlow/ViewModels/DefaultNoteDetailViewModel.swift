@@ -75,10 +75,10 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
         self.vaultSession = vaultSession
         self.navigator = navigator
         self.noteSync = noteSync
-        syncOutcomeObservation = Task { [weak self] in
+        syncOutcomeObservation = Task { @MainActor [weak self] in
             guard let self else { return }
             for await outcome in noteSync.syncOutcomes {
-                self.handleSyncOutcome(outcome)
+                handleSyncOutcome(outcome)
             }
         }
     }
