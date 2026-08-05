@@ -1,6 +1,7 @@
 import AuthRepositoryProtocol
 import AuthFlowProtocol
 import VaultRepositoryProtocol
+import VaultRepositoryProtocol
 import XCTest
 
 @MainActor
@@ -41,6 +42,19 @@ final class DefaultLoginViewModelErrorTests: XCTestCase {
         XCTAssertEqual(viewModel.state, .failure(.vaultUnlockFailed))
     }
 
+    func testLoginMapsVaultNotFoundFromRemotePull() async {
+        let noteSync = MockNoteSyncService()
+        await noteSync.setLocalVaultHeaderExists(false)
+        await noteSync.setPullVaultHeaderError(VaultRepositoryError.headerNotFound)
+        let viewModel = makeViewModel(noteSync: noteSync)
+        viewModel.email = "user@example.com"
+        viewModel.password = "secret"
+
+        await viewModel.login()
+
+        XCTAssertEqual(viewModel.state, .failure(.vaultNotFound))
+    }
+
     func testLoginMapsNetworkError() async {
         let authRepository = MockAuthRepository()
         await authRepository.setLoginError(.networkError)
@@ -56,13 +70,25 @@ final class DefaultLoginViewModelErrorTests: XCTestCase {
     private func makeViewModel(
         authRepository: MockAuthRepository = MockAuthRepository(),
         vaultRepository: MockVaultRepository = MockVaultRepository(),
-        authenticator: MockVaultAuthenticator = MockVaultAuthenticator()
+        authenticator: MockVaultAuthenticator = MockVaultAuthenticator(),
+        noteSync: MockNoteSyncService = MockNoteSyncService()
     ) -> DefaultLoginViewModel {
         AuthFlowTestSupport.makeLoginViewModel(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
-            vaultAuthenticator: authenticator
+            vaultAuthenticator: authenticator,
+            noteSync: noteSync
         )
+    }
+}
+
+private extension MockNoteSyncService {
+    func setLocalVaultHeaderExists(_ exists: Bool) {
+        localVaultHeaderExists = exists
+    }
+
+    func setPullVaultHeaderError(_ error: VaultRepositoryError) {
+        pullVaultHeaderError = error
     }
 }
 

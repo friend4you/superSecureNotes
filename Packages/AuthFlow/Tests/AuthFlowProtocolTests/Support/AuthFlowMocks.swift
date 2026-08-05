@@ -23,7 +23,8 @@ enum AuthFlowTestSupport {
         notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         navigator: (any Navigating)? = nil,
         credentialStore: any CredentialStore = MockCredentialStore(),
-        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true)
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
+        noteSync: any NoteSyncing = MockNoteSyncService()
     ) -> DefaultLoginViewModel {
         DefaultLoginViewModel(
             authRepository: authRepository,
@@ -33,7 +34,8 @@ enum AuthFlowTestSupport {
             notesIndexStore: notesIndexStore,
             navigator: navigator ?? MockNavigating(),
             credentialStore: credentialStore,
-            networkReachability: networkReachability
+            networkReachability: networkReachability,
+            noteSync: noteSync
         )
     }
 
@@ -45,7 +47,7 @@ enum AuthFlowTestSupport {
         notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         credentialStore: any CredentialStore = MockCredentialStore(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
-        vaultHeaderUploader: any VaultHeaderUploadScheduling = MockVaultHeaderUploadScheduler()
+        noteSync: any NoteSyncing = MockNoteSyncService()
     ) -> DefaultRegisterViewModel {
         DefaultRegisterViewModel(
             authRepository: authRepository,
@@ -55,7 +57,7 @@ enum AuthFlowTestSupport {
             notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
             networkReachability: networkReachability,
-            vaultHeaderUploader: vaultHeaderUploader
+            noteSync: noteSync
         )
     }
 
@@ -98,7 +100,8 @@ final class AuthFlowMocksSmokeTests: XCTestCase {
             notesIndexStore: MockNotesIndexStore(),
             navigator: MockNavigating(),
             credentialStore: MockCredentialStore(),
-            networkReachability: MockNetworkReachability(isOnline: true)
+            networkReachability: MockNetworkReachability(isOnline: true),
+            noteSync: MockNoteSyncService()
         )
 
         XCTAssertEqual(viewModel.state, .idle)
@@ -108,6 +111,8 @@ final class AuthFlowMocksSmokeTests: XCTestCase {
 actor MockAuthRepository: AuthRepository {
     var loginCallCount = 0
     var registerCallCount = 0
+    var logoutCallCount = 0
+    var clearSessionCallCount = 0
     var loginError: AuthRepositoryError?
     var registerError: AuthRepositoryError?
     var restoreError: AuthRepositoryError?
@@ -180,6 +185,7 @@ actor MockAuthRepository: AuthRepository {
     }
 
     func logout() async throws {
+        logoutCallCount += 1
         session = nil
         user = nil
     }
@@ -206,6 +212,7 @@ actor MockAuthRepository: AuthRepository {
     }
 
     func clearSession() async {
+        clearSessionCallCount += 1
         session = nil
         user = nil
     }
@@ -274,6 +281,7 @@ final class MockVaultAuthenticator: VaultAuthenticator, @unchecked Sendable {
 
 actor MockVaultSession: VaultSessionProtocol {
     private(set) var establishedKeys: VaultSessionKeys?
+    var onEstablish: (@Sendable () -> Void)?
 
     var isActive: Bool {
         establishedKeys != nil
@@ -286,6 +294,7 @@ actor MockVaultSession: VaultSessionProtocol {
     }
 
     func establish(_ keys: VaultSessionKeys) {
+        onEstablish?()
         establishedKeys = keys
     }
 
@@ -418,6 +427,14 @@ final class MockVaultHeaderUploadScheduler: VaultHeaderUploadScheduling, @unchec
 
 actor MockNoteSyncService: NoteSyncing {
     private(set) var flushCallCount = 0
+    private(set) var uploadVaultHeaderCallCount = 0
+    private(set) var pullVaultHeaderCallCount = 0
+    private(set) var pullRemoteNotesCatalogCallCount = 0
+    var uploadVaultHeaderError: Error?
+    var pullVaultHeaderError: Error?
+    var pullVaultHeaderResult: Data?
+    var localVaultHeaderExists = true
+    var onPullRemoteNotesCatalog: (@Sendable () -> Void)?
 
     nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome> = AsyncStream { $0.finish() }
 
@@ -425,8 +442,31 @@ actor MockNoteSyncService: NoteSyncing {
         flushCallCount += 1
     }
 
+    func pullVaultHeaderIfLocalMissing() async throws -> Data? {
+        pullVaultHeaderCallCount += 1
+        if let pullVaultHeaderError {
+            throw pullVaultHeaderError
+        }
+        if localVaultHeaderExists {
+            return nil
+        }
+        return pullVaultHeaderResult ?? Data([0x0B])
+    }
+
+    func pullRemoteNotesCatalog() async throws {
+        pullRemoteNotesCatalogCallCount += 1
+        onPullRemoteNotesCatalog?()
+    }
+
     func pullCatalogIfLocalVaultMissing() async throws -> Data? {
         nil
+    }
+
+    func uploadVaultHeaderOrThrow(_ header: Data) async throws {
+        uploadVaultHeaderCallCount += 1
+        if let uploadVaultHeaderError {
+            throw uploadVaultHeaderError
+        }
     }
 
     nonisolated func scheduleFlush() {

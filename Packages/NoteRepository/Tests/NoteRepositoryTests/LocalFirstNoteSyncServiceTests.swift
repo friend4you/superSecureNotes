@@ -1,6 +1,7 @@
 import NoteRepositoryProtocol
 import SecureCrypto
 import VaultRepository
+import VaultRepositoryProtocol
 import XCTest
 
 @testable import NoteRepository
@@ -245,6 +246,147 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         XCTAssertTrue(summariesAfterFailedFlush.isEmpty)
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .pendingDelete)
+    }
+
+    func testPullVaultHeaderIfLocalMissingFetchesAndWritesWhenLocalMissing() async throws {
+        let (_, _, localVault, _, syncService) = makeSyncEnvironment()
+        let captured = RequestCapture()
+
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.vaultHeaderBytes)
+        }
+
+        let header = try await syncService.pullVaultHeaderIfLocalMissing()
+
+        XCTAssertEqual(header, NoteFixtures.vaultHeaderBytes)
+        XCTAssertEqual(captured.method, "GET")
+        XCTAssertEqual(captured.path, "/v1/vault/header")
+        let localHeader = try await localVault.readHeader()
+        XCTAssertEqual(localHeader, NoteFixtures.vaultHeaderBytes)
+    }
+
+    func testPullVaultHeaderIfLocalMissingReturnsNilWhenLocalExists() async throws {
+        let (_, _, localVault, _, syncService) = makeSyncEnvironment()
+        let requestCounter = RequestCounter()
+
+        URLProtocolStub.requestHandler = { request in
+            requestCounter.increment()
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, Data())
+        }
+
+        try await localVault.writeHeader(NoteFixtures.vaultHeaderBytes)
+        let result = try await syncService.pullVaultHeaderIfLocalMissing()
+
+        XCTAssertNil(result)
+        XCTAssertEqual(requestCounter.value, 0)
+    }
+
+    func testPullRemoteNotesCatalogImportsNotesWhenIndexOpen() async throws {
+        let noteID = NoteFixtures.noteID
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
+
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            switch request.url?.path {
+            case "/v1/notes":
+                return (
+                    response,
+                    NoteFixtures.pullListNotesJSON(
+                        noteID: noteID,
+                        title: "Remote note",
+                        updatedAt: 1_700_000_100,
+                        etag: #"W/"remote-etag""#
+                    )
+                )
+            case "/v1/notes/\(noteID.uuidString.lowercased())":
+                return (response, NoteFixtures.noteBytes)
+            default:
+                XCTFail("Unexpected path: \(request.url?.path ?? "")")
+                return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+            }
+        }
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await syncService.pullRemoteNotesCatalog()
+
+        let summaries = try await localRepository.listNotes()
+        XCTAssertEqual(summaries.count, 1)
+        XCTAssertEqual(summaries[0].noteID, noteID)
+        XCTAssertEqual(summaries[0].syncState, .synced)
+
+        let row = try await indexStore.fetchNote(noteID: noteID)
+        XCTAssertEqual(row?.syncState, .synced)
+        XCTAssertEqual(row?.etag, #"W/"remote-etag""#)
+    }
+
+    func testPullRemoteNotesCatalogFailsWhenIndexNotOpen() async throws {
+        let noteID = NoteFixtures.noteID
+        let (_, _, _, _, syncService) = makeSyncEnvironment()
+
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            switch request.url?.path {
+            case "/v1/notes":
+                return (
+                    response,
+                    NoteFixtures.pullListNotesJSON(
+                        noteID: noteID,
+                        title: "Remote note",
+                        updatedAt: 1_700_000_100,
+                        etag: #"W/"remote-etag""#
+                    )
+                )
+            case "/v1/notes/\(noteID.uuidString.lowercased())":
+                return (response, NoteFixtures.noteBytes)
+            default:
+                return (response, Data())
+            }
+        }
+
+        do {
+            try await syncService.pullRemoteNotesCatalog()
+            XCTFail("Expected databaseNotOpen")
+        } catch NoteRepositoryError.databaseNotOpen {
+            // expected
+        }
+    }
+
+    func testUploadVaultHeaderOrThrowSucceedsOn204() async throws {
+        let header = Data([0xAA, 0xBB])
+        let captured = RequestCapture()
+
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
+            return (response, nil)
+        }
+
+        let (_, _, _, _, syncService) = makeSyncEnvironment()
+        try await syncService.uploadVaultHeaderOrThrow(header)
+
+        XCTAssertEqual(captured.method, "PUT")
+        XCTAssertEqual(captured.path, "/v1/vault/header")
+        XCTAssertEqual(captured.contentType, "application/octet-stream")
+        XCTAssertEqual(captured.bodyData, header)
+    }
+
+    func testUploadVaultHeaderOrThrowThrowsOnServerError() async throws {
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 500)
+            return (response, Data())
+        }
+
+        let (_, _, _, _, syncService) = makeSyncEnvironment()
+
+        do {
+            try await syncService.uploadVaultHeaderOrThrow(Data([0x01]))
+            XCTFail("Expected serverError")
+        } catch VaultRepositoryError.serverError(let statusCode) {
+            XCTAssertEqual(statusCode, 500)
+        }
     }
 
     func testPullCatalogImportsVaultHeaderAndNotesWhenLocalVaultMissing() async throws {

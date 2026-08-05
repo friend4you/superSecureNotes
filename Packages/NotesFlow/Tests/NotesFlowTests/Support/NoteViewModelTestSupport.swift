@@ -106,9 +106,17 @@ actor RecordingNoteSyncService: NoteSyncing {
 
     func flushPending() async {}
 
+    func pullVaultHeaderIfLocalMissing() async throws -> Data? {
+        nil
+    }
+
+    func pullRemoteNotesCatalog() async throws {}
+
     func pullCatalogIfLocalVaultMissing() async throws -> Data? {
         nil
     }
+
+    func uploadVaultHeaderOrThrow(_ header: Data) async throws {}
 
     nonisolated func scheduleFlush() {
         Task { await recordScheduleFlush() }
@@ -150,9 +158,17 @@ actor ControllableNoteSyncService: NoteSyncing {
 
     func flushPending() async {}
 
+    func pullVaultHeaderIfLocalMissing() async throws -> Data? {
+        nil
+    }
+
+    func pullRemoteNotesCatalog() async throws {}
+
     func pullCatalogIfLocalVaultMissing() async throws -> Data? {
         nil
     }
+
+    func uploadVaultHeaderOrThrow(_ header: Data) async throws {}
 
     nonisolated func scheduleFlush() {}
 

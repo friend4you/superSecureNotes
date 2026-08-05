@@ -39,8 +39,7 @@ final class AppComposition {
             credentialStore: dependencies.credentialStore,
             biometricAuthenticator: dependencies.biometricAuthenticator,
             networkReachability: dependencies.networkReachability,
-            noteSync: dependencies.noteSyncService,
-            vaultHeaderUploader: dependencies.noteSyncService
+            noteSync: dependencies.noteSyncService
         )
         notesDependencies = NotesFlowDependencies(
             authRepository: dependencies.authRepository,

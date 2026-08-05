@@ -25,6 +25,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
     private let navigator: any Navigating
     private let credentialStore: any CredentialStore
     private let networkReachability: any NetworkReachability
+    private let noteSync: any NoteSyncing
 
     public init(
         authRepository: any AuthRepository,
@@ -34,7 +35,8 @@ public final class DefaultLoginViewModel: LoginViewModel {
         notesIndexStore: any NotesIndexStoreProtocol,
         navigator: any Navigating,
         credentialStore: any CredentialStore,
-        networkReachability: any NetworkReachability
+        networkReachability: any NetworkReachability,
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -44,6 +46,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
         self.navigator = navigator
         self.credentialStore = credentialStore
         self.networkReachability = networkReachability
+        self.noteSync = noteSync
     }
 
     public func registerTapped() {
@@ -81,16 +84,39 @@ public final class DefaultLoginViewModel: LoginViewModel {
             let session = try await authRepository.login(
                 LoginCredentials(email: email, password: password)
             )
-            let headerData = try await vaultRepository.readHeader()
+            let pulledHeader = try await noteSync.pullVaultHeaderIfLocalMissing()
+            let headerData: Data
+            if let pulledHeader {
+                headerData = pulledHeader
+            } else {
+                headerData = try await vaultRepository.readHeader()
+            }
             let unlockOutcome = try vaultAuthenticator.unlockVault(
                 headerData: headerData,
                 password: password
             )
-            try await NotesIndexStoreLifecycle.openAfterEstablish(
-                sessionKeys: unlockOutcome.sessionKeys,
-                vaultSession: vaultSession,
-                notesIndexStore: notesIndexStore
-            )
+            if pulledHeader != nil {
+                try await NotesIndexStoreLifecycle.open(
+                    sessionKeys: unlockOutcome.sessionKeys,
+                    notesIndexStore: notesIndexStore
+                )
+                do {
+                    try await noteSync.pullRemoteNotesCatalog()
+                } catch {
+                    await notesIndexStore.close()
+                    throw error
+                }
+                await NotesIndexStoreLifecycle.establish(
+                    sessionKeys: unlockOutcome.sessionKeys,
+                    vaultSession: vaultSession
+                )
+            } else {
+                try await NotesIndexStoreLifecycle.openAfterEstablish(
+                    sessionKeys: unlockOutcome.sessionKeys,
+                    vaultSession: vaultSession,
+                    notesIndexStore: notesIndexStore
+                )
+            }
             try credentialStore.saveSetup(
                 email: email,
                 refreshToken: session.refreshToken,

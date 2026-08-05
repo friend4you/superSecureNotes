@@ -22,7 +22,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
     private let notesIndexStore: any NotesIndexStoreProtocol
     private let credentialStore: any CredentialStore
     private let networkReachability: any NetworkReachability
-    private let vaultHeaderUploader: any VaultHeaderUploadScheduling
+    private let noteSync: any NoteSyncing
 
     public init(
         authRepository: any AuthRepository,
@@ -32,7 +32,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
         notesIndexStore: any NotesIndexStoreProtocol,
         credentialStore: any CredentialStore,
         networkReachability: any NetworkReachability,
-        vaultHeaderUploader: any VaultHeaderUploadScheduling = NoOpVaultHeaderUploadScheduler()
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -41,7 +41,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
         self.notesIndexStore = notesIndexStore
         self.credentialStore = credentialStore
         self.networkReachability = networkReachability
-        self.vaultHeaderUploader = vaultHeaderUploader
+        self.noteSync = noteSync
     }
 
     public func register() async {
@@ -64,7 +64,12 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
             )
             let creationOutcome = try vaultAuthenticator.createVault(password: password)
             try await vaultRepository.writeHeader(creationOutcome.headerData)
-            vaultHeaderUploader.scheduleVaultHeaderUpload(creationOutcome.headerData)
+            do {
+                try await noteSync.uploadVaultHeaderOrThrow(creationOutcome.headerData)
+            } catch {
+                await authRepository.clearSession()
+                throw error
+            }
             let unlockOutcome = try vaultAuthenticator.unlockVault(
                 headerData: creationOutcome.headerData,
                 password: password

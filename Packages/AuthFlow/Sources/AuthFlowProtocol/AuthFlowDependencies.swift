@@ -19,7 +19,6 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
-    private let vaultHeaderUploader: any VaultHeaderUploadScheduling
 
     public init(
         authRepository: any AuthRepository,
@@ -31,8 +30,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         credentialStore: any CredentialStore,
         biometricAuthenticator: any BiometricAuthenticator,
         networkReachability: any NetworkReachability,
-        noteSync: any NoteSyncing = NoOpNoteSyncService(),
-        vaultHeaderUploader: any VaultHeaderUploadScheduling = NoOpVaultHeaderUploadScheduler()
+        noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -44,7 +42,6 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
         self.noteSync = noteSync
-        self.vaultHeaderUploader = vaultHeaderUploader
     }
 
     public func makeLoginViewModel() -> DefaultLoginViewModel {
@@ -56,7 +53,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             notesIndexStore: notesIndexStore,
             navigator: navigator,
             credentialStore: credentialStore,
-            networkReachability: networkReachability
+            networkReachability: networkReachability,
+            noteSync: noteSync
         )
     }
 
@@ -69,7 +67,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
             networkReachability: networkReachability,
-            vaultHeaderUploader: vaultHeaderUploader
+            noteSync: noteSync
         )
     }
 

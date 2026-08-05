@@ -37,6 +37,23 @@ private final class MockNavigating: Navigating {
 
 @MainActor
 final class AppCompositionTests: XCTestCase {
+    func testAppCompositionPassesSameNoteSyncServiceToAuthViewModels() async {
+        let composition = AppComposition()
+
+        let appSync = composition.appDependencies.noteSyncService
+        let loginViewModel = composition.authDependencies.makeLoginViewModel()
+        let registerViewModel = composition.authDependencies.makeRegisterViewModel()
+        let unlockViewModel = composition.authDependencies.makeUnlockViewModel()
+
+        XCTAssertTrue(loginViewModel is DefaultLoginViewModel)
+        XCTAssertTrue(registerViewModel is DefaultRegisterViewModel)
+        XCTAssertTrue(unlockViewModel is DefaultUnlockViewModel)
+
+        let notesSync = composition.notesDependencies.noteSync as? LocalFirstNoteSyncService
+        XCTAssertTrue(notesSync === appSync)
+        await Task.yield()
+    }
+
     func testAppCompositionPassesNoteSyncServiceToNotesDependencies() async {
         let composition = AppComposition()
 

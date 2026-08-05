@@ -259,9 +259,17 @@ private actor MockNoteSyncService: NoteSyncing {
         flushCallCount += 1
     }
 
+    func pullVaultHeaderIfLocalMissing() async throws -> Data? {
+        nil
+    }
+
+    func pullRemoteNotesCatalog() async throws {}
+
     func pullCatalogIfLocalVaultMissing() async throws -> Data? {
         nil
     }
+
+    func uploadVaultHeaderOrThrow(_ header: Data) async throws {}
 
     nonisolated func scheduleFlush() {
         Task { await flushPending() }

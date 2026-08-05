@@ -49,15 +49,30 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         await flushDeletes()
     }
 
-    public func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+    public func pullVaultHeaderIfLocalMissing() async throws -> Data? {
         if (try? await localVault.readHeader()) != nil {
             return nil
         }
 
         let header = try await remoteVault.readHeader()
         try await localVault.writeHeader(header)
-        try await importRemoteNotes()
         return header
+    }
+
+    public func pullRemoteNotesCatalog() async throws {
+        try await importRemoteNotes()
+    }
+
+    public func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        guard let header = try await pullVaultHeaderIfLocalMissing() else {
+            return nil
+        }
+        try await pullRemoteNotesCatalog()
+        return header
+    }
+
+    public func uploadVaultHeaderOrThrow(_ header: Data) async throws {
+        try await remoteVault.writeHeader(header)
     }
 
     public nonisolated func scheduleVaultHeaderUpload(_ header: Data) {

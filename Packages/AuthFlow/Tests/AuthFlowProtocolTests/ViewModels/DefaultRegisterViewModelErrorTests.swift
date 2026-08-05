@@ -41,6 +41,27 @@ final class DefaultRegisterViewModelErrorTests: XCTestCase {
         XCTAssertEqual(viewModel.state, .failure(.networkError))
     }
 
+    func testRegisterFailsAndClearsSessionWhenVaultUploadFails() async {
+        let authRepository = MockAuthRepository()
+        let credentialStore = MockCredentialStore()
+        let noteSync = MockNoteSyncService()
+        await noteSync.setUploadVaultHeaderError(VaultRepositoryError.serverError(statusCode: 500))
+        let viewModel = AuthFlowTestSupport.makeRegisterViewModel(
+            authRepository: authRepository,
+            credentialStore: credentialStore,
+            noteSync: noteSync
+        )
+        viewModel.email = "user@example.com"
+        viewModel.password = "secret"
+
+        await viewModel.register()
+
+        XCTAssertEqual(viewModel.state, .failure(.unknown))
+        XCTAssertFalse(credentialStore.hasLocalSetup)
+        let clearSessionCallCount = await authRepository.clearSessionCallCount
+        XCTAssertEqual(clearSessionCallCount, 1)
+    }
+
     private func makeViewModel(
         authRepository: MockAuthRepository = MockAuthRepository(),
         vaultRepository: MockVaultRepository = MockVaultRepository()
@@ -49,6 +70,12 @@ final class DefaultRegisterViewModelErrorTests: XCTestCase {
             authRepository: authRepository,
             vaultRepository: vaultRepository
         )
+    }
+}
+
+private extension MockNoteSyncService {
+    func setUploadVaultHeaderError(_ error: Error) {
+        uploadVaultHeaderError = error
     }
 }
 
