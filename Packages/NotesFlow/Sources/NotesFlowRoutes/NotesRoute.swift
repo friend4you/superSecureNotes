@@ -4,5 +4,6 @@ import NavigationProtocol
 public enum NotesRoute: Route {
     case list
     case detail(noteID: UUID)
+    case sharedDetail(noteID: UUID)
     case create
 }

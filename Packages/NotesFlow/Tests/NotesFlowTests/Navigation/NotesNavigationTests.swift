@@ -26,8 +26,10 @@ private final class MockNotesDependencies: NotesDependencyProviding {
 
     private(set) var makeNoteListViewModelCallCount = 0
     private(set) var makeNoteDetailViewModelCallCount = 0
+    private(set) var makeSharedNoteDetailViewModelCallCount = 0
     private(set) var makeCreateNoteViewModelCallCount = 0
     private(set) var lastNoteDetailViewModelNoteID: UUID?
+    private(set) var lastSharedNoteDetailViewModelNoteID: UUID?
 
     func makeNoteListViewModel() -> DefaultNoteListViewModel {
         makeNoteListViewModelCallCount += 1
@@ -49,6 +51,16 @@ private final class MockNotesDependencies: NotesDependencyProviding {
             noteRepository: noteRepository,
             vaultSession: MockVaultSession(),
             navigator: MockNavigating()
+        )
+    }
+
+    func makeSharedNoteDetailViewModel(noteID: UUID) -> DefaultSharedNoteDetailViewModel {
+        makeSharedNoteDetailViewModelCallCount += 1
+        lastSharedNoteDetailViewModelNoteID = noteID
+        return DefaultSharedNoteDetailViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: MockVaultSession()
         )
     }
 
@@ -111,6 +123,23 @@ private actor MockNoteRepository: NoteRepository {
     }
     func writeNote(_ note: StoredNote) async throws {}
     func deleteNote(noteID: UUID) async throws {}
+
+    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 }
 
 @MainActor
@@ -179,6 +208,7 @@ final class NotesNavigationTests: XCTestCase {
         let noteID = UUID()
         _ = registry.view(for: NotesRoute.list)
         _ = registry.view(for: NotesRoute.detail(noteID: noteID))
+        _ = registry.view(for: NotesRoute.sharedDetail(noteID: noteID))
         _ = registry.view(for: NotesRoute.create)
 
         XCTAssertTrue(registry.isRegistered(NotesRoute.self))

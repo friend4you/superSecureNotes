@@ -69,6 +69,14 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         )
     }
 
+    public func makeSharedNoteDetailViewModel(noteID: UUID) -> DefaultSharedNoteDetailViewModel {
+        DefaultSharedNoteDetailViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: vaultSession
+        )
+    }
+
     public func makeCreateNoteViewModel() -> DefaultCreateNoteViewModel {
         DefaultCreateNoteViewModel(
             noteRepository: noteRepository,

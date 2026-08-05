@@ -243,6 +243,10 @@ actor MockVaultRepository: VaultRepository {
     func fetchPublicKey(userID: String) async throws -> Data {
         Data()
     }
+
+    func fetchPublicKey(email: String) async throws -> Data {
+        Data()
+    }
 }
 
 final class MockVaultAuthenticator: VaultAuthenticator, @unchecked Sendable {

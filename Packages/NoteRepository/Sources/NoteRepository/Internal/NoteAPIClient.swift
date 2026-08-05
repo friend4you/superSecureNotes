@@ -154,6 +154,63 @@ struct NoteAPIClient {
         _ = try await perform(request, expectedSuccessCodes: [204])
     }
 
+    func listSharedNotes(accessToken: String) async throws -> [SharedNoteSummary] {
+        let request = try makeAuthorizedRequest(
+            path: "notes/shared",
+            method: "GET",
+            accessToken: accessToken
+        )
+        let data = try await perform(request, expectedSuccessCodes: [200])
+        let response = try decoder.decode([SharedNoteSummaryResponseDTO].self, from: data)
+        return try response.map { dto in
+            guard let noteID = UUID(uuidString: dto.noteId) else {
+                throw NoteRepositoryError.validationError("Invalid note ID in shared list response.")
+            }
+            guard let ownerID = UUID(uuidString: dto.ownerId) else {
+                throw NoteRepositoryError.validationError("Invalid owner ID in shared list response.")
+            }
+            return SharedNoteSummary(
+                noteID: noteID,
+                title: dto.title,
+                updatedAt: dto.updatedAt,
+                etag: dto.etag,
+                ownerEmail: dto.ownerEmail,
+                ownerID: ownerID,
+                sharedAt: dto.sharedAt
+            )
+        }
+    }
+
+    func readSharedNote(noteID: UUID, accessToken: String) async throws -> SharedNoteDownloadResponseDTO {
+        let request = try makeAuthorizedRequest(
+            path: "notes/shared/\(noteID.uuidString.lowercased())",
+            method: "GET",
+            accessToken: accessToken
+        )
+        let data = try await perform(request, expectedSuccessCodes: [200])
+        return try decoder.decode(SharedNoteDownloadResponseDTO.self, from: data)
+    }
+
+    func shareNote(
+        noteID: UUID,
+        recipientEmail: String,
+        wrappedFEK: Data,
+        accessToken: String
+    ) async throws {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/share",
+            method: "POST",
+            accessToken: accessToken
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: String] = [
+            "recipientEmail": recipientEmail,
+            "wrappedFek": wrappedFEK.base64EncodedString(),
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        _ = try await perform(request, expectedSuccessCodes: [200, 201, 204])
+    }
+
     private func makeAuthorizedRequest(
         path: String,
         method: String,

@@ -19,6 +19,11 @@ final class NotesRouteTests: XCTestCase {
         XCTAssertEqual(NotesRoute.detail(noteID: noteID), .detail(noteID: noteID))
     }
 
+    func testNotesRouteIncludesSharedDetailWithNoteID() {
+        let noteID = UUID()
+        XCTAssertEqual(NotesRoute.sharedDetail(noteID: noteID), .sharedDetail(noteID: noteID))
+    }
+
     func testNotesRouteIncludesCreate() {
         XCTAssertEqual(NotesRoute.create, .create)
     }
@@ -27,10 +32,12 @@ final class NotesRouteTests: XCTestCase {
         let noteID = UUID()
         XCTAssertEqual(NotesRoute.list, .list)
         XCTAssertEqual(NotesRoute.detail(noteID: noteID), .detail(noteID: noteID))
+        XCTAssertEqual(NotesRoute.sharedDetail(noteID: noteID), .sharedDetail(noteID: noteID))
         XCTAssertEqual(NotesRoute.create, .create)
         XCTAssertNotEqual(NotesRoute.list, .detail(noteID: noteID))
         XCTAssertNotEqual(NotesRoute.list, .create)
         XCTAssertNotEqual(NotesRoute.create, .detail(noteID: noteID))
+        XCTAssertNotEqual(NotesRoute.detail(noteID: noteID), .sharedDetail(noteID: noteID))
     }
 
     func testNotesRouteIsSendable() {
@@ -39,6 +46,9 @@ final class NotesRouteTests: XCTestCase {
 
         let detailRoute: any Route & Sendable = NotesRoute.detail(noteID: UUID())
         XCTAssertTrue(detailRoute is NotesRoute)
+
+        let sharedDetailRoute: any Route & Sendable = NotesRoute.sharedDetail(noteID: UUID())
+        XCTAssertTrue(sharedDetailRoute is NotesRoute)
 
         let createRoute: any Route & Sendable = NotesRoute.create
         XCTAssertTrue(createRoute is NotesRoute)

@@ -182,6 +182,56 @@
         }
       }
     },
+    "notes.list.segment" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes Segment"
+          }
+        }
+      }
+    },
+    "notes.list.segment.myNotes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Notes"
+          }
+        }
+      }
+    },
+    "notes.list.segment.shared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared"
+          }
+        }
+      }
+    },
+    "notes.shared.detail.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared Note"
+          }
+        }
+      }
+    },
+    "notes.shared.detail.owner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared by"
+          }
+        }
+      }
+    },
     "notes.sync.pending" : {
       "localizations" : {
         "en" : {

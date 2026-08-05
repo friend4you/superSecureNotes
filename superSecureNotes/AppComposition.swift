@@ -58,7 +58,10 @@ final class AppComposition {
             }
         )
         shareNoteDependencies = ShareNoteDependencies(
-            navigator: navigation.navigator
+            navigator: navigation.navigator,
+            noteRepository: dependencies.noteRepository,
+            vaultRepository: dependencies.vaultRepository,
+            vaultSession: dependencies.vaultSession
         )
         let navigator = navigation.navigator
         let credentialStore = dependencies.credentialStore

@@ -105,6 +105,23 @@ final class NotesFlowDependenciesTests: XCTestCase {
         XCTAssertEqual(viewModel.noteID, noteID)
     }
 
+    func testMakeSharedNoteDetailViewModelReturnsDefaultImplementationBoundToNoteID() {
+        let noteID = UUID()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let viewModel = dependencies.makeSharedNoteDetailViewModel(noteID: noteID)
+
+        XCTAssertTrue(viewModel is DefaultSharedNoteDetailViewModel)
+        XCTAssertEqual(viewModel.noteID, noteID)
+    }
+
     func testMakeCreateNoteViewModelReturnsDefaultImplementation() {
         let dependencies = NotesFlowDependencies(
             authRepository: MockAuthRepository(),
@@ -304,4 +321,21 @@ private actor MockNoteRepository: NoteRepository {
     }
     func writeNote(_ note: StoredNote) async throws {}
     func deleteNote(noteID: UUID) async throws {}
+
+    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 }

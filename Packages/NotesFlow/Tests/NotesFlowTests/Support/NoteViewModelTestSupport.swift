@@ -34,6 +34,35 @@ enum NoteViewModelTestSupport {
             syncState: syncState
         )
     }
+
+    static func makeSharedNote(
+        noteID: UUID,
+        title: String,
+        body: String,
+        recipientPublicKey: Data,
+        attachments: [NotePayload.Attachment] = [],
+        createdAt: UInt64 = 1_700_000_000,
+        updatedAt: UInt64 = 1_700_000_100
+    ) throws -> SharedNote {
+        let fek = generateSymmetricKey()
+        let payload = NotePayload(body: Data(body.utf8), attachments: attachments)
+        let encryptedPayload = try encryptPayload(payload, with: fek)
+        let recipientWrappedFEK = try wrapFEKForRecipient(fek, recipientPublicKey: recipientPublicKey)
+        let metadata = NoteMetadata(
+            noteID: noteID,
+            title: title,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            attachmentCount: UInt32(attachments.count),
+            attachmentsTotalSize: attachments.reduce(0) { $0 + UInt64($1.data.count) }
+        )
+        return SharedNote(
+            noteID: noteID,
+            metadata: metadata,
+            recipientWrappedFEK: recipientWrappedFEK,
+            encryptedPayload: encryptedPayload
+        )
+    }
 }
 
 actor StoredNoteMockRepository: NoteRepository {
@@ -74,6 +103,23 @@ actor StoredNoteMockRepository: NoteRepository {
         deletedNoteIDs.append(noteID)
         notes.removeValue(forKey: noteID)
     }
+
+    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 
     func storedNote(noteID: UUID) async throws -> StoredNote {
         try await readNote(noteID: noteID)

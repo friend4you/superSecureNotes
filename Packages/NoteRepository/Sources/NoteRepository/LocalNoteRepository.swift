@@ -125,6 +125,22 @@ public actor LocalNoteRepository: NoteRepository {
         )
     }
 
+    public func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    public func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    public func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
     func requireOpen() async throws {
         guard await notesIndexStore.isOpen else {
             throw NoteRepositoryError.databaseNotOpen

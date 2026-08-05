@@ -13,6 +13,7 @@ import NotesFlowRoutes
 import ShareNote
 import ShareNoteRoutes
 import SwiftUI
+import VaultRepositoryProtocol
 import VaultSession
 import XCTest
 
@@ -101,9 +102,33 @@ final class AppCompositionTests: XCTestCase {
     }
 
     func testAppUsesShareNoteDependencies() {
-        let shareNoteDependencies = ShareNoteDependencies(navigator: MockNavigating())
+        let shareNoteDependencies = ShareNoteDependencies(
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            vaultRepository: MockVaultRepository(),
+            vaultSession: VaultSession()
+        )
 
         XCTAssertTrue(shareNoteDependencies is ShareNoteDependencyProviding)
+    }
+
+    func testAppCompositionWiresShareNoteDependenciesWithSharedRepositories() async {
+        let composition = AppComposition()
+
+        let noteID = UUID()
+        let viewModel = composition.shareNoteDependencies.makeShareNoteViewModel(noteID: noteID)
+
+        XCTAssertTrue(viewModel is DefaultShareNoteViewModel)
+        XCTAssertEqual(viewModel.noteID, noteID)
+
+        guard let appNoteRepository = composition.appDependencies.noteRepository as? LocalNoteRepository,
+              let notesRepository = composition.notesDependencies.noteRepository as? LocalNoteRepository
+        else {
+            XCTFail("Expected LocalNoteRepository instances")
+            return
+        }
+        XCTAssertTrue(appNoteRepository === notesRepository)
+        await Task.yield()
     }
 
     func testAppCompositionRegistersShareNoteRoute() async {
@@ -202,6 +227,30 @@ private actor MockNoteRepository: NoteRepository {
     }
     func writeNote(_ note: StoredNote) async throws {}
     func deleteNote(noteID: UUID) async throws {}
+
+    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
+}
+
+private actor MockVaultRepository: VaultRepository {
+    func readHeader() async throws -> Data { Data() }
+    func writeHeader(_ header: Data) async throws {}
+    func fetchPublicKey(userID: String) async throws -> Data { Data(repeating: 0, count: 32) }
+    func fetchPublicKey(email: String) async throws -> Data { Data(repeating: 0, count: 32) }
 }
 
 private final class TestCredentialStore: CredentialStore, @unchecked Sendable {

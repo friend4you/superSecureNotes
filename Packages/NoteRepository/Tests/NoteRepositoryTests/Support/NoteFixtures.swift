@@ -106,6 +106,51 @@ enum NoteFixtures {
     }
 
     static let uploadID = UUID(uuidString: "660E8400-E29B-41D4-A716-446655440001")!
+    static let ownerID = UUID(uuidString: "770E8400-E29B-41D4-A716-446655440000")!
+    static let sharedAt = Date(timeIntervalSince1970: 1_700_000_500)
+    static let recipientWrappedFEK = Data(repeating: 0xAB, count: 48)
+
+    static let sampleSharedSummary = SharedNoteSummary(
+        noteID: noteID,
+        title: "My note",
+        updatedAt: 1_700_000_000,
+        etag: #"W/"shared-etag""#,
+        ownerEmail: "owner@example.com",
+        ownerID: ownerID,
+        sharedAt: sharedAt
+    )
+
+    static func listSharedNotesJSON(
+        summaries: [SharedNoteSummary] = [sampleSharedSummary]
+    ) -> Data {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let payload: [[String: Any]] = summaries.map { summary in
+            [
+                "noteId": summary.noteID.uuidString.lowercased(),
+                "title": summary.title,
+                "updatedAt": summary.updatedAt,
+                "etag": summary.etag,
+                "ownerEmail": summary.ownerEmail,
+                "ownerId": summary.ownerID.uuidString.lowercased(),
+                "sharedAt": formatter.string(from: summary.sharedAt),
+            ]
+        }
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static func readSharedNoteJSON(
+        noteID: UUID = noteID,
+        wrappedFek: Data = recipientWrappedFEK,
+        blob: Data = noteBytes
+    ) -> Data {
+        let payload: [String: String] = [
+            "noteId": noteID.uuidString.lowercased(),
+            "wrappedFek": wrappedFek.base64EncodedString(),
+            "blob": blob.base64EncodedString(),
+        ]
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
 }
 
 struct MockTokenProvider: AccessTokenProviding {

@@ -301,6 +301,23 @@ private actor MockNoteRepository: NoteRepository {
         deletedNoteIDs.append(noteID)
         notes.removeAll { $0.noteID == noteID }
     }
+
+    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 }
 
 private actor MockAuthRepository: AuthRepository {

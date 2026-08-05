@@ -11,6 +11,8 @@ public enum NotesNavigation {
             listView(deps: deps)
         case .detail(let noteID):
             detailView(noteID: noteID, deps: deps)
+        case .sharedDetail(let noteID):
+            sharedDetailView(noteID: noteID, deps: deps)
         case .create:
             createView(deps: deps)
         }
@@ -22,6 +24,13 @@ public enum NotesNavigation {
 
     public static func detailView(noteID: UUID, deps: any NotesDependencyProviding) -> NoteDetailView {
         NoteDetailView(viewModel: deps.makeNoteDetailViewModel(noteID: noteID))
+    }
+
+    public static func sharedDetailView(
+        noteID: UUID,
+        deps: any NotesDependencyProviding
+    ) -> SharedNoteDetailView {
+        SharedNoteDetailView(viewModel: deps.makeSharedNoteDetailViewModel(noteID: noteID))
     }
 
     public static func createView(deps: any NotesDependencyProviding) -> CreateNoteView {

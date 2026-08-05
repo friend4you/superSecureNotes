@@ -4,6 +4,7 @@ import VaultRepositoryProtocol
 enum VaultFixtures {
     static let baseURL = URL(string: "https://api.example.com/v1")!
     static let userID = "550e8400-e29b-41d4-a716-446655440000"
+    static let email = "user@example.com"
     static let accessToken = "access-token"
     static let headerBytes = Data([0x53, 0x53, 0x4E, 0x56, 0x02])
 
@@ -96,6 +97,12 @@ final class RequestCapture: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return request?.url?.path
+    }
+
+    var query: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return request?.url?.query
     }
 
     var contentType: String? {

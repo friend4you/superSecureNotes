@@ -5,6 +5,7 @@ public enum NoteRepositoryError: Error, Equatable, Sendable {
     case noteNotFound
     case corruptNote
     case databaseNotOpen
+    case notSupported
     case validationError(String)
     case networkError
     case serverError(statusCode: Int)

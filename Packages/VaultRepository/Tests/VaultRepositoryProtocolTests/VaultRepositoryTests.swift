@@ -48,4 +48,8 @@ private actor MockVaultRepository: VaultRepository {
     func fetchPublicKey(userID: String) async throws -> Data {
         publicKey
     }
+
+    func fetchPublicKey(email: String) async throws -> Data {
+        publicKey
+    }
 }

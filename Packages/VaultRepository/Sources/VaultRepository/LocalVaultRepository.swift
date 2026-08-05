@@ -40,6 +40,10 @@ public actor LocalVaultRepository: VaultRepository {
         Data(repeating: 0, count: 32)
     }
 
+    public func fetchPublicKey(email: String) async throws -> Data {
+        Data(repeating: 0, count: 32)
+    }
+
     private func ensureVaultDirectory() throws {
         try fileManager.createDirectory(
             at: vaultDirectoryURL,

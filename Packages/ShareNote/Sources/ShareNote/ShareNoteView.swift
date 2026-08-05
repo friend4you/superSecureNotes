@@ -1,8 +1,6 @@
 import SwiftUI
 
 public struct ShareNoteView: View {
-    public static let placeholderText = "Share note"
-
     @Bindable private var viewModel: DefaultShareNoteViewModel
 
     public init(viewModel: DefaultShareNoteViewModel) {
@@ -10,30 +8,55 @@ public struct ShareNoteView: View {
     }
 
     public var body: some View {
-        Text(Self.placeholderText)
+        NavigationStack {
+            Form {
+                if viewModel.isSharing {
+                    Section {
+                        HStack {
+                            Spacer()
+                            ProgressView(ShareNoteUILocalization.localized("share.loading"))
+                            Spacer()
+                        }
+                    }
+                }
+
+                if let errorMessage = viewModel.errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    TextField(
+                        ShareNoteUILocalization.localized("share.emailField"),
+                        text: $viewModel.recipientEmail
+                    )
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+                    #endif
+                    .autocorrectionDisabled()
+                }
+
+                Section {
+                    Button(ShareNoteUILocalization.localized("share.button")) {
+                        Task {
+                            await viewModel.share()
+                        }
+                    }
+                    .disabled(viewModel.isSharing)
+                }
+            }
+            .navigationTitle(ShareNoteUILocalization.localized("share.title"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(ShareNoteUILocalization.localized("share.cancel")) {
+                        viewModel.dismiss()
+                    }
+                    .disabled(viewModel.isSharing)
+                }
+            }
+        }
     }
 }
-
-#Preview {
-    ShareNoteView(
-        viewModel: DefaultShareNoteViewModel(
-            noteID: UUID(),
-            navigator: PreviewNavigating()
-        )
-    )
-}
-
-#if DEBUG
-import Foundation
-import NavigationProtocol
-
-@MainActor
-private final class PreviewNavigating: Navigating {
-    func setRoot<R: Route>(_ route: R) {}
-    func push<R: Route>(_ route: R) {}
-    func present<R: Route>(_ route: R, style: RoutePresentation) {}
-    func pop() {}
-    func popToRoot() {}
-    func dismissPresentation() {}
-}
-#endif

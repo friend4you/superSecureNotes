@@ -10,6 +10,30 @@ public struct NoteListView: View {
 
     public var body: some View {
         List {
+            Section {
+                Picker(
+                    NotesFlowUILocalization.localized("notes.list.segment"),
+                    selection: $viewModel.selectedSegment
+                ) {
+                    Text(NotesFlowUILocalization.localized("notes.list.segment.myNotes"))
+                        .tag(NoteListSegment.myNotes)
+                    Text(NotesFlowUILocalization.localized("notes.list.segment.shared"))
+                        .tag(NoteListSegment.shared)
+                }
+                .pickerStyle(.segmented)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .onChange(of: viewModel.selectedSegment) { _, segment in
+                    Task {
+                        switch segment {
+                        case .myNotes:
+                            await viewModel.reloadSummaries()
+                        case .shared:
+                            await viewModel.reloadSharedSummaries()
+                        }
+                    }
+                }
+            }
+
             if viewModel.isLoading {
                 HStack {
                     Spacer()
@@ -23,28 +47,44 @@ public struct NoteListView: View {
                     .foregroundStyle(.red)
             }
 
-            ForEach(viewModel.notes, id: \.noteID) { note in
-                Group {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(note.title)
-                            NoteSyncStatusLabel(syncState: note.syncState)
-                                .font(.caption)
+            if viewModel.selectedSegment == .myNotes {
+                ForEach(viewModel.notes, id: \.noteID) { note in
+                    Group {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(note.title)
+                                NoteSyncStatusLabel(syncState: note.syncState)
+                                    .font(.caption)
+                            }
+                            Spacer()
                         }
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .onTapGesture {
+                        viewModel.openDetail(noteID: note.noteID)
+                    }
+                    .contextMenu {
+                        Button(NotesFlowUILocalization.localized("common.share")) {
+                            viewModel.share(noteID: note.noteID)
+                        }
+                        Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                            pendingDeleteNoteID = note.noteID
+                        }
+                    }
+                }
+            } else {
+                ForEach(viewModel.sharedNotes, id: \.noteID) { note in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(note.title)
+                        Text(note.ownerEmail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
-                }
-                .onTapGesture {
-                    viewModel.openDetail(noteID: note.noteID)
-                }
-                .contextMenu {
-                    Button(NotesFlowUILocalization.localized("common.share")) {
-                        viewModel.share(noteID: note.noteID)
-                    }
-                    Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
-                        pendingDeleteNoteID = note.noteID
+                    .onTapGesture {
+                        viewModel.openSharedDetail(noteID: note.noteID)
                     }
                 }
             }
@@ -204,6 +244,23 @@ private actor PreviewNoteRepository: NoteRepository {
     }
     func writeNote(_ note: StoredNote) async throws {}
     func deleteNote(noteID: UUID) async throws {}
+
+    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
+        _ = noteID
+        _ = recipientEmail
+        _ = wrappedFEK
+        throw NoteRepositoryError.notSupported
+    }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] {
+        []
+    }
+
+    func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 }
 
 @MainActor

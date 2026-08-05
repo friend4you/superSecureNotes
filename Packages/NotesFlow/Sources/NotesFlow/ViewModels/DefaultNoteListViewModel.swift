@@ -12,12 +12,16 @@ import VaultSessionProtocol
 @MainActor
 public protocol NoteListViewModel: Observable {
     var notes: [NoteSummary] { get }
+    var sharedNotes: [SharedNoteSummary] { get }
+    var selectedSegment: NoteListSegment { get set }
     var isLoading: Bool { get }
     var errorMessage: String? { get }
 
     func refresh() async
     func reloadSummaries() async
+    func reloadSharedSummaries() async
     func openDetail(noteID: UUID)
+    func openSharedDetail(noteID: UUID)
     func createNote()
     func share(noteID: UUID)
     func deleteNote(noteID: UUID) async
@@ -25,10 +29,17 @@ public protocol NoteListViewModel: Observable {
     func logout() async
 }
 
+public enum NoteListSegment: String, CaseIterable, Sendable {
+    case myNotes
+    case shared
+}
+
 @MainActor
 @Observable
 public final class DefaultNoteListViewModel: NoteListViewModel {
     public private(set) var notes: [NoteSummary] = []
+    public private(set) var sharedNotes: [SharedNoteSummary] = []
+    public var selectedSegment: NoteListSegment = .myNotes
     public private(set) var isLoading = false
     public private(set) var errorMessage: String?
 
@@ -76,13 +87,27 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
 
         await noteSync.flushPending()
 
-        await reloadSummaries()
+        switch selectedSegment {
+        case .myNotes:
+            await reloadSummaries()
+        case .shared:
+            await reloadSharedSummaries()
+        }
     }
 
     public func reloadSummaries() async {
         do {
             let loadedNotes = try await noteRepository.listNotes()
             notes = loadedNotes.sorted { $0.updatedAt > $1.updatedAt }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    public func reloadSharedSummaries() async {
+        do {
+            let loadedNotes = try await noteRepository.listSharedNotes()
+            sharedNotes = loadedNotes.sorted { $0.updatedAt > $1.updatedAt }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -97,6 +122,10 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
 
     public func openDetail(noteID: UUID) {
         navigator.push(NotesRoute.detail(noteID: noteID))
+    }
+
+    public func openSharedDetail(noteID: UUID) {
+        navigator.push(NotesRoute.sharedDetail(noteID: noteID))
     }
 
     public func createNote() {

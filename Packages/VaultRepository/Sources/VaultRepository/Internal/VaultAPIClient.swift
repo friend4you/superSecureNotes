@@ -42,6 +42,20 @@ public struct VaultAPIClient {
             method: "GET"
         )
         let data = try await perform(request, expectedSuccessCodes: [200])
+        return try decodePublicKey(from: data)
+    }
+
+    func fetchPublicKey(email: String) async throws -> Data {
+        let request = try await makeAuthorizedRequest(
+            path: "users/public-key",
+            method: "GET",
+            queryItems: [URLQueryItem(name: "email", value: email)]
+        )
+        let data = try await perform(request, expectedSuccessCodes: [200])
+        return try decodePublicKey(from: data)
+    }
+
+    private func decodePublicKey(from data: Data) throws -> Data {
         let response = try decoder.decode(PublicKeyResponseDTO.self, from: data)
         guard let publicKeyData = Data(base64Encoded: response.publicKey) else {
             throw VaultRepositoryError.validationError("Invalid public key encoding.")
@@ -51,10 +65,17 @@ public struct VaultAPIClient {
 
     private func makeAuthorizedRequest(
         path: String,
-        method: String
+        method: String,
+        queryItems: [URLQueryItem]? = nil
     ) async throws -> URLRequest {
         let accessToken = try await tokenProvider.accessToken()
-        let url = baseURL.appending(path: path)
+        var components = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
+        if let queryItems, !queryItems.isEmpty {
+            components.queryItems = queryItems
+        }
+        guard let url = components.url else {
+            throw VaultRepositoryError.validationError("Invalid request URL.")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")

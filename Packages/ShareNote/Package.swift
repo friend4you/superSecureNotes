@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "ShareNote",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17),
         .macOS(.v14),
@@ -20,6 +21,10 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Navigation"),
+        .package(path: "../NoteRepository"),
+        .package(path: "../VaultRepository"),
+        .package(path: "../VaultSession"),
+        .package(path: "../SecureCrypto"),
     ],
     targets: [
         .target(
@@ -27,6 +32,13 @@ let package = Package(
             dependencies: [
                 "ShareNoteRoutes",
                 .product(name: "Navigation", package: "Navigation"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+                .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
+                .product(name: "VaultSessionProtocol", package: "VaultSession"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
+            ],
+            resources: [
+                .process("Resources"),
             ]
         ),
         .target(
@@ -37,7 +49,13 @@ let package = Package(
         ),
         .testTarget(
             name: "ShareNoteTests",
-            dependencies: ["ShareNote"]
+            dependencies: [
+                "ShareNote",
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+                .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
+                .product(name: "VaultSessionProtocol", package: "VaultSession"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
+            ]
         ),
         .testTarget(
             name: "ShareNoteRoutesTests",

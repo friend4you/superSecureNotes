@@ -8,6 +8,22 @@ struct NoteSummaryResponseDTO: Decodable {
     let etag: String?
 }
 
+struct SharedNoteSummaryResponseDTO: Decodable {
+    let noteId: String
+    let title: String
+    let updatedAt: UInt64
+    let etag: String
+    let ownerEmail: String
+    let ownerId: String
+    let sharedAt: Date
+}
+
+struct SharedNoteDownloadResponseDTO: Decodable {
+    let noteId: String
+    let wrappedFek: String
+    let blob: String
+}
+
 struct ErrorResponseDTO: Decodable {
     let error: String
     let message: String
@@ -33,6 +49,27 @@ struct NoteUploadSession: Equatable, Sendable {
 
 enum NoteJSON {
     static func makeDecoder() -> JSONDecoder {
-        JSONDecoder()
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: value) {
+                return date
+            }
+
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: value) {
+                return date
+            }
+
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Invalid ISO8601 date: \(value)"
+            )
+        }
+        return decoder
     }
 }

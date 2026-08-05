@@ -5,6 +5,7 @@ struct NoteAttachmentsSection: View {
     let dataForPreview: (String) -> Data?
     let onRemove: (String) -> Void
     let onPreview: (URL) -> Void
+    var allowsRemoval: Bool = true
 
     private let previewStore = AttachmentPreviewStore()
 
@@ -30,14 +31,16 @@ struct NoteAttachmentsSection: View {
                 }
                 #endif
 
-            Button {
-                onRemove(item.id)
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(.red)
+            if allowsRemoval {
+                Button {
+                    onRemove(item.id)
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(NotesFlowUILocalization.localized("notes.attachments.remove"))
             }
-            .buttonStyle(.borderless)
-            .accessibilityLabel(NotesFlowUILocalization.localized("notes.attachments.remove"))
         }
     }
 
