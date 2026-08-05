@@ -87,7 +87,7 @@ struct NoteAPIClient {
         )
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: ["totalSize": totalSize])
-        let responseData = try await perform(request, expectedSuccessCodes: [200])
+        let responseData = try await perform(request, expectedSuccessCodes: [200, 201])
         let response = try decoder.decode(NoteUploadInitResponseDTO.self, from: responseData)
         guard let uploadID = UUID(uuidString: response.uploadId) else {
             throw NoteRepositoryError.validationError("Invalid upload ID in init response.")

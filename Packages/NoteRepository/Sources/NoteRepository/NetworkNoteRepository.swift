@@ -246,7 +246,7 @@ public actor NetworkNoteRepository: NoteRepository {
         case .noteNotFound:
             return true
         case let .serverError(statusCode):
-            return statusCode == 404 || statusCode == 410
+            return statusCode == 404 || statusCode == 409 || statusCode == 410
         default:
             return false
         }

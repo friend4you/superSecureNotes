@@ -9,6 +9,30 @@ final class NoteAPIClientChunkedUploadTests: XCTestCase {
         super.tearDown()
     }
 
+    func testInitUploadAcceptsCreatedStatus() async throws {
+        let noteID = NoteFixtures.noteID
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 201)
+            return (
+                response,
+                NoteFixtures.uploadInitResponseJSON(
+                    uploadId: NoteFixtures.uploadID,
+                    chunkSize: 5_242_880,
+                    totalChunks: 3
+                )
+            )
+        }
+
+        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
+        let session = try await client.initUpload(
+            noteID: noteID,
+            totalSize: 11_000_000,
+            accessToken: NoteFixtures.accessToken
+        )
+
+        XCTAssertEqual(session.uploadID, NoteFixtures.uploadID)
+    }
+
     func testInitUploadPostsTotalSize() async throws {
         let log = RequestLog()
         let noteID = NoteFixtures.noteID

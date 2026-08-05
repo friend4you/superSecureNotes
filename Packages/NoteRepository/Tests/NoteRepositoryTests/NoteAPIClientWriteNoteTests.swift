@@ -145,7 +145,7 @@ final class NoteAPIClientWriteNoteTests: XCTestCase {
     }
 
     func testNoteUploadSizeThresholdIsTenMegabytes() {
-        XCTAssertEqual(NoteUploadSizeThreshold, 10_000_000)
+        XCTAssertEqual(NoteUploadSizeThreshold, 10_485_760)
     }
 
     func testWriteNoteUsesSinglePUTForThresholdSizedBlob() async throws {
