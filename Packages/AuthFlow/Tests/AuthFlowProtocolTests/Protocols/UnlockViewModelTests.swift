@@ -40,4 +40,6 @@ private final class MockUnlockViewModel: UnlockViewModel {
     func unlockWithPassword() async {}
 
     func retryBiometrics() async {}
+
+    func logout() async {}
 }

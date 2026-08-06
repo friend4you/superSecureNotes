@@ -21,6 +21,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
+    private let performLogout: () async -> Void
 
     public init(
         credentialStore: any CredentialStore,
@@ -30,7 +31,8 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
         notesIndexStore: any NotesIndexStoreProtocol,
         biometricAuthenticator: any BiometricAuthenticator,
         networkReachability: any NetworkReachability,
-        noteSync: any NoteSyncing = NoOpNoteSyncService()
+        noteSync: any NoteSyncing = NoOpNoteSyncService(),
+        performLogout: @escaping () async -> Void = {}
     ) {
         self.credentialStore = credentialStore
         self.authRepository = authRepository
@@ -40,6 +42,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
         self.noteSync = noteSync
+        self.performLogout = performLogout
         self.email = credentialStore.email() ?? ""
     }
 
@@ -49,6 +52,10 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
 
     public func retryBiometrics() async {
         await attemptBiometricUnlockIfEnabled()
+    }
+
+    public func logout() async {
+        await performLogout()
     }
 
     public func unlockWithPassword() async {

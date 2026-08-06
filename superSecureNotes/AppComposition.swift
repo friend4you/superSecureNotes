@@ -29,6 +29,16 @@ final class AppComposition {
         let dependencies = AppDependencies()
         self.appDependencies = dependencies
         navigation = NavigationCoordinator()
+        let localAppDataWiper = FileSystemLocalAppDataWiper()
+        let performLogout: () async -> Void = {
+            await LogoutReset.perform(
+                authRepository: dependencies.authRepository,
+                vaultSession: dependencies.vaultSession,
+                notesIndexStore: dependencies.notesIndexStore,
+                credentialStore: dependencies.credentialStore,
+                localAppDataWiper: localAppDataWiper
+            )
+        }
         authDependencies = AuthFlowDependencies(
             authRepository: dependencies.authRepository,
             vaultRepository: dependencies.vaultRepository,
@@ -39,7 +49,8 @@ final class AppComposition {
             credentialStore: dependencies.credentialStore,
             biometricAuthenticator: dependencies.biometricAuthenticator,
             networkReachability: dependencies.networkReachability,
-            noteSync: dependencies.noteSyncService
+            noteSync: dependencies.noteSyncService,
+            performLogout: performLogout
         )
         notesDependencies = NotesFlowDependencies(
             authRepository: dependencies.authRepository,
@@ -48,14 +59,7 @@ final class AppComposition {
             noteRepository: dependencies.noteRepository,
             credentialStore: dependencies.credentialStore,
             noteSync: dependencies.noteSyncService,
-            performLogout: {
-                await LogoutReset.perform(
-                    authRepository: dependencies.authRepository,
-                    vaultSession: dependencies.vaultSession,
-                    notesIndexStore: dependencies.notesIndexStore,
-                    credentialStore: dependencies.credentialStore
-                )
-            }
+            performLogout: performLogout
         )
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator,

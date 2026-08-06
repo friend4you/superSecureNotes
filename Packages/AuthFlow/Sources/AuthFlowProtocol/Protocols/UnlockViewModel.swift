@@ -17,4 +17,5 @@ public protocol UnlockViewModel: Observable {
     func onAppear() async
     func unlockWithPassword() async
     func retryBiometrics() async
+    func logout() async
 }

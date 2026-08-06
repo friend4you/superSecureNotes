@@ -61,7 +61,8 @@ final class LogoutFlowTests: XCTestCase {
                     authRepository: authRepository,
                     vaultSession: vaultSession,
                     notesIndexStore: notesIndexStore,
-                    credentialStore: credentialStore
+                    credentialStore: credentialStore,
+                    localAppDataWiper: FileSystemLocalAppDataWiper(rootURL: temporaryDirectory)
                 )
             }
         )

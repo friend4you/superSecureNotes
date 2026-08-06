@@ -8,10 +8,12 @@ public enum LogoutReset {
         authRepository: any AuthRepository,
         vaultSession: any VaultSessionProtocol,
         notesIndexStore: any NotesIndexStoreProtocol,
-        credentialStore: any CredentialStore
+        credentialStore: any CredentialStore,
+        localAppDataWiper: (any LocalAppDataWiping)? = nil
     ) async {
         await notesIndexStore.close()
         try? await authRepository.logout()
+        try? await localAppDataWiper?.wipeAll()
         try? credentialStore.clearAll()
         await vaultSession.clear()
     }

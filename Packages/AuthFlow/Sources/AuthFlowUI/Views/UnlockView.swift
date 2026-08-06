@@ -47,6 +47,13 @@ public struct UnlockView: View {
                         }
                     }
                 }
+
+                Button(AuthFlowUILocalization.localized("unlock.logout"), role: .destructive) {
+                    Task {
+                        await viewModel.logout()
+                    }
+                }
+                .disabled(viewModel.state == .loading)
             }
         }
         .navigationTitle(AuthFlowUILocalization.localized("unlock.title"))

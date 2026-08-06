@@ -19,6 +19,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
+    private let performLogout: () async -> Void
 
     public init(
         authRepository: any AuthRepository,
@@ -30,7 +31,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         credentialStore: any CredentialStore,
         biometricAuthenticator: any BiometricAuthenticator,
         networkReachability: any NetworkReachability,
-        noteSync: any NoteSyncing = NoOpNoteSyncService()
+        noteSync: any NoteSyncing = NoOpNoteSyncService(),
+        performLogout: @escaping () async -> Void = {}
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -42,6 +44,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
         self.noteSync = noteSync
+        self.performLogout = performLogout
     }
 
     public func makeLoginViewModel() -> DefaultLoginViewModel {
@@ -80,7 +83,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             notesIndexStore: notesIndexStore,
             biometricAuthenticator: biometricAuthenticator,
             networkReachability: networkReachability,
-            noteSync: noteSync
+            noteSync: noteSync,
+            performLogout: performLogout
         )
     }
 

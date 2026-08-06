@@ -69,7 +69,8 @@ enum AuthFlowTestSupport {
         notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
         biometricAuthenticator: any BiometricAuthenticator = MockBiometricAuthenticator(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false),
-        noteSync: any NoteSyncing = MockNoteSyncService()
+        noteSync: any NoteSyncing = MockNoteSyncService(),
+        performLogout: @escaping () async -> Void = {}
     ) -> DefaultUnlockViewModel {
         DefaultUnlockViewModel(
             credentialStore: credentialStore,
@@ -79,7 +80,8 @@ enum AuthFlowTestSupport {
             notesIndexStore: notesIndexStore,
             biometricAuthenticator: biometricAuthenticator,
             networkReachability: networkReachability,
-            noteSync: noteSync
+            noteSync: noteSync,
+            performLogout: performLogout
         )
     }
 }

@@ -25,6 +25,7 @@ final class LogoutResetTests: XCTestCase {
 
         let vaultSession = MockVaultSession()
         let notesIndexStore = MockNotesIndexStore()
+        let localAppDataWiper = MockLocalAppDataWiper()
         await vaultSession.establish(
             VaultSessionKeys(
                 udk: SymmetricKey(size: .bits256),
@@ -37,17 +38,20 @@ final class LogoutResetTests: XCTestCase {
             authRepository: authRepository,
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore,
-            credentialStore: credentialStore
+            credentialStore: credentialStore,
+            localAppDataWiper: localAppDataWiper
         )
 
         let currentSession = await authRepository.currentSession
         let establishedKeys = await vaultSession.establishedKeys
         let isOpen = await notesIndexStore.isOpen
         let closeCallCount = await notesIndexStore.closeCallCount
+        let wipeCallCount = await localAppDataWiper.wipeCallCount
         XCTAssertNil(currentSession)
         XCTAssertNil(establishedKeys)
         XCTAssertFalse(isOpen)
         XCTAssertEqual(closeCallCount, 1)
+        XCTAssertEqual(wipeCallCount, 1)
         XCTAssertFalse(credentialStore.hasLocalSetup)
         XCTAssertNil(credentialStore.email())
         XCTAssertNil(credentialStore.refreshToken())
@@ -77,5 +81,13 @@ final class LogoutResetTests: XCTestCase {
         )
 
         XCTAssertFalse(credentialStore.hasLocalSetup)
+    }
+}
+
+private actor MockLocalAppDataWiper: LocalAppDataWiping {
+    private(set) var wipeCallCount = 0
+
+    func wipeAll() async throws {
+        wipeCallCount += 1
     }
 }

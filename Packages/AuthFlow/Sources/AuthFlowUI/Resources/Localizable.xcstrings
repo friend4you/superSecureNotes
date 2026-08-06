@@ -297,6 +297,16 @@
           }
         }
       }
+    },
+    "unlock.logout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log Out"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -69,7 +69,7 @@ final class NotesStorageIntegrationTests: XCTestCase {
         XCTAssertEqual(note.metadata.title, "Persisted")
     }
 
-    func testLogoutClosesIndexStoreAndPreservesNotesForNextUnlock() async throws {
+    func testLogoutClosesIndexStoreAndWipesLocalNotesData() async throws {
         let udk = SymmetricKey(size: .bits256)
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440013")!
         let vaultSession = VaultSession()
@@ -80,7 +80,7 @@ final class NotesStorageIntegrationTests: XCTestCase {
 
         try await indexStore.open(passphrase: passphrase)
         try await repository.writeNote(
-            try makeStoredNote(noteID: noteID, title: "Survives logout", body: "Body", udk: udk)
+            try makeStoredNote(noteID: noteID, title: "Removed on logout", body: "Body", udk: udk)
         )
         await vaultSession.establish(
             VaultSessionKeys(
@@ -89,29 +89,22 @@ final class NotesStorageIntegrationTests: XCTestCase {
             )
         )
 
+        let databaseURL = temporaryDirectory.appendingPathComponent("notes.db")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: databaseURL.path))
+
         await LogoutReset.perform(
             authRepository: authRepository,
             vaultSession: vaultSession,
             notesIndexStore: indexStore,
-            credentialStore: credentialStore
+            credentialStore: credentialStore,
+            localAppDataWiper: FileSystemLocalAppDataWiper(rootURL: temporaryDirectory)
         )
 
         let isOpenAfterLogout = await indexStore.isOpen
         let isActiveAfterLogout = await vaultSession.isActive
         XCTAssertFalse(isOpenAfterLogout)
         XCTAssertFalse(isActiveAfterLogout)
-
-        do {
-            _ = try await repository.listNotes()
-            XCTFail("Expected databaseNotOpen after logout")
-        } catch NoteRepositoryError.databaseNotOpen {
-            // expected
-        }
-
-        try await indexStore.open(passphrase: passphrase)
-        let summaries = try await repository.listNotes()
-
-        XCTAssertEqual(summaries.map(\.title), ["Survives logout"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: databaseURL.path))
     }
 
     private func makeRepository() -> (NotesIndexStore, LocalNoteRepository) {

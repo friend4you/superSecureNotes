@@ -26,6 +26,7 @@ final class UnlockViewTests: XCTestCase {
             "unlock.password",
             "unlock.submit",
             "unlock.useBiometrics",
+            "unlock.logout",
         ]
 
         for key in keys {
