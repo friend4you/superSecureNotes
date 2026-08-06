@@ -141,6 +141,11 @@ public actor LocalNoteRepository: NoteRepository {
         throw NoteRepositoryError.notSupported
     }
 
+    public func deleteSharedNote(noteID: UUID) async throws {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
     func requireOpen() async throws {
         guard await notesIndexStore.isOpen else {
             throw NoteRepositoryError.databaseNotOpen

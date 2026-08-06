@@ -318,6 +318,11 @@ private actor MockNoteRepository: NoteRepository {
         throw NoteRepositoryError.notSupported
     }
 
+    func deleteSharedNote(noteID: UUID) async throws {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 }
 
 private actor MockAuthRepository: AuthRepository {

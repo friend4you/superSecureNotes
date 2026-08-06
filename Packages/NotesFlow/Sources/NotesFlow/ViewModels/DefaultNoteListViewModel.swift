@@ -25,6 +25,7 @@ public protocol NoteListViewModel: Observable {
     func createNote()
     func share(noteID: UUID)
     func deleteNote(noteID: UUID) async
+    func deleteSharedNote(noteID: UUID) async
     func openSettings()
     func logout() async
 }
@@ -140,6 +141,15 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         do {
             try await noteRepository.deleteNote(noteID: noteID)
             await refresh()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    public func deleteSharedNote(noteID: UUID) async {
+        do {
+            try await noteRepository.deleteSharedNote(noteID: noteID)
+            await reloadSharedSummaries()
         } catch {
             errorMessage = error.localizedDescription
         }

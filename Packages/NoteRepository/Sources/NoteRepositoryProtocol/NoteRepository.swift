@@ -8,4 +8,5 @@ public protocol NoteRepository: Sendable {
     func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws
     func listSharedNotes() async throws -> [SharedNoteSummary]
     func readSharedNote(noteID: UUID) async throws -> SharedNote
+    func deleteSharedNote(noteID: UUID) async throws
 }

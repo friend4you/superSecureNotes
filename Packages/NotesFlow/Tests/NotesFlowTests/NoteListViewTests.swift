@@ -107,6 +107,14 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("await viewModel.deleteNote(noteID: noteID)"))
     }
 
+    func testNoteListViewSourceSharedContextMenuOffersDelete() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("pendingDeleteSharedNoteID = note.noteID"))
+        XCTAssertTrue(source.contains("await viewModel.deleteSharedNote(noteID: noteID)"))
+        XCTAssertTrue(source.contains("notes.shared.delete.confirmation"))
+    }
+
     func testNoteListViewSourceSettingsButtonOpensSettings() throws {
         let source = try Self.noteListViewSource()
 
@@ -231,6 +239,11 @@ private actor MockNoteRepository: NoteRepository {
     }
 
     func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
+    func deleteSharedNote(noteID: UUID) async throws {
         _ = noteID
         throw NoteRepositoryError.notSupported
     }

@@ -110,4 +110,26 @@ final class NoteSharingAPIClientTests: XCTestCase {
         XCTAssertEqual(json?["recipientEmail"], "friend@example.com")
         XCTAssertEqual(json?["wrappedFek"], wrappedFEK.base64EncodedString())
     }
+
+    func testDeleteSharedNoteSendsExpectedRequest() async throws {
+        let captured = RequestCapture()
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
+            return (response, Data())
+        }
+
+        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
+        try await client.deleteSharedNote(
+            noteID: NoteFixtures.noteID,
+            accessToken: NoteFixtures.accessToken
+        )
+
+        XCTAssertEqual(captured.method, "DELETE")
+        XCTAssertEqual(
+            captured.path,
+            "/v1/notes/shared/\(NoteFixtures.noteID.uuidString.lowercased())"
+        )
+        XCTAssertEqual(captured.authorization, "Bearer \(NoteFixtures.accessToken)")
+    }
 }

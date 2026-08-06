@@ -191,6 +191,15 @@ struct NoteAPIClient {
         return try decoder.decode(SharedNoteDownloadResponseDTO.self, from: data)
     }
 
+    func deleteSharedNote(noteID: UUID, accessToken: String) async throws {
+        let request = try makeAuthorizedRequest(
+            path: "notes/shared/\(noteID.uuidString.lowercased())",
+            method: "DELETE",
+            accessToken: accessToken
+        )
+        _ = try await perform(request, expectedSuccessCodes: [204])
+    }
+
     func shareNote(
         noteID: UUID,
         recipientEmail: String,

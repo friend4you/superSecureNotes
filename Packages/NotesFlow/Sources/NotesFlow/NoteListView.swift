@@ -3,6 +3,7 @@ import SwiftUI
 public struct NoteListView: View {
     @Bindable private var viewModel: DefaultNoteListViewModel
     @State private var pendingDeleteNoteID: UUID?
+    @State private var pendingDeleteSharedNoteID: UUID?
 
     public init(viewModel: DefaultNoteListViewModel) {
         self.viewModel = viewModel
@@ -86,6 +87,11 @@ public struct NoteListView: View {
                     .onTapGesture {
                         viewModel.openSharedDetail(noteID: note.noteID)
                     }
+                    .contextMenu {
+                        Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                            pendingDeleteSharedNoteID = note.noteID
+                        }
+                    }
                 }
             }
         }
@@ -150,6 +156,30 @@ public struct NoteListView: View {
             }
         } message: { _ in
             Text(NotesFlowUILocalization.localized("notes.delete.confirmation"))
+        }
+        .alert(
+            NotesFlowUILocalization.localized("common.delete"),
+            isPresented: Binding(
+                get: { pendingDeleteSharedNoteID != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        pendingDeleteSharedNoteID = nil
+                    }
+                }
+            ),
+            presenting: pendingDeleteSharedNoteID
+        ) { noteID in
+            Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                Task {
+                    await viewModel.deleteSharedNote(noteID: noteID)
+                    pendingDeleteSharedNoteID = nil
+                }
+            }
+            Button(NotesFlowUILocalization.localized("common.cancel"), role: .cancel) {
+                pendingDeleteSharedNoteID = nil
+            }
+        } message: { _ in
+            Text(NotesFlowUILocalization.localized("notes.shared.delete.confirmation"))
         }
     }
 }
@@ -257,6 +287,11 @@ private actor PreviewNoteRepository: NoteRepository {
     }
 
     func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
+    func deleteSharedNote(noteID: UUID) async throws {
         _ = noteID
         throw NoteRepositoryError.notSupported
     }

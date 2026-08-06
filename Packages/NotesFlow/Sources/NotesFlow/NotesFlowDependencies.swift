@@ -16,6 +16,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     private let performLogout: () async -> Void
     internal let noteSync: any NoteSyncing
     private var noteListViewModel: DefaultNoteListViewModel?
+    private var noteDetailViewModels: [UUID: DefaultNoteDetailViewModel] = [:]
+    private var sharedNoteDetailViewModels: [UUID: DefaultSharedNoteDetailViewModel] = [:]
 
     public init(
         authRepository: any AuthRepository,
@@ -37,6 +39,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         Task {
             for await isActive in vaultSession.changes where !isActive {
                 noteListViewModel = nil
+                noteDetailViewModels = [:]
+                sharedNoteDetailViewModels = [:]
             }
         }
     }
@@ -60,21 +64,33 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
     }
 
     public func makeNoteDetailViewModel(noteID: UUID) -> DefaultNoteDetailViewModel {
-        DefaultNoteDetailViewModel(
+        if let existingViewModel = noteDetailViewModels[noteID] {
+            return existingViewModel
+        }
+
+        let viewModel = DefaultNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: vaultSession,
             navigator: navigator,
             noteSync: noteSync
         )
+        noteDetailViewModels[noteID] = viewModel
+        return viewModel
     }
 
     public func makeSharedNoteDetailViewModel(noteID: UUID) -> DefaultSharedNoteDetailViewModel {
-        DefaultSharedNoteDetailViewModel(
+        if let existingViewModel = sharedNoteDetailViewModels[noteID] {
+            return existingViewModel
+        }
+
+        let viewModel = DefaultSharedNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: vaultSession
         )
+        sharedNoteDetailViewModels[noteID] = viewModel
+        return viewModel
     }
 
     public func makeCreateNoteViewModel() -> DefaultCreateNoteViewModel {

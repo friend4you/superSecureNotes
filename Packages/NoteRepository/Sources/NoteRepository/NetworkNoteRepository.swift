@@ -294,4 +294,9 @@ public actor NetworkNoteRepository: NoteRepository {
             encryptedPayload: sections.encryptedPayload
         )
     }
+
+    public func deleteSharedNote(noteID: UUID) async throws {
+        let accessToken = try await tokenProvider.accessToken()
+        try await apiClient.deleteSharedNote(noteID: noteID, accessToken: accessToken)
+    }
 }

@@ -54,6 +54,31 @@ final class DefaultNoteListViewModelSharedTests: XCTestCase {
         )
     }
 
+    func testDeleteSharedNoteCallsRepositoryAndReloadsSharedList() async {
+        let noteID = UUID()
+        let summary = SharedNoteSummary(
+            noteID: noteID,
+            title: "Shared title",
+            updatedAt: 1_700_000_200,
+            etag: "etag",
+            ownerEmail: "owner@example.com",
+            ownerID: UUID(),
+            sharedAt: Date(timeIntervalSince1970: 1_700_000_200)
+        )
+        let noteRepository = SharedListMockNoteRepository(sharedNotes: [summary])
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+        viewModel.selectedSegment = .shared
+        await viewModel.reloadSharedSummaries()
+
+        await viewModel.deleteSharedNote(noteID: noteID)
+
+        let deletedNoteIDs = await noteRepository.deletedSharedNoteIDs
+        let listCallCount = await noteRepository.listSharedNotesCallCount
+        XCTAssertEqual(deletedNoteIDs, [noteID])
+        XCTAssertEqual(listCallCount, 2)
+        XCTAssertTrue(viewModel.sharedNotes.isEmpty)
+    }
+
     private func makeViewModel(
         noteRepository: SharedListMockNoteRepository = SharedListMockNoteRepository(),
         navigator: RecordingNavigator? = nil
@@ -110,8 +135,9 @@ private actor SharedListMockVaultSession: VaultSessionProtocol {
 }
 
 private actor SharedListMockNoteRepository: NoteRepository {
-    private let sharedNotes: [SharedNoteSummary]
+    private var sharedNotes: [SharedNoteSummary]
     private(set) var listSharedNotesCallCount = 0
+    private(set) var deletedSharedNoteIDs: [UUID] = []
 
     init(sharedNotes: [SharedNoteSummary] = []) {
         self.sharedNotes = sharedNotes
@@ -132,5 +158,10 @@ private actor SharedListMockNoteRepository: NoteRepository {
     }
     func readSharedNote(noteID: UUID) async throws -> SharedNote {
         throw NoteRepositoryError.notSupported
+    }
+
+    func deleteSharedNote(noteID: UUID) async throws {
+        deletedSharedNoteIDs.append(noteID)
+        sharedNotes.removeAll { $0.noteID == noteID }
     }
 }

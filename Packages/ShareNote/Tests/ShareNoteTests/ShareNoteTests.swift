@@ -109,6 +109,10 @@ private enum ShareNoteTestMocks {
         func readSharedNote(noteID: UUID) async throws -> SharedNote {
             throw NoteRepositoryError.notSupported
         }
+
+        func deleteSharedNote(noteID: UUID) async throws {
+            throw NoteRepositoryError.notSupported
+        }
     }
 
     actor VaultRepo: VaultRepository {

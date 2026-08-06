@@ -93,6 +93,11 @@ private actor SharedDetailMockNoteRepository: NoteRepository {
         }
         return sharedNote
     }
+
+    func deleteSharedNote(noteID: UUID) async throws {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
 }
 
 private actor SharedDetailMockVaultSession: VaultSessionProtocol {

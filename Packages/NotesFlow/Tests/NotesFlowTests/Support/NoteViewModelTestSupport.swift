@@ -120,6 +120,11 @@ actor StoredNoteMockRepository: NoteRepository {
         throw NoteRepositoryError.notSupported
     }
 
+    func deleteSharedNote(noteID: UUID) async throws {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
 
     func storedNote(noteID: UUID) async throws -> StoredNote {
         try await readNote(noteID: noteID)

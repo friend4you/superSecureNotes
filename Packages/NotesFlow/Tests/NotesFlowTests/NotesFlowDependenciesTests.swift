@@ -105,6 +105,46 @@ final class NotesFlowDependenciesTests: XCTestCase {
         XCTAssertEqual(viewModel.noteID, noteID)
     }
 
+    func testMakeNoteDetailViewModelReturnsSameInstanceForSameNoteID() {
+        let noteID = UUID()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let firstViewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
+        let secondViewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
+
+        XCTAssertTrue(firstViewModel === secondViewModel)
+    }
+
+    func testMakeNoteDetailViewModelCreatesNewInstanceAfterVaultClears() async {
+        let noteID = UUID()
+        let vaultSession = VaultSession()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: vaultSession,
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let firstViewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
+        await vaultSession.establish(
+            VaultSessionKeys(udk: .init(size: .bits256), identityPrivateKey: Data(repeating: 1, count: 32))
+        )
+        await vaultSession.clear()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        let secondViewModel = dependencies.makeNoteDetailViewModel(noteID: noteID)
+
+        XCTAssertFalse(firstViewModel === secondViewModel)
+    }
+
     func testMakeSharedNoteDetailViewModelReturnsDefaultImplementationBoundToNoteID() {
         let noteID = UUID()
         let dependencies = NotesFlowDependencies(
@@ -120,6 +160,23 @@ final class NotesFlowDependenciesTests: XCTestCase {
 
         XCTAssertTrue(viewModel is DefaultSharedNoteDetailViewModel)
         XCTAssertEqual(viewModel.noteID, noteID)
+    }
+
+    func testMakeSharedNoteDetailViewModelReturnsSameInstanceForSameNoteID() {
+        let noteID = UUID()
+        let dependencies = NotesFlowDependencies(
+            authRepository: MockAuthRepository(),
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating(),
+            noteRepository: MockNoteRepository(),
+            credentialStore: NotesFlowTestMocks.credentialStore(),
+            performLogout: NotesFlowTestMocks.noopLogout
+        )
+
+        let firstViewModel = dependencies.makeSharedNoteDetailViewModel(noteID: noteID)
+        let secondViewModel = dependencies.makeSharedNoteDetailViewModel(noteID: noteID)
+
+        XCTAssertTrue(firstViewModel === secondViewModel)
     }
 
     func testMakeCreateNoteViewModelReturnsDefaultImplementation() {
@@ -334,6 +391,11 @@ private actor MockNoteRepository: NoteRepository {
     }
 
     func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        _ = noteID
+        throw NoteRepositoryError.notSupported
+    }
+
+    func deleteSharedNote(noteID: UUID) async throws {
         _ = noteID
         throw NoteRepositoryError.notSupported
     }

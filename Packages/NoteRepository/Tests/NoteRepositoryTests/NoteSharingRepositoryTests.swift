@@ -117,4 +117,42 @@ final class NoteSharingRepositoryTests: XCTestCase {
             XCTFail("Unexpected error: \(error)")
         }
     }
+
+    func testNetworkDeleteSharedNoteDelegatesToAPIClient() async throws {
+        let captured = RequestCapture()
+        URLProtocolStub.requestHandler = { request in
+            captured.record(request)
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
+            return (response, Data())
+        }
+
+        let repository = NetworkNoteRepository(
+            baseURL: NoteFixtures.baseURL,
+            tokenProvider: MockTokenProvider(),
+            session: .stubbed()
+        )
+
+        try await repository.deleteSharedNote(noteID: NoteFixtures.noteID)
+
+        XCTAssertEqual(captured.method, "DELETE")
+        XCTAssertEqual(
+            captured.path,
+            "/v1/notes/shared/\(NoteFixtures.noteID.uuidString.lowercased())"
+        )
+    }
+
+    func testLocalDeleteSharedNoteThrowsNotSupported() async throws {
+        let notesRootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let (_, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
+
+        do {
+            try await repository.deleteSharedNote(noteID: NoteFixtures.noteID)
+            XCTFail("Expected notSupported")
+        } catch let error as NoteRepositoryError {
+            XCTAssertEqual(error, .notSupported)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
 }

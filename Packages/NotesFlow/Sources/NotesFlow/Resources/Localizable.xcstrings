@@ -232,6 +232,16 @@
         }
       }
     },
+    "notes.shared.delete.confirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove this shared note from your list?"
+          }
+        }
+      }
+    },
     "notes.sync.pending" : {
       "localizations" : {
         "en" : {
