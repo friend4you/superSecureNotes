@@ -54,7 +54,10 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             )
             try execute(Self.createTableSQL, on: pointer)
             try migrateSchemaIfNeeded(on: pointer)
+            try migrateBodyEtagIfNeeded(on: pointer)
             try migrateUploadSessionsIfNeeded(on: pointer)
+            try migrateAttachmentsIfNeeded(on: pointer)
+            try migrateAttachmentUploadSessionsIfNeeded(on: pointer)
             try execute("SELECT count(*) FROM notes", on: pointer)
         } catch {
             sqlite3_close(pointer)
@@ -203,6 +206,7 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             attachments_total_size INTEGER NOT NULL,
             wrapped_fek BLOB NOT NULL,
             sync_state TEXT NOT NULL CHECK (sync_state IN ('pendingSync', 'synced', 'pendingDelete')),
+            body_etag TEXT,
             etag TEXT
         )
         """
@@ -223,6 +227,7 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
                 attachments_total_size INTEGER NOT NULL,
                 wrapped_fek BLOB NOT NULL,
                 sync_state TEXT NOT NULL CHECK (sync_state IN ('pendingSync', 'synced', 'pendingDelete')),
+                body_etag TEXT,
                 etag TEXT
             )
             """,
@@ -232,17 +237,24 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             """
             INSERT INTO notes_migrated (
                 note_id, title, created_at, updated_at,
-                attachment_count, attachments_total_size, wrapped_fek, sync_state, etag
+                attachment_count, attachments_total_size, wrapped_fek, sync_state, body_etag, etag
             )
             SELECT
                 note_id, title, created_at, updated_at,
-                attachment_count, attachments_total_size, wrapped_fek, sync_state, NULL
+                attachment_count, attachments_total_size, wrapped_fek, sync_state, NULL, NULL
             FROM notes
             """,
             on: database
         )
         try execute("DROP TABLE notes", on: database)
         try execute("ALTER TABLE notes_migrated RENAME TO notes", on: database)
+    }
+
+    private func migrateBodyEtagIfNeeded(on database: OpaquePointer) throws {
+        let columns = try queryRows("PRAGMA table_info(notes)", on: database)
+        let hasBodyEtag = columns.contains { Self.textValue($0["name"]) == "body_etag" }
+        guard !hasBodyEtag else { return }
+        try execute("ALTER TABLE notes ADD COLUMN body_etag TEXT", on: database)
     }
 
     private func migrateUploadSessionsIfNeeded(on database: OpaquePointer) throws {
@@ -256,6 +268,41 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
                 total_chunks INTEGER NOT NULL,
                 completed_chunk_indices TEXT NOT NULL,
                 if_match TEXT
+            )
+            """,
+            on: database
+        )
+    }
+
+    private func migrateAttachmentsIfNeeded(on database: OpaquePointer) throws {
+        try execute(
+            """
+            CREATE TABLE IF NOT EXISTS attachments (
+                note_id TEXT NOT NULL,
+                attachment_id TEXT NOT NULL,
+                etag TEXT,
+                size_bytes INTEGER NOT NULL,
+                sync_state TEXT NOT NULL CHECK (sync_state IN ('pendingSync', 'synced', 'pendingDelete')),
+                PRIMARY KEY (note_id, attachment_id)
+            )
+            """,
+            on: database
+        )
+    }
+
+    private func migrateAttachmentUploadSessionsIfNeeded(on database: OpaquePointer) throws {
+        try execute(
+            """
+            CREATE TABLE IF NOT EXISTS attachment_upload_sessions (
+                note_id TEXT NOT NULL,
+                attachment_id TEXT NOT NULL,
+                upload_id TEXT NOT NULL,
+                wire_size INTEGER NOT NULL,
+                chunk_size INTEGER NOT NULL,
+                total_chunks INTEGER NOT NULL,
+                completed_chunk_indices TEXT NOT NULL,
+                if_match TEXT,
+                PRIMARY KEY (note_id, attachment_id)
             )
             """,
             on: database
