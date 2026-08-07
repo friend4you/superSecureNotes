@@ -35,7 +35,8 @@ final class SharedNoteDetailTests: XCTestCase {
         let viewModel = DefaultSharedNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            noteSync: RecordingNoteSyncService()
         )
 
         await viewModel.load()

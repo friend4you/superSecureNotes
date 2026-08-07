@@ -6,6 +6,8 @@ struct NoteAttachmentsSection: View {
     let onRemove: (String) -> Void
     let onPreview: (URL) -> Void
     var allowsRemoval: Bool = true
+    var progressByID: [String: AttachmentRowProgress] = [:]
+    var onRetry: (String) -> Void = { _ in }
 
     private let previewStore = AttachmentPreviewStore()
 
@@ -22,14 +24,33 @@ struct NoteAttachmentsSection: View {
     @ViewBuilder
     private func attachmentRow(for item: NoteAttachmentItem) -> some View {
         HStack {
-            Text(item.filename)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                #if os(iOS)
-                .onTapGesture {
-                    openPreview(for: item)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.filename)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    #if os(iOS)
+                    .onTapGesture {
+                        openPreview(for: item)
+                    }
+                    #endif
+
+                if let progress = progressByID[item.id], progress.state != .completed {
+                    if progress.state == .downloading {
+                        ProgressView(value: progress.fractionCompleted)
+                            .accessibilityLabel(NotesFlowUILocalization.localized("notes.attachments.downloading"))
+                    } else if progress.state == .failed {
+                        HStack {
+                            Text(NotesFlowUILocalization.localized("notes.attachments.downloadFailed"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button(NotesFlowUILocalization.localized("notes.attachments.retry")) {
+                                onRetry(item.id)
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
                 }
-                #endif
+            }
 
             if allowsRemoval {
                 Button {

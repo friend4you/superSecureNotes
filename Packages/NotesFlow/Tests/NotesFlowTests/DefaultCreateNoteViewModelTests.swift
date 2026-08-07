@@ -117,6 +117,9 @@ final class DefaultCreateNoteViewModelTests: XCTestCase {
         let payload = try decryptPayload(storedNote.encryptedPayload, with: fek)
         XCTAssertEqual(String(data: payload.body, encoding: .utf8), "New body")
         XCTAssertEqual(payload.attachments.map(\.filename), ["image.png"])
+        XCTAssertEqual(payload.schemaVersion, 2)
+        XCTAssertNil(payload.attachments[0].data)
+        XCTAssertEqual(storedNote.attachmentCiphertexts.count, 1)
     }
 
     func testSaveDoesNothingWhenCannotSave() async {

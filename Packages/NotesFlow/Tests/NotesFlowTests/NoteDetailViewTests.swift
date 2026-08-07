@@ -56,7 +56,8 @@ final class NoteDetailViewTests: XCTestCase {
             noteID: noteID,
             title: "Title",
             body: "Body",
-            udk: udk
+            udk: udk,
+            syncState: .synced
         )
         let viewModel = makeViewModel(
             noteID: noteID,

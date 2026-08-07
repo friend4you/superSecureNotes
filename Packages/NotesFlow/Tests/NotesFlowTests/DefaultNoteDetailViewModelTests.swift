@@ -217,7 +217,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
             noteID: noteID,
             title: "Title",
             body: "Body",
-            udk: udk
+            udk: udk,
+            syncState: .synced
         )
         let viewModel = makeViewModel(
             noteID: noteID,
@@ -255,7 +256,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
                     mime: "application/pdf",
                     data: Data([0x01])
                 ),
-            ]
+            ],
+            syncState: .synced
         )
         let viewModel = makeViewModel(
             noteID: noteID,
@@ -273,12 +275,14 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
 
     func testSavePersistsAttachmentChanges() async throws {
         let noteID = UUID()
+        let attachmentID = UUID()
         let udk = SymmetricKey(size: .bits256)
         let noteData = try NoteViewModelTestSupport.makeStoredNote(
             noteID: noteID,
             title: "Title",
             body: "Body",
-            udk: udk
+            udk: udk,
+            syncState: .synced
         )
         let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
         let viewModel = makeViewModel(
@@ -289,7 +293,7 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
         await viewModel.load()
         viewModel.addAttachment(
             NotePayload.Attachment(
-                id: "saved-attachment",
+                id: attachmentID.uuidString,
                 filename: "saved.txt",
                 mime: "text/plain",
                 data: Data("saved".utf8)
@@ -372,7 +376,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
             noteID: noteID,
             title: "Original title",
             body: "Original body",
-            udk: udk
+            udk: udk,
+            syncState: .synced
         )
         let noteRepository = StoredNoteMockRepository(notes: [noteID: noteData])
         let viewModel = makeViewModel(
@@ -403,7 +408,8 @@ final class DefaultNoteDetailViewModelTests: XCTestCase {
             noteID: noteID,
             title: "Title",
             body: "Body",
-            udk: udk
+            udk: udk,
+            syncState: .synced
         )
         let viewModel = makeViewModel(
             noteID: noteID,

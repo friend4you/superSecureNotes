@@ -53,7 +53,13 @@ public struct SharedNoteDetailView: View {
                     attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
                     #endif
                 },
-                allowsRemoval: false
+                allowsRemoval: false,
+                progressByID: viewModel.attachmentProgressByID,
+                onRetry: { id in
+                    Task {
+                        await viewModel.retryAttachment(id: id)
+                    }
+                }
             )
         }
         #if os(iOS)

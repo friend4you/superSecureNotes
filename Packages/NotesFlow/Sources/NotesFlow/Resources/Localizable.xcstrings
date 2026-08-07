@@ -82,6 +82,36 @@
         }
       }
     },
+    "notes.attachments.retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        }
+      }
+    },
+    "notes.attachments.downloading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading attachment"
+          }
+        }
+      }
+    },
+    "notes.attachments.downloadFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download failed"
+          }
+        }
+      }
+    },
     "notes.create.addFile" : {
       "localizations" : {
         "en" : {

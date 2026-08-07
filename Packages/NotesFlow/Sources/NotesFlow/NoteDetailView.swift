@@ -87,6 +87,12 @@ public struct NoteDetailView: View {
                     #if os(iOS)
                     attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
                     #endif
+                },
+                progressByID: viewModel.attachmentProgressByID,
+                onRetry: { id in
+                    Task {
+                        await viewModel.retryAttachment(id: id)
+                    }
                 }
             )
         }

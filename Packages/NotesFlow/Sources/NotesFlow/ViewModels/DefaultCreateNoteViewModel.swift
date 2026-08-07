@@ -66,7 +66,7 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
     }
 
     public func attachmentData(for id: String) -> Data? {
-        attachments.first { $0.id == id }?.data
+        attachments.first { $0.id == id }.flatMap(\.data)
     }
 
     public func reportError(_ message: String) {
@@ -83,7 +83,7 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
             let noteID = UUID()
             let fek = generateSymmetricKey()
             let udk = try await vaultSession.udk()
-            let payload = NotePayload(body: Data(body.utf8), attachments: attachments)
+            let (payload, ciphertexts) = try makeSplitWritePayload(fek: fek)
             let encryptedPayload = try encryptPayload(payload, with: fek)
             let wrappedFEK = try wrapFEK(fek, with: udk)
             let timestamp = UInt64(Date().timeIntervalSince1970)
@@ -92,14 +92,15 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
                 title: title,
                 createdAt: timestamp,
                 updatedAt: timestamp,
-                attachmentCount: UInt32(attachments.count),
-                attachmentsTotalSize: attachments.reduce(0) { $0 + UInt64($1.data.count) }
+                attachmentCount: UInt32(payload.attachments.count),
+                attachmentsTotalSize: payload.attachments.reduce(0) { $0 + UInt64($1.size) }
             )
             let storedNote = StoredNote(
                 metadata: metadata,
                 wrappedFEK: wrappedFEK,
                 encryptedPayload: encryptedPayload,
-                syncState: .pendingSync
+                syncState: .pendingSync,
+                attachmentCiphertexts: ciphertexts
             )
             try await noteRepository.writeNote(storedNote)
             noteSync.scheduleFlush()
@@ -109,6 +110,38 @@ public final class DefaultCreateNoteViewModel: CreateNoteViewModel {
         }
 
         isLoading = false
+    }
+
+    private func makeSplitWritePayload(
+        fek: SymmetricKey
+    ) throws -> (NotePayload, [UUID: Data]) {
+        var index: [NotePayload.Attachment] = []
+        var ciphertexts: [UUID: Data] = [:]
+
+        for attachment in attachments {
+            guard let attachmentID = UUID(uuidString: attachment.id) else {
+                throw NoteRepositoryError.validationError("Attachment id must be a UUID.")
+            }
+            guard let plaintext = attachment.data else {
+                throw NoteRepositoryError.validationError(
+                    "Missing attachment bytes for '\(attachment.filename)'."
+                )
+            }
+            ciphertexts[attachmentID] = try encryptAttachmentFile(plaintext, with: fek)
+            index.append(
+                NotePayload.Attachment(
+                    id: attachment.id,
+                    filename: attachment.filename,
+                    mime: attachment.mime,
+                    size: plaintext.count
+                )
+            )
+        }
+
+        return (
+            NotePayload(body: Data(body.utf8), attachments: index, schemaVersion: 2),
+            ciphertexts
+        )
     }
 
     private func syncAttachmentItems() {

@@ -87,7 +87,8 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
         let viewModel = DefaultSharedNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: vaultSession
+            vaultSession: vaultSession,
+            noteSync: noteSync
         )
         sharedNoteDetailViewModels[noteID] = viewModel
         return viewModel
