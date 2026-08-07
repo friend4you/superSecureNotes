@@ -41,10 +41,40 @@ struct NoteUploadInitResponseDTO: Decodable {
     let totalChunks: Int
 }
 
+struct AttachmentSummaryResponseDTO: Decodable {
+    let attachmentId: String
+    let sizeBytes: UInt64
+    let contentType: String
+    let etag: String
+}
+
+struct AttachmentWriteResponseDTO: Decodable {
+    let etag: String
+    let noteEtag: String
+}
+
+struct SharedNoteBodyResponseDTO: Decodable {
+    let noteId: String
+    let wrappedFek: String
+    let body: String
+}
+
 struct NoteUploadSession: Equatable, Sendable {
     let uploadID: UUID
     let chunkSize: Int
     let totalChunks: Int
+}
+
+struct RemoteAttachmentSummary: Equatable, Sendable {
+    let attachmentID: UUID
+    let sizeBytes: UInt64
+    let contentType: String
+    let etag: String
+}
+
+struct AttachmentUploadResult: Equatable, Sendable {
+    let etag: String?
+    let noteEtag: String?
 }
 
 enum NoteJSON {

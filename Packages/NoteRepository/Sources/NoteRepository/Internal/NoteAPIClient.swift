@@ -75,6 +75,173 @@ struct NoteAPIClient {
         )
     }
 
+    func readBody(noteID: UUID, accessToken: String) async throws -> Data {
+        let request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/body",
+            method: "GET",
+            accessToken: accessToken
+        )
+        return try await perform(request, expectedSuccessCodes: [200])
+    }
+
+    func writeBody(
+        noteID: UUID,
+        data: Data,
+        accessToken: String,
+        ifMatch etag: String? = nil
+    ) async throws -> NoteUploadResult {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/body",
+            method: "PUT",
+            accessToken: accessToken
+        )
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-Match")
+        }
+        request.httpBody = data
+        let responseData = try await perform(request, expectedSuccessCodes: [200, 204])
+        if responseData.isEmpty {
+            return NoteUploadResult(syncState: .synced, updatedAt: 0, etag: nil)
+        }
+        let response = try decoder.decode(NoteWriteResponseDTO.self, from: responseData)
+        guard let syncState = NoteSyncState(rawValue: response.syncState) else {
+            throw NoteRepositoryError.validationError("Invalid sync state in body upload response.")
+        }
+        return NoteUploadResult(
+            syncState: syncState,
+            updatedAt: response.updatedAt,
+            etag: response.etag
+        )
+    }
+
+    func listAttachments(noteID: UUID, accessToken: String) async throws -> [RemoteAttachmentSummary] {
+        let request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments",
+            method: "GET",
+            accessToken: accessToken
+        )
+        let data = try await perform(request, expectedSuccessCodes: [200])
+        return try decodeAttachmentManifest(from: data)
+    }
+
+    func readAttachment(
+        noteID: UUID,
+        attachmentID: UUID,
+        accessToken: String
+    ) async throws -> Data {
+        let request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
+            method: "GET",
+            accessToken: accessToken
+        )
+        return try await perform(request, expectedSuccessCodes: [200])
+    }
+
+    func writeAttachment(
+        noteID: UUID,
+        attachmentID: UUID,
+        data: Data,
+        accessToken: String,
+        ifMatch etag: String? = nil
+    ) async throws -> AttachmentUploadResult {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
+            method: "PUT",
+            accessToken: accessToken
+        )
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-Match")
+        }
+        request.httpBody = data
+        let responseData = try await perform(request, expectedSuccessCodes: [200, 204])
+        if responseData.isEmpty {
+            return AttachmentUploadResult(etag: nil, noteEtag: nil)
+        }
+        let response = try decoder.decode(AttachmentWriteResponseDTO.self, from: responseData)
+        return AttachmentUploadResult(etag: response.etag, noteEtag: response.noteEtag)
+    }
+
+    func deleteAttachment(
+        noteID: UUID,
+        attachmentID: UUID,
+        accessToken: String
+    ) async throws {
+        let request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
+            method: "DELETE",
+            accessToken: accessToken
+        )
+        _ = try await perform(request, expectedSuccessCodes: [204])
+    }
+
+    func initAttachmentUpload(
+        noteID: UUID,
+        attachmentID: UUID,
+        totalSize: Int,
+        accessToken: String
+    ) async throws -> NoteUploadSession {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads",
+            method: "POST",
+            accessToken: accessToken
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["totalSize": totalSize])
+        let responseData = try await perform(request, expectedSuccessCodes: [200, 201])
+        let response = try decoder.decode(NoteUploadInitResponseDTO.self, from: responseData)
+        guard let uploadID = UUID(uuidString: response.uploadId) else {
+            throw NoteRepositoryError.validationError("Invalid upload ID in attachment init response.")
+        }
+        return NoteUploadSession(
+            uploadID: uploadID,
+            chunkSize: response.chunkSize,
+            totalChunks: response.totalChunks
+        )
+    }
+
+    func uploadAttachmentChunk(
+        noteID: UUID,
+        attachmentID: UUID,
+        uploadID: UUID,
+        chunkIndex: Int,
+        data: Data,
+        accessToken: String
+    ) async throws {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads/\(uploadID.uuidString.lowercased())/chunks/\(chunkIndex)",
+            method: "PUT",
+            accessToken: accessToken
+        )
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.httpBody = data
+        _ = try await perform(request, expectedSuccessCodes: [204])
+    }
+
+    func completeAttachmentUpload(
+        noteID: UUID,
+        attachmentID: UUID,
+        uploadID: UUID,
+        accessToken: String,
+        ifMatch etag: String? = nil
+    ) async throws -> AttachmentUploadResult {
+        var request = try makeAuthorizedRequest(
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads/\(uploadID.uuidString.lowercased())/complete",
+            method: "POST",
+            accessToken: accessToken
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let etag {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["ifMatch": etag])
+        } else {
+            request.httpBody = try JSONSerialization.data(withJSONObject: [:])
+        }
+        let responseData = try await perform(request, expectedSuccessCodes: [200])
+        let response = try decoder.decode(AttachmentWriteResponseDTO.self, from: responseData)
+        return AttachmentUploadResult(etag: response.etag, noteEtag: response.noteEtag)
+    }
+
     func initUpload(
         noteID: UUID,
         totalSize: Int,
@@ -191,6 +358,42 @@ struct NoteAPIClient {
         return try decoder.decode(SharedNoteDownloadResponseDTO.self, from: data)
     }
 
+    func readSharedBody(noteID: UUID, accessToken: String) async throws -> SharedNoteBodyResponseDTO {
+        let request = try makeAuthorizedRequest(
+            path: "notes/shared/\(noteID.uuidString.lowercased())/body",
+            method: "GET",
+            accessToken: accessToken
+        )
+        let data = try await perform(request, expectedSuccessCodes: [200])
+        return try decoder.decode(SharedNoteBodyResponseDTO.self, from: data)
+    }
+
+    func listSharedAttachments(
+        noteID: UUID,
+        accessToken: String
+    ) async throws -> [RemoteAttachmentSummary] {
+        let request = try makeAuthorizedRequest(
+            path: "notes/shared/\(noteID.uuidString.lowercased())/attachments",
+            method: "GET",
+            accessToken: accessToken
+        )
+        let data = try await perform(request, expectedSuccessCodes: [200])
+        return try decodeAttachmentManifest(from: data)
+    }
+
+    func readSharedAttachment(
+        noteID: UUID,
+        attachmentID: UUID,
+        accessToken: String
+    ) async throws -> Data {
+        let request = try makeAuthorizedRequest(
+            path: "notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
+            method: "GET",
+            accessToken: accessToken
+        )
+        return try await perform(request, expectedSuccessCodes: [200])
+    }
+
     func deleteSharedNote(noteID: UUID, accessToken: String) async throws {
         let request = try makeAuthorizedRequest(
             path: "notes/shared/\(noteID.uuidString.lowercased())",
@@ -218,6 +421,21 @@ struct NoteAPIClient {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         _ = try await perform(request, expectedSuccessCodes: [200, 201, 204])
+    }
+
+    private func decodeAttachmentManifest(from data: Data) throws -> [RemoteAttachmentSummary] {
+        let response = try decoder.decode([AttachmentSummaryResponseDTO].self, from: data)
+        return try response.map { dto in
+            guard let attachmentID = UUID(uuidString: dto.attachmentId) else {
+                throw NoteRepositoryError.validationError("Invalid attachment ID in manifest response.")
+            }
+            return RemoteAttachmentSummary(
+                attachmentID: attachmentID,
+                sizeBytes: dto.sizeBytes,
+                contentType: dto.contentType,
+                etag: dto.etag
+            )
+        }
     }
 
     private func makeAuthorizedRequest(

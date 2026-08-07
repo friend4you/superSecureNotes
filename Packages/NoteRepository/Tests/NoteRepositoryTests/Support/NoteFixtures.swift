@@ -106,9 +106,48 @@ enum NoteFixtures {
     }
 
     static let uploadID = UUID(uuidString: "660E8400-E29B-41D4-A716-446655440001")!
+    static let attachmentID = UUID(uuidString: "880E8400-E29B-41D4-A716-446655440002")!
     static let ownerID = UUID(uuidString: "770E8400-E29B-41D4-A716-446655440000")!
     static let sharedAt = Date(timeIntervalSince1970: 1_700_000_500)
     static let recipientWrappedFEK = Data(repeating: 0xAB, count: 48)
+
+    static func attachmentsManifestJSON(
+        attachments: [(attachmentID: UUID, sizeBytes: UInt64, contentType: String, etag: String)]
+    ) -> Data {
+        let payload: [[String: Any]] = attachments.map { item in
+            [
+                "attachmentId": item.attachmentID.uuidString.lowercased(),
+                "sizeBytes": item.sizeBytes,
+                "contentType": item.contentType,
+                "etag": item.etag,
+            ]
+        }
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static func writeAttachmentResponseJSON(
+        etag: String = #"W/"att-etag""#,
+        noteEtag: String = #"W/"note-etag""#
+    ) -> Data {
+        let payload: [String: Any] = [
+            "etag": etag,
+            "noteEtag": noteEtag,
+        ]
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static func readSharedBodyJSON(
+        noteID: UUID = noteID,
+        wrappedFek: Data = recipientWrappedFEK,
+        body: Data = noteBytes
+    ) -> Data {
+        let payload: [String: String] = [
+            "noteId": noteID.uuidString.lowercased(),
+            "wrappedFek": wrappedFek.base64EncodedString(),
+            "body": body.base64EncodedString(),
+        ]
+        return try! JSONSerialization.data(withJSONObject: payload)
+    }
 
     static let sampleSharedSummary = SharedNoteSummary(
         noteID: noteID,
