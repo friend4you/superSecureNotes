@@ -1,41 +1,51 @@
+import CryptoKit
 import Foundation
 import NoteRepositoryProtocol
 import VaultRepository
 
 public actor LocalFirstNoteSyncService: NoteSyncing {
+    public typealias NoteFEKProvider = @Sendable (UUID) async throws -> SymmetricKey?
+
     private let outcomeMulticaster = NoteSyncOutcomeMulticaster()
+    let hydrationProgressMulticaster = AttachmentHydrationProgressMulticaster()
+    var inFlightHydrations: [HydrationKey: Task<Void, Never>] = [:]
 
     public nonisolated var syncOutcomes: AsyncStream<NoteSyncOutcome> {
         outcomeMulticaster.stream()
     }
 
-    private let localNotes: any NoteSyncLocalStoring
-    private let remoteNotes: any NoteSyncRemoteStoring
+    let localNotes: any NoteSyncLocalStoring
+    let remoteNotes: any NoteSyncRemoteStoring
     private let localVault: any NoteSyncLocalVaultStoring
     private let remoteVault: any NoteSyncRemoteVaultStoring
+    private let noteFEKProvider: NoteFEKProvider?
 
     public init(
         localNotes: LocalNoteRepository,
         remoteNotes: NetworkNoteRepository,
         localVault: LocalVaultRepository,
-        remoteVault: NetworkVaultRepository
+        remoteVault: NetworkVaultRepository,
+        noteFEKProvider: NoteFEKProvider? = nil
     ) {
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
         self.localVault = localVault
         self.remoteVault = remoteVault
+        self.noteFEKProvider = noteFEKProvider
     }
 
     init(
         localNotes: any NoteSyncLocalStoring,
         remoteNotes: any NoteSyncRemoteStoring,
         localVault: any NoteSyncLocalVaultStoring,
-        remoteVault: any NoteSyncRemoteVaultStoring
+        remoteVault: any NoteSyncRemoteVaultStoring,
+        noteFEKProvider: NoteFEKProvider? = nil
     ) {
         self.localNotes = localNotes
         self.remoteNotes = remoteNotes
         self.localVault = localVault
         self.remoteVault = remoteVault
+        self.noteFEKProvider = noteFEKProvider
     }
 
     public nonisolated func scheduleFlush() {
@@ -104,15 +114,16 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
 
     private func pushNote(_ candidate: NoteSyncUploadCandidate) async {
         let noteID = candidate.note.metadata.noteID
+        let prepared = await prepareCandidateForUpload(candidate)
         do {
             let result = try await remoteNotes.uploadNote(
-                candidate.note,
-                ifMatch: candidate.etag,
+                prepared.note,
+                ifMatch: prepared.etag,
                 uploadSessionStore: localNotes
             )
             let updatedAt = resolvedUpdatedAt(
                 server: result.updatedAt,
-                local: candidate.note.metadata.updatedAt
+                local: prepared.note.metadata.updatedAt
             )
             try await localNotes.markNoteSynced(
                 noteID: noteID,
@@ -128,35 +139,33 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
                 )
             )
         } catch NoteRepositoryError.serverError(statusCode: 409) {
-            await resolveConflict(candidate)
+            // Local wins: retry full multi-part upload without If-Match.
+            await retryUploadWithoutConditionalMatch(prepared)
         } catch {
             emitOutcome(.uploadFailed(noteID: noteID))
         }
     }
 
-    private func resolveConflict(_ candidate: NoteSyncUploadCandidate) async {
+    private func prepareCandidateForUpload(
+        _ candidate: NoteSyncUploadCandidate
+    ) async -> NoteSyncUploadCandidate {
         let noteID = candidate.note.metadata.noteID
-        guard let remote = try? await remoteNotes.readNote(noteID: noteID) else {
-            emitOutcome(.uploadFailed(noteID: noteID))
-            return
+        guard let noteFEKProvider,
+              let fek = try? await noteFEKProvider(noteID)
+        else {
+            return candidate
         }
 
-        let localUpdatedAt = candidate.note.metadata.updatedAt
-        let remoteUpdatedAt = remote.metadata.updatedAt
-
-        if localUpdatedAt > remoteUpdatedAt {
-            await retryUploadWithoutConditionalMatch(candidate)
-        } else if remoteUpdatedAt > localUpdatedAt {
-            try? await localNotes.replaceNoteWithRemote(remote, etag: candidate.etag)
-            emitOutcome(
-                .uploaded(
-                    noteID: noteID,
-                    syncState: .synced,
-                    updatedAt: remote.metadata.updatedAt,
-                    etag: candidate.etag
-                )
-            )
+        do {
+            try await localNotes.migrateInlineAttachmentsToSplit(noteID: noteID, fek: fek)
+            let candidates = try await localNotes.uploadCandidates()
+            if let refreshed = candidates.first(where: { $0.note.metadata.noteID == noteID }) {
+                return refreshed
+            }
+        } catch {
+            return candidate
         }
+        return candidate
     }
 
     private func retryUploadWithoutConditionalMatch(_ candidate: NoteSyncUploadCandidate) async {

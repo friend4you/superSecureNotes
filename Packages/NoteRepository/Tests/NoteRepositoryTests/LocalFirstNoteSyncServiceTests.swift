@@ -28,6 +28,11 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
 
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             XCTAssertEqual(request.httpMethod, "PUT")
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (
@@ -64,6 +69,11 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             requestCounter.increment()
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
         }
@@ -77,20 +87,16 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         await syncService.flushPending()
 
-        XCTAssertEqual(requestCounter.value, 1)
+        XCTAssertEqual(requestCounter.value, 2)
     }
 
     func testFlushRetriesUploadWhenLocalNewerAfter409() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440032")!
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
-        let remoteWireNote = try NoteTestSupport.makeSampleWireNote(
-            noteID: noteID,
-            title: "Remote older",
-            updatedAt: 1_700_000_100
-        )
         var putAttempts = 0
 
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
             switch request.httpMethod {
             case "PUT":
                 putAttempts += 1
@@ -108,8 +114,9 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
                     )
                 )
             case "GET":
+                XCTAssertTrue(path.hasSuffix("/attachments"))
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, remoteWireNote)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
             default:
                 XCTFail("Unexpected method: \(request.httpMethod ?? "")")
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 500)
@@ -150,25 +157,33 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         XCTAssertEqual(row?.etag, #"W/"retry-etag""#)
     }
 
-    func testFlushOverwritesLocalWhenRemoteNewerAfter409() async throws {
+    func testFlushRetriesFromLocalWhenRemoteNewerAfter409() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440033")!
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
-        let remoteWireNote = try NoteTestSupport.makeSampleWireNote(
-            noteID: noteID,
-            title: "Remote winner",
-            updatedAt: 1_700_000_300
-        )
         var putAttempts = 0
 
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
             switch request.httpMethod {
             case "PUT":
                 putAttempts += 1
-                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 409)
-                return (response, Data())
-            case "GET":
+                if putAttempts == 1 {
+                    let response = TestHTTP.makeResponse(url: request.url!, statusCode: 409)
+                    return (response, Data())
+                }
+                XCTAssertNil(request.value(forHTTPHeaderField: "If-Match"))
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, remoteWireNote)
+                return (
+                    response,
+                    NoteFixtures.writeNoteResponseJSON(
+                        updatedAt: 1_700_000_400,
+                        etag: #"W/"local-wins-etag""#
+                    )
+                )
+            case "GET":
+                XCTAssertTrue(path.hasSuffix("/attachments"))
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
             default:
                 XCTFail("Unexpected method: \(request.httpMethod ?? "")")
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 500)
@@ -188,13 +203,14 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         await syncService.flushPending()
 
-        XCTAssertEqual(putAttempts, 1)
+        XCTAssertEqual(putAttempts, 2)
         let readNote = try await localRepository.readNote(noteID: noteID)
-        XCTAssertEqual(readNote.metadata.title, "Remote winner")
-        XCTAssertEqual(readNote.metadata.updatedAt, 1_700_000_300)
+        XCTAssertEqual(readNote.metadata.title, "Local older")
+        XCTAssertEqual(readNote.metadata.updatedAt, 1_700_000_400)
         XCTAssertEqual(readNote.syncState, .synced)
-        let summaries = try await localRepository.listNotes()
-        XCTAssertEqual(summaries[0].syncState, .synced)
+        let row = try await indexStore.fetchNote(noteID: noteID)
+        XCTAssertEqual(row?.etag, #"W/"local-wins-etag""#)
+        XCTAssertEqual(row?.updatedAt, 1_700_000_400)
     }
 
     func testFlushDeletesRemotePendingDeleteNote() async throws {
@@ -301,7 +317,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
                         etag: #"W/"remote-etag""#
                     )
                 )
-            case "/v1/notes/\(noteID.uuidString.lowercased())":
+            case "/v1/notes/\(noteID.uuidString.lowercased())/body":
                 return (response, NoteFixtures.noteBytes)
             default:
                 XCTFail("Unexpected path: \(request.url?.path ?? "")")
@@ -339,7 +355,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
                         etag: #"W/"remote-etag""#
                     )
                 )
-            case "/v1/notes/\(noteID.uuidString.lowercased())":
+            case "/v1/notes/\(noteID.uuidString.lowercased())/body":
                 return (response, NoteFixtures.noteBytes)
             default:
                 return (response, Data())
@@ -408,7 +424,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
                         etag: #"W/"remote-etag""#
                     )
                 )
-            case "/v1/notes/\(noteID.uuidString.lowercased())":
+            case "/v1/notes/\(noteID.uuidString.lowercased())/body":
                 return (response, NoteFixtures.noteBytes)
             default:
                 XCTFail("Unexpected path: \(request.url?.path ?? "")")

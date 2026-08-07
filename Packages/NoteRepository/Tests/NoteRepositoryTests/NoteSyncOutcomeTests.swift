@@ -47,6 +47,11 @@ final class NoteSyncOutcomeTests: XCTestCase {
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
 
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (
                 response,
@@ -87,6 +92,11 @@ final class NoteSyncOutcomeTests: XCTestCase {
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
 
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
         }

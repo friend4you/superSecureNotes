@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import NoteRepositoryProtocol
 import VaultRepository
@@ -13,13 +14,22 @@ struct NoteDeleteSyncEntry: Sendable {
     let etag: String?
 }
 
-protocol NoteSyncLocalStoring: Actor, NoteUploadSessionStoring {
+protocol NoteSyncLocalStoring: Actor, NoteUploadSessionStoring, AttachmentUploadSessionStoring {
     func uploadCandidates() async throws -> [NoteSyncUploadCandidate]
     func pendingDeleteEntries() async throws -> [NoteDeleteSyncEntry]
     func markNoteSynced(noteID: UUID, updatedAt: UInt64, etag: String?) async throws
     func finalizeDeletedNote(noteID: UUID) async throws
     func replaceNoteWithRemote(_ note: StoredNote, etag: String?) async throws
     func importSyncedNote(_ note: StoredNote, etag: String?) async throws
+    func migrateInlineAttachmentsToSplit(noteID: UUID, fek: SymmetricKey) async throws
+    func attachmentFileExists(noteID: UUID, attachmentID: UUID) -> Bool
+    func listAttachmentIndexRows(noteID: UUID) async throws -> [AttachmentIndexRow]
+    func writeAttachmentFile(
+        noteID: UUID,
+        attachmentID: UUID,
+        ciphertext: Data,
+        etag: String?
+    ) async throws
 }
 
 protocol NoteUploadSessionStoring: Actor {
@@ -29,15 +39,33 @@ protocol NoteUploadSessionStoring: Actor {
     func deleteUploadSession(noteID: UUID) async throws
 }
 
+protocol AttachmentUploadSessionStoring: Actor {
+    func fetchAttachmentUploadSession(
+        noteID: UUID,
+        attachmentID: UUID
+    ) async throws -> AttachmentUploadSessionRecord?
+    func upsertAttachmentUploadSession(_ record: AttachmentUploadSessionRecord) async throws
+    func markAttachmentUploadChunkCompleted(
+        noteID: UUID,
+        attachmentID: UUID,
+        chunkIndex: Int
+    ) async throws
+    func deleteAttachmentUploadSession(noteID: UUID, attachmentID: UUID) async throws
+}
+
 protocol NoteSyncRemoteStoring: Actor {
     func listNotes() async throws -> [NoteSummary]
     func uploadNote(
         _ note: StoredNote,
         ifMatch etag: String?,
-        uploadSessionStore: (any NoteUploadSessionStoring)?
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?
     ) async throws -> NoteUploadResult
     func readNote(noteID: UUID) async throws -> StoredNote
     func deleteNote(noteID: UUID) async throws
+    func listAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary]
+    func readAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data
+    func listSharedAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary]
+    func readSharedAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data
 }
 
 protocol NoteSyncLocalVaultStoring: Actor {
@@ -83,6 +111,7 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
                 attachmentsTotalSize: row.attachmentsTotalSize,
                 wrappedFEK: row.wrappedFEK,
                 syncState: .synced,
+                bodyEtag: row.bodyEtag,
                 etag: etag
             )
         )
@@ -109,6 +138,43 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
         try await notesIndexStore.deleteUploadSession(noteID: noteID)
     }
 
+    func fetchAttachmentUploadSession(
+        noteID: UUID,
+        attachmentID: UUID
+    ) async throws -> AttachmentUploadSessionRecord? {
+        try await requireOpen()
+        return try await notesIndexStore.fetchAttachmentUploadSession(
+            noteID: noteID,
+            attachmentID: attachmentID
+        )
+    }
+
+    func upsertAttachmentUploadSession(_ record: AttachmentUploadSessionRecord) async throws {
+        try await requireOpen()
+        try await notesIndexStore.upsertAttachmentUploadSession(record)
+    }
+
+    func markAttachmentUploadChunkCompleted(
+        noteID: UUID,
+        attachmentID: UUID,
+        chunkIndex: Int
+    ) async throws {
+        try await requireOpen()
+        try await notesIndexStore.markAttachmentUploadChunkCompleted(
+            noteID: noteID,
+            attachmentID: attachmentID,
+            chunkIndex: chunkIndex
+        )
+    }
+
+    func deleteAttachmentUploadSession(noteID: UUID, attachmentID: UUID) async throws {
+        try await requireOpen()
+        try await notesIndexStore.deleteAttachmentUploadSession(
+            noteID: noteID,
+            attachmentID: attachmentID
+        )
+    }
+
     func finalizeDeletedNote(noteID: UUID) async throws {
         try await requireOpen()
         try await notesIndexStore.deleteNote(noteID: noteID)
@@ -119,7 +185,8 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
             metadata: remote.metadata,
             wrappedFEK: remote.wrappedFEK,
             encryptedPayload: remote.encryptedPayload,
-            syncState: .synced
+            syncState: .synced,
+            attachmentCiphertexts: remote.attachmentCiphertexts
         )
         try await writeNote(syncedNote)
         try await markNoteSynced(
