@@ -11,6 +11,11 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
 
     func testWriteNoteSucceedsOn200WithUploadResponse() async throws {
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (
                 response,
@@ -37,6 +42,11 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
 
     func testWriteNoteSucceedsOnNoContent() async throws {
         URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
             return (response, nil)
         }
@@ -97,9 +107,14 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
     }
 
     func testUploadNoteUsesSinglePUTForSubThresholdBlob() async throws {
-        let captured = RequestCapture()
+        let log = RequestLog()
         URLProtocolStub.requestHandler = { request in
-            captured.record(request)
+            log.record(request)
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
         }
@@ -112,20 +127,25 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
 
         _ = try await repository.uploadNote(NoteFixtures.sampleStoredNote)
 
-        XCTAssertEqual(captured.method, "PUT")
-        XCTAssertEqual(captured.path, "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())")
-        XCTAssertFalse(captured.path?.contains("/uploads") ?? true)
+        XCTAssertEqual(log.method(at: 0), "PUT")
+        XCTAssertEqual(log.path(at: 0), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
+        XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
     }
 
-    func testUploadNoteUsesSinglePUTAtThresholdWireBlobSize() async throws {
-        let captured = RequestCapture()
+    func testUploadNoteUsesSingleBodyPUTAtThresholdWireBlobSize() async throws {
+        let log = RequestLog()
         let note = try NoteTestSupport.makeStoredNoteWithWireBlobSize(
             noteID: NoteFixtures.noteID,
             title: "Threshold note",
             wireBlobSize: NoteUploadSizeThreshold
         )
         URLProtocolStub.requestHandler = { request in
-            captured.record(request)
+            log.record(request)
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
         }
@@ -138,10 +158,10 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
 
         _ = try await repository.uploadNote(note)
 
-        XCTAssertEqual(captured.method, "PUT")
-        XCTAssertEqual(captured.path, "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())")
-        XCTAssertFalse(captured.path?.contains("/uploads") ?? true)
-        XCTAssertEqual(captured.bodyData?.count, NoteUploadSizeThreshold)
+        XCTAssertEqual(log.method(at: 0), "PUT")
+        XCTAssertEqual(log.path(at: 0), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
+        XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
+        XCTAssertEqual(log.bodyData(at: 0)?.count, NoteUploadSizeThreshold)
     }
 
     func testWriteNotePropagatesTokenProviderFailure() async {

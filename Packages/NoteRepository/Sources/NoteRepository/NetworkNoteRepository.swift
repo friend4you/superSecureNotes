@@ -28,13 +28,42 @@ public actor NetworkNoteRepository: NoteRepository {
 
     public func readNote(noteID: UUID) async throws -> StoredNote {
         let accessToken = try await tokenProvider.accessToken()
-        let data = try await apiClient.readNote(noteID: noteID, accessToken: accessToken)
+        let data = try await apiClient.readBody(noteID: noteID, accessToken: accessToken)
         let sections = try parseNoteFile(data)
         return StoredNote(
             metadata: sections.metadata,
             wrappedFEK: sections.wrappedFEK,
             encryptedPayload: sections.encryptedPayload,
-            syncState: .synced
+            syncState: .synced,
+            attachmentCiphertexts: [:]
+        )
+    }
+
+    public func readAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
+        let accessToken = try await tokenProvider.accessToken()
+        return try await apiClient.readAttachment(
+            noteID: noteID,
+            attachmentID: attachmentID,
+            accessToken: accessToken
+        )
+    }
+
+    func listAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary] {
+        let accessToken = try await tokenProvider.accessToken()
+        return try await apiClient.listAttachments(noteID: noteID, accessToken: accessToken)
+    }
+
+    func listSharedAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary] {
+        let accessToken = try await tokenProvider.accessToken()
+        return try await apiClient.listSharedAttachments(noteID: noteID, accessToken: accessToken)
+    }
+
+    func readSharedAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
+        let accessToken = try await tokenProvider.accessToken()
+        return try await apiClient.readSharedAttachment(
+            noteID: noteID,
+            attachmentID: attachmentID,
+            accessToken: accessToken
         )
     }
 
@@ -49,90 +78,176 @@ public actor NetworkNoteRepository: NoteRepository {
     func uploadNote(
         _ note: StoredNote,
         ifMatch etag: String?,
-        uploadSessionStore: (any NoteUploadSessionStoring)?
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?
     ) async throws -> NoteUploadResult {
         guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
         }
 
-        let data = try assembleNoteFile(
+        let bodyData = try assembleNoteFile(
             metadata: note.metadata,
             wrappedFEK: note.wrappedFEK,
             encryptedPayload: note.encryptedPayload
         )
         let accessToken = try await tokenProvider.accessToken()
-        if data.count <= NoteUploadSizeThreshold {
-            return try await apiClient.writeNote(
+        var result = try await apiClient.writeBody(
+            noteID: note.metadata.noteID,
+            data: bodyData,
+            accessToken: accessToken,
+            ifMatch: etag
+        )
+
+        let attachmentEntries = note.attachmentCiphertexts.sorted {
+            $0.key.uuidString.lowercased() < $1.key.uuidString.lowercased()
+        }
+        for (attachmentID, ciphertext) in attachmentEntries {
+            let attachmentResult = try await uploadAttachment(
                 noteID: note.metadata.noteID,
-                data: data,
+                attachmentID: attachmentID,
+                ciphertext: ciphertext,
+                accessToken: accessToken,
+                ifMatch: nil,
+                uploadSessionStore: uploadSessionStore
+            )
+            if let noteEtag = attachmentResult.noteEtag {
+                result = NoteUploadResult(
+                    syncState: result.syncState,
+                    updatedAt: result.updatedAt,
+                    etag: noteEtag
+                )
+            }
+        }
+
+        try await deleteRemovedAttachments(
+            noteID: note.metadata.noteID,
+            localAttachmentIDs: Set(note.attachmentCiphertexts.keys),
+            accessToken: accessToken
+        )
+
+        return result
+    }
+
+    private func deleteRemovedAttachments(
+        noteID: UUID,
+        localAttachmentIDs: Set<UUID>,
+        accessToken: String
+    ) async throws {
+        let remoteAttachments: [RemoteAttachmentSummary]
+        do {
+            remoteAttachments = try await apiClient.listAttachments(
+                noteID: noteID,
+                accessToken: accessToken
+            )
+        } catch NoteRepositoryError.noteNotFound {
+            return
+        }
+
+        for remote in remoteAttachments where !localAttachmentIDs.contains(remote.attachmentID) {
+            try await apiClient.deleteAttachment(
+                noteID: noteID,
+                attachmentID: remote.attachmentID,
+                accessToken: accessToken
+            )
+        }
+    }
+
+    private func uploadAttachment(
+        noteID: UUID,
+        attachmentID: UUID,
+        ciphertext: Data,
+        accessToken: String,
+        ifMatch etag: String?,
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?
+    ) async throws -> AttachmentUploadResult {
+        if ciphertext.count <= NoteUploadSizeThreshold {
+            return try await apiClient.writeAttachment(
+                noteID: noteID,
+                attachmentID: attachmentID,
+                data: ciphertext,
                 accessToken: accessToken,
                 ifMatch: etag
             )
         }
-        return try await uploadNoteChunked(
-            noteID: note.metadata.noteID,
-            wireBlob: data,
+        return try await uploadAttachmentChunked(
+            noteID: noteID,
+            attachmentID: attachmentID,
+            ciphertext: ciphertext,
             accessToken: accessToken,
             ifMatch: etag,
             uploadSessionStore: uploadSessionStore
         )
     }
 
-    private func uploadNoteChunked(
+    private func uploadAttachmentChunked(
         noteID: UUID,
-        wireBlob: Data,
+        attachmentID: UUID,
+        ciphertext: Data,
         accessToken: String,
         ifMatch etag: String?,
-        uploadSessionStore: (any NoteUploadSessionStoring)?
-    ) async throws -> NoteUploadResult {
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?
+    ) async throws -> AttachmentUploadResult {
         if let uploadSessionStore,
-           let persisted = try await uploadSessionStore.fetchUploadSession(noteID: noteID) {
-            if persisted.wireSize == wireBlob.count {
+           let persisted = try await uploadSessionStore.fetchAttachmentUploadSession(
+               noteID: noteID,
+               attachmentID: attachmentID
+           ) {
+            if persisted.wireSize == ciphertext.count {
                 do {
-                    return try await resumeChunkedUpload(
+                    return try await resumeAttachmentChunkedUpload(
                         persisted: persisted,
                         noteID: noteID,
-                        wireBlob: wireBlob,
+                        attachmentID: attachmentID,
+                        ciphertext: ciphertext,
                         accessToken: accessToken,
                         ifMatch: etag,
                         uploadSessionStore: uploadSessionStore
                     )
                 } catch let error where Self.isExpiredUploadSession(error) {
-                    try await uploadSessionStore.deleteUploadSession(noteID: noteID)
+                    try await uploadSessionStore.deleteAttachmentUploadSession(
+                        noteID: noteID,
+                        attachmentID: attachmentID
+                    )
                 }
             } else {
-                try await uploadSessionStore.deleteUploadSession(noteID: noteID)
+                try await uploadSessionStore.deleteAttachmentUploadSession(
+                    noteID: noteID,
+                    attachmentID: attachmentID
+                )
             }
         }
 
-        return try await startChunkedUpload(
+        return try await startAttachmentChunkedUpload(
             noteID: noteID,
-            wireBlob: wireBlob,
+            attachmentID: attachmentID,
+            ciphertext: ciphertext,
             accessToken: accessToken,
             ifMatch: etag,
             uploadSessionStore: uploadSessionStore
         )
     }
 
-    private func startChunkedUpload(
+    private func startAttachmentChunkedUpload(
         noteID: UUID,
-        wireBlob: Data,
+        attachmentID: UUID,
+        ciphertext: Data,
         accessToken: String,
         ifMatch etag: String?,
-        uploadSessionStore: (any NoteUploadSessionStoring)?
-    ) async throws -> NoteUploadResult {
-        let session = try await apiClient.initUpload(
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?
+    ) async throws -> AttachmentUploadResult {
+        let session = try await apiClient.initAttachmentUpload(
             noteID: noteID,
-            totalSize: wireBlob.count,
+            attachmentID: attachmentID,
+            totalSize: ciphertext.count,
             accessToken: accessToken
         )
 
         if let uploadSessionStore {
-            try await uploadSessionStore.upsertUploadSession(
-                NoteUploadSessionRecord(
+            try await uploadSessionStore.upsertAttachmentUploadSession(
+                AttachmentUploadSessionRecord(
                     noteID: noteID,
+                    attachmentID: attachmentID,
                     uploadID: session.uploadID,
-                    wireSize: wireBlob.count,
+                    wireSize: ciphertext.count,
                     chunkSize: session.chunkSize,
                     totalChunks: session.totalChunks,
                     ifMatch: etag
@@ -140,10 +255,11 @@ public actor NetworkNoteRepository: NoteRepository {
             )
         }
 
-        try await uploadRemainingChunks(
+        try await uploadRemainingAttachmentChunks(
             noteID: noteID,
+            attachmentID: attachmentID,
             uploadID: session.uploadID,
-            wireBlob: wireBlob,
+            ciphertext: ciphertext,
             chunkSize: session.chunkSize,
             totalChunks: session.totalChunks,
             completedChunkIndices: [],
@@ -151,28 +267,34 @@ public actor NetworkNoteRepository: NoteRepository {
             uploadSessionStore: uploadSessionStore
         )
 
-        let result = try await apiClient.completeUpload(
+        let result = try await apiClient.completeAttachmentUpload(
             noteID: noteID,
+            attachmentID: attachmentID,
             uploadID: session.uploadID,
             accessToken: accessToken,
             ifMatch: etag
         )
-        try await uploadSessionStore?.deleteUploadSession(noteID: noteID)
+        try await uploadSessionStore?.deleteAttachmentUploadSession(
+            noteID: noteID,
+            attachmentID: attachmentID
+        )
         return result
     }
 
-    private func resumeChunkedUpload(
-        persisted: NoteUploadSessionRecord,
+    private func resumeAttachmentChunkedUpload(
+        persisted: AttachmentUploadSessionRecord,
         noteID: UUID,
-        wireBlob: Data,
+        attachmentID: UUID,
+        ciphertext: Data,
         accessToken: String,
         ifMatch etag: String?,
-        uploadSessionStore: any NoteUploadSessionStoring
-    ) async throws -> NoteUploadResult {
-        try await uploadRemainingChunks(
+        uploadSessionStore: any AttachmentUploadSessionStoring
+    ) async throws -> AttachmentUploadResult {
+        try await uploadRemainingAttachmentChunks(
             noteID: noteID,
+            attachmentID: attachmentID,
             uploadID: persisted.uploadID,
-            wireBlob: wireBlob,
+            ciphertext: ciphertext,
             chunkSize: persisted.chunkSize,
             totalChunks: persisted.totalChunks,
             completedChunkIndices: persisted.completedChunkIndices,
@@ -180,43 +302,54 @@ public actor NetworkNoteRepository: NoteRepository {
             uploadSessionStore: uploadSessionStore
         )
 
-        let result = try await apiClient.completeUpload(
+        let result = try await apiClient.completeAttachmentUpload(
             noteID: noteID,
+            attachmentID: attachmentID,
             uploadID: persisted.uploadID,
             accessToken: accessToken,
             ifMatch: etag ?? persisted.ifMatch
         )
-        try await uploadSessionStore.deleteUploadSession(noteID: noteID)
+        try await uploadSessionStore.deleteAttachmentUploadSession(
+            noteID: noteID,
+            attachmentID: attachmentID
+        )
         return result
     }
 
-    private func uploadRemainingChunks(
+    private func uploadRemainingAttachmentChunks(
         noteID: UUID,
+        attachmentID: UUID,
         uploadID: UUID,
-        wireBlob: Data,
+        ciphertext: Data,
         chunkSize: Int,
         totalChunks: Int,
         completedChunkIndices: Set<Int>,
         accessToken: String,
-        uploadSessionStore: (any NoteUploadSessionStoring)?
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?
     ) async throws {
         for chunkIndex in 0..<totalChunks where !completedChunkIndices.contains(chunkIndex) {
             let start = chunkIndex * chunkSize
-            let end = min(start + chunkSize, wireBlob.count)
-            let chunkData = wireBlob.subdata(in: start..<end)
-            try await uploadChunkWithRetry(
+            let end = min(start + chunkSize, ciphertext.count)
+            let chunkData = ciphertext.subdata(in: start..<end)
+            try await uploadAttachmentChunkWithRetry(
                 noteID: noteID,
+                attachmentID: attachmentID,
                 uploadID: uploadID,
                 chunkIndex: chunkIndex,
                 chunkData: chunkData,
                 accessToken: accessToken
             )
-            try await uploadSessionStore?.markUploadChunkCompleted(noteID: noteID, chunkIndex: chunkIndex)
+            try await uploadSessionStore?.markAttachmentUploadChunkCompleted(
+                noteID: noteID,
+                attachmentID: attachmentID,
+                chunkIndex: chunkIndex
+            )
         }
     }
 
-    private func uploadChunkWithRetry(
+    private func uploadAttachmentChunkWithRetry(
         noteID: UUID,
+        attachmentID: UUID,
         uploadID: UUID,
         chunkIndex: Int,
         chunkData: Data,
@@ -224,8 +357,9 @@ public actor NetworkNoteRepository: NoteRepository {
     ) async throws {
         while true {
             do {
-                try await apiClient.uploadChunk(
+                try await apiClient.uploadAttachmentChunk(
                     noteID: noteID,
+                    attachmentID: attachmentID,
                     uploadID: uploadID,
                     chunkIndex: chunkIndex,
                     data: chunkData,

@@ -2,6 +2,7 @@ import XCTest
 
 @testable import NoteRepository
 @testable import NoteRepositoryProtocol
+import SecureCrypto
 
 final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
     override func tearDown() {
@@ -9,22 +10,48 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
         super.tearDown()
     }
 
-    func testUploadNoteUsesChunkedFlowForOverThresholdBlob() async throws {
+    func testUploadNoteUsesChunkedFlowForOverThresholdAttachment() async throws {
         let log = RequestLog()
         let noteID = NoteFixtures.noteID
+        let attachmentID = NoteFixtures.attachmentID
         let uploadID = NoteFixtures.uploadID
         let chunkSize = 5_000_000
-        let note = try NoteTestSupport.makeStoredNoteWithWireBlobSize(
-            noteID: noteID,
-            title: "Large note",
-            wireBlobSize: NoteUploadSizeThreshold + 1
+        let ciphertext = Data(repeating: 0xAA, count: NoteUploadSizeThreshold + 1)
+        let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
+        let initPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads"
+        let directAttachmentPutPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+        let noteUploadsPath = "/v1/notes/\(noteID.uuidString.lowercased())/uploads"
+
+        let note = StoredNote(
+            metadata: NoteMetadata(
+                noteID: noteID,
+                title: "Large attachment",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 1,
+                attachmentsTotalSize: UInt64(ciphertext.count)
+            ),
+            wrappedFEK: Data(repeating: 0xAB, count: 60),
+            encryptedPayload: Data(repeating: 0xCD, count: 128),
+            syncState: .pendingSync,
+            attachmentCiphertexts: [attachmentID: ciphertext]
         )
-        let initPath = "/v1/notes/\(noteID.uuidString.lowercased())/uploads"
-        let directPutPath = "/v1/notes/\(noteID.uuidString.lowercased())"
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
             let path = request.url!.path
+
+            if path == bodyPath {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.writeNoteResponseJSON())
+            }
+
+            if path == "/v1/notes/\(noteID.uuidString.lowercased())/attachments" && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
 
             if path == initPath {
                 guard
@@ -54,7 +81,7 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
 
             if path.hasSuffix("/complete") {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.writeNoteResponseJSON())
+                return (response, NoteFixtures.writeAttachmentResponseJSON())
             }
 
             XCTFail("Unexpected path: \(path)")
@@ -69,30 +96,57 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
 
         _ = try await repository.uploadNote(note)
 
-        XCTAssertFalse(log.paths.contains(directPutPath))
-        XCTAssertEqual(log.method(at: 0), "POST")
-        XCTAssertEqual(log.path(at: 0), initPath)
+        XCTAssertFalse(log.paths.contains(directAttachmentPutPath))
+        XCTAssertFalse(log.paths.contains(noteUploadsPath))
+        XCTAssertEqual(log.method(at: 0), "PUT")
+        XCTAssertEqual(log.path(at: 0), bodyPath)
+        XCTAssertEqual(log.method(at: 1), "POST")
+        XCTAssertEqual(log.path(at: 1), initPath)
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/0") })
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/1") })
         XCTAssertTrue(log.paths.contains { $0.hasSuffix("/complete") })
     }
 
-    func testFailedChunkIsRetriedWithoutResendingPriorChunks() async throws {
+    func testFailedAttachmentChunkIsRetriedWithoutResendingPriorChunks() async throws {
         let log = RequestLog()
         let noteID = NoteFixtures.noteID
+        let attachmentID = NoteFixtures.attachmentID
         let uploadID = NoteFixtures.uploadID
         let chunkSize = 5_000_000
         var chunkAttempts: [Int: Int] = [:]
-        let note = try NoteTestSupport.makeStoredNoteWithWireBlobSize(
-            noteID: noteID,
-            title: "Large note",
-            wireBlobSize: NoteUploadSizeThreshold + 1
+        let ciphertext = Data(repeating: 0xAA, count: NoteUploadSizeThreshold + 1)
+        let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
+        let initPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads"
+
+        let note = StoredNote(
+            metadata: NoteMetadata(
+                noteID: noteID,
+                title: "Large attachment",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 1,
+                attachmentsTotalSize: UInt64(ciphertext.count)
+            ),
+            wrappedFEK: Data(repeating: 0xAB, count: 60),
+            encryptedPayload: Data(repeating: 0xCD, count: 128),
+            syncState: .pendingSync,
+            attachmentCiphertexts: [attachmentID: ciphertext]
         )
-        let initPath = "/v1/notes/\(noteID.uuidString.lowercased())/uploads"
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
             let path = request.url!.path
+
+            if path == bodyPath {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.writeNoteResponseJSON())
+            }
+
+            if path == "/v1/notes/\(noteID.uuidString.lowercased())/attachments" && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
 
             if path == initPath {
                 guard
@@ -130,7 +184,7 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
 
             if path.hasSuffix("/complete") {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.writeNoteResponseJSON())
+                return (response, NoteFixtures.writeAttachmentResponseJSON())
             }
 
             XCTFail("Unexpected path: \(path)")
