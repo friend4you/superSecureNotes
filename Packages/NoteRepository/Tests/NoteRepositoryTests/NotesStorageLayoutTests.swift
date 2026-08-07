@@ -21,7 +21,7 @@ final class NotesStorageLayoutTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWriteCreatesNotesDatabaseAndPayloadWithoutPlaintextTitle() async throws {
+    func testWriteCreatesNotesDatabaseAndBodyWithoutPlaintextBody() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440010")!
         let title = "Secret Meeting Notes"
         let body = "Discuss quarterly roadmap"
@@ -50,14 +50,17 @@ final class NotesStorageLayoutTests: XCTestCase {
         try await repository.writeNote(storedNote)
 
         let databaseURL = temporaryDirectory.appendingPathComponent("notes.db")
-        let payloadURL = temporaryDirectory
+        let bodyURL = temporaryDirectory
             .appendingPathComponent(noteID.uuidString, isDirectory: true)
-            .appendingPathComponent("payload")
-        let payloadData = try Data(contentsOf: payloadURL)
+            .appendingPathComponent("body")
+        let bodyData = try Data(contentsOf: bodyURL)
+        let sections = try parseNoteFile(bodyData)
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: databaseURL.path))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: payloadURL.path))
-        XCTAssertNil(payloadData.range(of: Data(title.utf8)))
-        XCTAssertNil(payloadData.range(of: Data(body.utf8)))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: bodyURL.path))
+        // Title is plaintext in SSNT metadata; note body text must stay in ciphertext only.
+        XCTAssertNotNil(bodyData.range(of: Data(title.utf8)))
+        XCTAssertNil(sections.encryptedPayload.range(of: Data(body.utf8)))
+        XCTAssertNil(bodyData.range(of: Data(body.utf8)))
     }
 }

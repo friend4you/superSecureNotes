@@ -214,7 +214,7 @@ final class LocalNoteRepositoryTests: XCTestCase {
         }
     }
 
-    func testReadNoteWhenPayloadFileMissingThrowsCorruptNote() async throws {
+    func testReadNoteWhenBodyFileMissingThrowsCorruptNote() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440004")!
         let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
         try await NoteTestSupport.openIndexStore(indexStore)
@@ -222,10 +222,10 @@ final class LocalNoteRepositoryTests: XCTestCase {
             NoteTestSupport.makeSampleStoredNote(noteID: noteID, title: "Incomplete")
         )
 
-        let payloadURL = temporaryDirectory
+        let bodyURL = temporaryDirectory
             .appendingPathComponent(noteID.uuidString, isDirectory: true)
-            .appendingPathComponent("payload")
-        try FileManager.default.removeItem(at: payloadURL)
+            .appendingPathComponent("body")
+        try FileManager.default.removeItem(at: bodyURL)
 
         do {
             _ = try await repository.readNote(noteID: noteID)

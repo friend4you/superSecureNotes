@@ -38,13 +38,16 @@ final class NotesStorageIntegrationTests: XCTestCase {
         )
 
         let databaseURL = temporaryDirectory.appendingPathComponent("notes.db")
-        let payloadURL = temporaryDirectory
+        let bodyURL = temporaryDirectory
             .appendingPathComponent(noteID.uuidString, isDirectory: true)
-            .appendingPathComponent("payload")
-        let payloadData = try Data(contentsOf: payloadURL)
+            .appendingPathComponent("body")
+        let bodyData = try Data(contentsOf: bodyURL)
+        let sections = try parseNoteFile(bodyData)
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: databaseURL.path))
-        XCTAssertNil(payloadData.range(of: Data(title.utf8)))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: bodyURL.path))
+        XCTAssertNil(sections.encryptedPayload.range(of: Data(title.utf8)))
+        XCTAssertNil(bodyData.range(of: Data("Body".utf8)))
     }
 
     func testLockAndUnlockPreservesNotes() async throws {
