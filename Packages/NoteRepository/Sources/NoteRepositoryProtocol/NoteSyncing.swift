@@ -22,10 +22,39 @@ public protocol NoteCatalogPulling: Sendable {
 
 public protocol NoteSyncing: Actor, VaultHeaderUploadScheduling, VaultHeaderUploading, NoteCatalogPulling {
     nonisolated var syncOutcomes: AsyncStream<NoteSyncOutcome> { get }
+    nonisolated var attachmentHydrationProgress: AsyncStream<AttachmentHydrationProgress> { get }
     func flushPending() async
     func pullVaultHeaderIfLocalMissing() async throws -> Data?
     func pullRemoteNotesCatalog() async throws
     func pullCatalogIfLocalVaultMissing() async throws -> Data?
     func uploadVaultHeaderOrThrow(_ header: Data) async throws
     nonisolated func scheduleFlush()
+    func hydrateAttachments(noteID: UUID) async
+    func hydrateSharedAttachments(noteID: UUID) async
+    func retryAttachment(noteID: UUID, attachmentID: UUID) async
+    func retrySharedAttachment(noteID: UUID, attachmentID: UUID) async
+}
+
+extension NoteSyncing {
+    public nonisolated var attachmentHydrationProgress: AsyncStream<AttachmentHydrationProgress> {
+        AsyncStream { $0.finish() }
+    }
+
+    public func hydrateAttachments(noteID: UUID) async {
+        _ = noteID
+    }
+
+    public func hydrateSharedAttachments(noteID: UUID) async {
+        _ = noteID
+    }
+
+    public func retryAttachment(noteID: UUID, attachmentID: UUID) async {
+        _ = noteID
+        _ = attachmentID
+    }
+
+    public func retrySharedAttachment(noteID: UUID, attachmentID: UUID) async {
+        _ = noteID
+        _ = attachmentID
+    }
 }
