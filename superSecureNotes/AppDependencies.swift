@@ -32,11 +32,13 @@ final class AppDependencies {
 
     init() {
         notesIndexStore = NotesIndexStore()
-        localNoteRepository = LocalNoteRepository(notesIndexStore: notesIndexStore)
-        noteRepository = localNoteRepository
+        let localNotes = LocalNoteRepository(notesIndexStore: notesIndexStore)
+        localNoteRepository = localNotes
+        noteRepository = localNotes
         localVaultRepository = LocalVaultRepository()
         vaultRepository = localVaultRepository
-        vaultSession = VaultSession()
+        let session = VaultSession()
+        vaultSession = session
         vaultAuthenticator = SecureCryptoVaultAuthenticator()
         credentialStore = KeychainCredentialStore()
         biometricAuthenticator = LocalAuthenticationBiometricAuthenticator()
@@ -54,16 +56,16 @@ final class AppDependencies {
             tokenProvider: tokenProvider
         )
         noteSyncService = LocalFirstNoteSyncService(
-            localNotes: localNoteRepository,
+            localNotes: localNotes,
             remoteNotes: networkNoteRepository,
             localVault: localVaultRepository,
             remoteVault: networkVaultRepository,
             noteFEKProvider: { noteID in
-                guard await vaultSession.isActive else {
+                guard await session.isActive else {
                     return nil
                 }
-                let udk = try await vaultSession.udk()
-                let note = try await localNoteRepository.readNote(noteID: noteID)
+                let udk = try await session.udk()
+                let note = try await localNotes.readNote(noteID: noteID)
                 return try unwrapFEK(note.wrappedFEK, with: udk)
             }
         )
