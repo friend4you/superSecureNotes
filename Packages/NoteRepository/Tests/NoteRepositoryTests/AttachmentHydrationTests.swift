@@ -74,6 +74,45 @@ final class AttachmentHydrationTests: XCTestCase {
         XCTAssertTrue(log.paths.contains(attachmentPath2))
     }
 
+    func testHydrateAttachmentsSucceedsWhenManifestContentTypeIsNull() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440083")!
+        let attachmentID = UUID(uuidString: "880e8400-e29b-41d4-a716-446655440083")!
+        let ciphertext = Data(repeating: 0x33, count: 24)
+
+        let (indexStore, localRepository, syncService) = makeSyncEnvironment()
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await seedBodyOnlyNote(noteID: noteID, repository: localRepository)
+
+        let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
+        let attachmentPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+
+        URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            if path == manifestPath && request.httpMethod == "GET" {
+                return (
+                    response,
+                    NoteFixtures.attachmentsManifestJSON(
+                        attachments: [
+                            (attachmentID, UInt64(ciphertext.count), nil, nil),
+                        ]
+                    )
+                )
+            }
+            if path == attachmentPath {
+                return (response, ciphertext)
+            }
+            XCTFail("Unexpected path: \(path)")
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+        }
+
+        await syncService.hydrateAttachments(noteID: noteID)
+
+        let note = try await localRepository.readNote(noteID: noteID)
+        XCTAssertEqual(note.attachmentCiphertexts[attachmentID], ciphertext)
+    }
+
     func testHydrateAttachmentsCapsConcurrencyAtThree() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440082")!
         let attachmentIDs = (0 ..< 4).map { index in

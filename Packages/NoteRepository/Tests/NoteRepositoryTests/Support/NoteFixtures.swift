@@ -121,9 +121,9 @@ enum NoteFixtures {
     static let recipientWrappedFEK = Data(repeating: 0xAB, count: 48)
 
     static func attachmentsManifestJSON(
-        attachments: [(attachmentID: UUID, sizeBytes: UInt64, contentType: String, etag: String)]
+        attachments: [(attachmentID: UUID, sizeBytes: UInt64, contentType: String?, etag: String?)]
     ) -> Data {
-        let payload: [[String: Any]] = attachments.map { item in
+        let payload: [[String: Any?]] = attachments.map { item in
             [
                 "attachmentId": item.attachmentID.uuidString.lowercased(),
                 "sizeBytes": item.sizeBytes,

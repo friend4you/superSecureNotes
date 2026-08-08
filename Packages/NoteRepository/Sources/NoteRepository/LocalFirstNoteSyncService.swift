@@ -105,7 +105,7 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     }
 
     private func pullRemoteChanges() async {
-        guard let remoteSummaries = try? await remoteNotes.listNotes(includeDeleted: true) else {
+        guard let remoteSummaries = try? await remoteNotes.listNotes(includeDeleted: false) else {
             return
         }
         guard let localSummaries = try? await localNotes.listNoteSummaries() else {

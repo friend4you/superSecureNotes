@@ -44,8 +44,12 @@ struct NoteUploadInitResponseDTO: Decodable {
 struct AttachmentSummaryResponseDTO: Decodable {
     let attachmentId: String
     let sizeBytes: UInt64
-    let contentType: String
-    let etag: String
+    let contentType: String?
+    let etag: String?
+}
+
+enum AttachmentManifestDefaults {
+    static let contentType = "application/octet-stream"
 }
 
 struct AttachmentWriteResponseDTO: Decodable {
@@ -69,7 +73,7 @@ struct RemoteAttachmentSummary: Equatable, Sendable {
     let attachmentID: UUID
     let sizeBytes: UInt64
     let contentType: String
-    let etag: String
+    let etag: String?
 }
 
 struct AttachmentUploadResult: Equatable, Sendable {

@@ -133,4 +133,37 @@ final class NoteAPIClientBodyTests: XCTestCase {
         XCTAssertEqual(attachments[0].contentType, "application/octet-stream")
         XCTAssertEqual(attachments[0].etag, #"W/"att-etag""#)
     }
+
+    func testListAttachmentsDefaultsNullContentTypeAndEtag() async throws {
+        let noteID = NoteFixtures.noteID
+        let attachmentID = NoteFixtures.attachmentID
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (
+                response,
+                NoteFixtures.attachmentsManifestJSON(
+                    attachments: [
+                        (
+                            attachmentID: attachmentID,
+                            sizeBytes: 512,
+                            contentType: nil,
+                            etag: nil
+                        ),
+                    ]
+                )
+            )
+        }
+
+        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
+        let attachments = try await client.listAttachments(
+            noteID: noteID,
+            accessToken: NoteFixtures.accessToken
+        )
+
+        XCTAssertEqual(attachments.count, 1)
+        XCTAssertEqual(attachments[0].attachmentID, attachmentID)
+        XCTAssertEqual(attachments[0].sizeBytes, 512)
+        XCTAssertEqual(attachments[0].contentType, "application/octet-stream")
+        XCTAssertNil(attachments[0].etag)
+    }
 }

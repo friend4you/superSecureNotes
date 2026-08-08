@@ -369,7 +369,7 @@ struct NoteAPIClient {
             return RemoteAttachmentSummary(
                 attachmentID: attachmentID,
                 sizeBytes: dto.sizeBytes,
-                contentType: dto.contentType,
+                contentType: dto.contentType ?? AttachmentManifestDefaults.contentType,
                 etag: dto.etag
             )
         }
