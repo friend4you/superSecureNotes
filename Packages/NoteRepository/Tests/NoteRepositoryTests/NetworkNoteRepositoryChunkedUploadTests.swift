@@ -98,10 +98,10 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
 
         XCTAssertFalse(log.paths.contains(directAttachmentPutPath))
         XCTAssertFalse(log.paths.contains(noteUploadsPath))
-        XCTAssertEqual(log.method(at: 0), "PUT")
-        XCTAssertEqual(log.path(at: 0), bodyPath)
+        XCTAssertEqual(log.method(at: 0), "GET")
         XCTAssertEqual(log.method(at: 1), "POST")
         XCTAssertEqual(log.path(at: 1), initPath)
+        XCTAssertEqual(log.paths.last, bodyPath)
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/0") })
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/1") })
         XCTAssertTrue(log.paths.contains { $0.hasSuffix("/complete") })

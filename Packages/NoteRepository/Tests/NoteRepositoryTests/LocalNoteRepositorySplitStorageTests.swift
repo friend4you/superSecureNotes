@@ -92,6 +92,41 @@ final class LocalNoteRepositorySplitStorageTests: XCTestCase {
         XCTAssertEqual(rows[0].syncState, .pendingSync)
     }
 
+    func testWriteNormalizesAttachmentManifestFromCiphertextSizes() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440085")!
+        let attachmentID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440086")!
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+        try await NoteTestSupport.openIndexStore(indexStore)
+
+        let ciphertext = Data(repeating: 0x44, count: 48)
+        let note = StoredNote(
+            metadata: NoteMetadata(
+                noteID: noteID,
+                title: "Plaintext manifest",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 1,
+                attachmentsTotalSize: 10
+            ),
+            wrappedFEK: Data(repeating: 0xAB, count: 60),
+            encryptedPayload: Data(repeating: 0xCD, count: 128),
+            syncState: .pendingSync,
+            attachmentCiphertexts: [attachmentID: ciphertext]
+        )
+
+        try await repository.writeNote(note)
+
+        let read = try await repository.readNote(noteID: noteID)
+        XCTAssertEqual(read.metadata.attachmentCount, 1)
+        XCTAssertEqual(read.metadata.attachmentsTotalSize, UInt64(ciphertext.count))
+
+        let bodyURL = temporaryDirectory
+            .appendingPathComponent(noteID.uuidString, isDirectory: true)
+            .appendingPathComponent("body")
+        let sections = try parseNoteFile(try Data(contentsOf: bodyURL))
+        XCTAssertEqual(sections.metadata.attachmentsTotalSize, UInt64(ciphertext.count))
+    }
+
     private func makeSplitNote(
         noteID: UUID,
         attachmentCiphertexts: [UUID: Data]

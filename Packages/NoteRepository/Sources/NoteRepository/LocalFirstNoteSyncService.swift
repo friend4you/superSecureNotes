@@ -139,7 +139,6 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
                 )
             )
         } catch NoteRepositoryError.serverError(statusCode: 409) {
-            // Local wins: retry full multi-part upload without If-Match.
             await retryUploadWithoutConditionalMatch(prepared)
         } catch {
             emitOutcome(.uploadFailed(noteID: noteID))

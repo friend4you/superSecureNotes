@@ -105,7 +105,7 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
                 noteID: noteID,
                 syncState: .synced,
                 updatedAt: 1_700_000_100,
-                etag: #"W/"migrated-note""#
+                etag: #"W/"migrated-body""#
             )
         )
 
@@ -122,9 +122,9 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
         let attachmentID = try XCTUnwrap(UUID(uuidString: decrypted.attachments[0].id))
         let attachmentPath =
             "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
-        XCTAssertEqual(log.method(at: 0), "PUT")
-        XCTAssertEqual(log.path(at: 0), bodyPath)
+        XCTAssertEqual(log.method(at: 0), "GET")
         XCTAssertTrue(log.paths.contains(attachmentPath))
+        XCTAssertEqual(log.paths.last, bodyPath)
 
         let ciphertext = try XCTUnwrap(migrated.attachmentCiphertexts[attachmentID])
         XCTAssertEqual(try decryptAttachmentFile(ciphertext, with: fek), plaintextAttachment)

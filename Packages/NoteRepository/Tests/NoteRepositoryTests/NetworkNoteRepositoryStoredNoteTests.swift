@@ -11,9 +11,14 @@ final class NetworkNoteRepositoryStoredNoteTests: XCTestCase {
     }
 
     func testWriteAssemblesWireBlob() async throws {
-        let captured = RequestCapture()
+        let log = RequestLog()
         URLProtocolStub.requestHandler = { request in
-            captured.record(request)
+            log.record(request)
+            let path = request.url!.path
+            if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
+                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
         }
@@ -26,7 +31,9 @@ final class NetworkNoteRepositoryStoredNoteTests: XCTestCase {
 
         try await repository.writeNote(NoteFixtures.sampleStoredNote)
 
-        let body = try XCTUnwrap(captured.bodyData)
+        let bodyPath = "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body"
+        let bodyIndex = try XCTUnwrap(log.paths.firstIndex(of: bodyPath))
+        let body = try XCTUnwrap(log.bodyData(at: bodyIndex))
         let sections = try parseNoteFile(body)
         XCTAssertEqual(sections.metadata, NoteFixtures.sampleStoredNote.metadata)
         XCTAssertEqual(sections.wrappedFEK, NoteFixtures.sampleStoredNote.wrappedFEK)

@@ -102,7 +102,7 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
 
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .synced)
-        XCTAssertEqual(row?.etag, #"W/"retry-note-etag""#)
+        XCTAssertEqual(row?.etag, #"W/"retry-body-etag""#)
         let local = try await localRepository.readNote(noteID: noteID)
         XCTAssertEqual(local.metadata.title, "Local wins")
     }
@@ -190,7 +190,7 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
 
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .synced)
-        XCTAssertEqual(row?.etag, #"W/"complete-etag""#)
+        XCTAssertEqual(row?.etag, #"W/"abc123""#)
     }
 
     private func makeNote(

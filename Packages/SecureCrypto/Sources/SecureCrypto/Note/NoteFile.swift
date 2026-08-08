@@ -29,6 +29,18 @@ public struct NoteMetadata: Equatable, Sendable {
         self.attachmentsTotalSize = attachmentsTotalSize
     }
 
+    /// Returns metadata whose attachment manifest matches stored ciphertext blob sizes.
+    public func withStoredAttachmentManifest(_ ciphertexts: [UUID: Data]) -> NoteMetadata {
+        NoteMetadata(
+            noteID: noteID,
+            title: title,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            attachmentCount: UInt32(ciphertexts.count),
+            attachmentsTotalSize: ciphertexts.values.reduce(0) { $0 + UInt64($1.count) }
+        )
+    }
+
     public static func fromNoteFile(_ data: Data) throws -> NoteMetadata {
         try parseNoteFile(data).metadata
     }

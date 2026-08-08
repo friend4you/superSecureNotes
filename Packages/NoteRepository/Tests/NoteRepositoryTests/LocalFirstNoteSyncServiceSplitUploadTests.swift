@@ -85,7 +85,7 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
 
         var row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .pendingSync)
-        XCTAssertTrue(log.paths.contains(bodyPath))
+        XCTAssertFalse(log.paths.contains(bodyPath))
         XCTAssertTrue(log.paths.contains(attachmentPath1))
         XCTAssertTrue(log.paths.contains(attachmentPath2))
 
@@ -103,16 +103,16 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
                 noteID: noteID,
                 syncState: .synced,
                 updatedAt: 1_700_000_100,
-                etag: #"W/"note-etag-2""#
+                etag: #"W/"body-etag""#
             )
         )
 
         row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .synced)
-        XCTAssertEqual(row?.etag, #"W/"note-etag-2""#)
+        XCTAssertEqual(row?.etag, #"W/"body-etag""#)
     }
 
-    func testFlushUploadsBodyThenAttachmentsAndEmitsOutcome() async throws {
+    func testFlushReconcilesAttachmentsBeforeBodyAndEmitsOutcome() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440072")!
         let attachmentID = UUID(uuidString: "880e8400-e29b-41d4-a716-446655440072")!
         let removedID = UUID(uuidString: "880e8400-e29b-41d4-a716-446655440073")!
@@ -185,23 +185,24 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
                 noteID: noteID,
                 syncState: .synced,
                 updatedAt: 1_700_000_100,
-                etag: #"W/"final-etag""#
+                etag: #"W/"body-etag""#
             )
         )
 
-        XCTAssertEqual(log.method(at: 0), "PUT")
-        XCTAssertEqual(log.path(at: 0), bodyPath)
+        XCTAssertEqual(log.method(at: 0), "GET")
+        XCTAssertEqual(log.path(at: 0), manifestPath)
         XCTAssertTrue(log.paths.contains(attachmentPath))
         XCTAssertTrue(log.paths.contains(removedPath))
         let bodyIndex = try XCTUnwrap(log.paths.firstIndex(of: bodyPath))
         let attachmentIndex = try XCTUnwrap(log.paths.firstIndex(of: attachmentPath))
         let deleteIndex = try XCTUnwrap(log.paths.firstIndex(of: removedPath))
-        XCTAssertLessThan(bodyIndex, attachmentIndex)
-        XCTAssertLessThan(attachmentIndex, deleteIndex)
+        XCTAssertLessThan(deleteIndex, attachmentIndex)
+        XCTAssertLessThan(attachmentIndex, bodyIndex)
+        XCTAssertEqual(log.paths.last, bodyPath)
 
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .synced)
-        XCTAssertEqual(row?.etag, #"W/"final-etag""#)
+        XCTAssertEqual(row?.etag, #"W/"body-etag""#)
     }
 
     private func makeNoteWithAttachments(

@@ -127,8 +127,8 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
 
         _ = try await repository.uploadNote(NoteFixtures.sampleStoredNote)
 
-        XCTAssertEqual(log.method(at: 0), "PUT")
-        XCTAssertEqual(log.path(at: 0), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
+        XCTAssertEqual(log.method(at: 0), "GET")
+        XCTAssertEqual(log.path(at: 1), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
     }
 
@@ -158,10 +158,13 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
 
         _ = try await repository.uploadNote(note)
 
-        XCTAssertEqual(log.method(at: 0), "PUT")
-        XCTAssertEqual(log.path(at: 0), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
+        XCTAssertEqual(log.method(at: 0), "GET")
+        XCTAssertEqual(log.path(at: 1), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
-        XCTAssertEqual(log.bodyData(at: 0)?.count, NoteUploadSizeThreshold)
+        let bodyIndex = try XCTUnwrap(log.paths.firstIndex {
+            $0 == "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body"
+        })
+        XCTAssertEqual(log.bodyData(at: bodyIndex)?.count, NoteUploadSizeThreshold)
     }
 
     func testWriteNotePropagatesTokenProviderFailure() async {

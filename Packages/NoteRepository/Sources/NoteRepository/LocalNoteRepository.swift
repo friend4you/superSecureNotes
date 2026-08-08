@@ -97,6 +97,13 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         }
 
         let noteID = note.metadata.noteID
+        let storedNote = StoredNote(
+            metadata: note.metadata.withStoredAttachmentManifest(note.attachmentCiphertexts),
+            wrappedFEK: note.wrappedFEK,
+            encryptedPayload: note.encryptedPayload,
+            syncState: note.syncState,
+            attachmentCiphertexts: note.attachmentCiphertexts
+        )
         try ensureNotesRootDirectory()
 
         let tempDirectoryURL = notesRootURL.appendingPathComponent(
@@ -111,22 +118,22 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         try fileManager.createDirectory(at: tempDirectoryURL, withIntermediateDirectories: true)
 
         let bodyData = try assembleNoteFile(
-            metadata: note.metadata,
-            wrappedFEK: note.wrappedFEK,
-            encryptedPayload: note.encryptedPayload
+            metadata: storedNote.metadata,
+            wrappedFEK: storedNote.wrappedFEK,
+            encryptedPayload: storedNote.encryptedPayload
         )
         try writeNoteBodyFile(
             bodyData,
             to: tempDirectoryURL.appendingPathComponent(Self.bodyFileName, isDirectory: false)
         )
 
-        if !note.attachmentCiphertexts.isEmpty {
+        if !storedNote.attachmentCiphertexts.isEmpty {
             let attachmentsDir = tempDirectoryURL.appendingPathComponent(
                 Self.attachmentsDirectoryName,
                 isDirectory: true
             )
             try fileManager.createDirectory(at: attachmentsDir, withIntermediateDirectories: true)
-            for (attachmentID, ciphertext) in note.attachmentCiphertexts {
+            for (attachmentID, ciphertext) in storedNote.attachmentCiphertexts {
                 guard !ciphertext.isEmpty else {
                     throw NoteRepositoryError.validationError("Attachment must not be empty.")
                 }
@@ -138,8 +145,8 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
             }
         }
 
-        try await notesIndexStore.upsertNote(NoteIndexRow(storedNote: note))
-        try await syncAttachmentIndexRows(noteID: noteID, ciphertexts: note.attachmentCiphertexts)
+        try await notesIndexStore.upsertNote(NoteIndexRow(storedNote: storedNote))
+        try await syncAttachmentIndexRows(noteID: noteID, ciphertexts: storedNote.attachmentCiphertexts)
 
         if fileManager.fileExists(atPath: finalDirectoryURL.path) {
             _ = try fileManager.replaceItemAt(finalDirectoryURL, withItemAt: tempDirectoryURL)
@@ -173,14 +180,7 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
             attachmentCiphertexts[attachmentID] = try encryptAttachmentFile(plaintext, with: fek)
         }
 
-        let updatedMetadata = NoteMetadata(
-            noteID: note.metadata.noteID,
-            title: note.metadata.title,
-            createdAt: note.metadata.createdAt,
-            updatedAt: note.metadata.updatedAt,
-            attachmentCount: UInt32(attachmentCiphertexts.count),
-            attachmentsTotalSize: attachmentCiphertexts.values.reduce(0) { $0 + UInt64($1.count) }
-        )
+        let updatedMetadata = note.metadata.withStoredAttachmentManifest(attachmentCiphertexts)
 
         let migratedNote = StoredNote(
             metadata: updatedMetadata,

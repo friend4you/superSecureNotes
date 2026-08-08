@@ -10,7 +10,7 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         super.tearDown()
     }
 
-    func testUploadNotePutsBodyThenEachAttachment() async throws {
+    func testUploadNoteUploadsAttachmentsBeforeBody() async throws {
         let log = RequestLog()
         let noteID = NoteFixtures.noteID
         let attachmentID1 = UUID(uuidString: "880E8400-E29B-41D4-A716-446655440010")!
@@ -76,15 +76,20 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         let result = try await repository.uploadNote(note)
 
         XCTAssertEqual(result.syncState, .synced)
-        XCTAssertEqual(log.method(at: 0), "PUT")
-        XCTAssertEqual(log.path(at: 0), bodyPath)
-        let bodySections = try parseNoteFile(try XCTUnwrap(log.bodyData(at: 0)))
+        XCTAssertEqual(log.method(at: 0), "GET")
+        XCTAssertEqual(log.path(at: 0), "/v1/notes/\(noteID.uuidString.lowercased())/attachments")
+
+        let bodyIndex = try XCTUnwrap(log.paths.firstIndex(of: bodyPath))
+        let attachmentPaths = log.paths.filter { $0 == attachmentPath1 || $0 == attachmentPath2 }
+        XCTAssertEqual(Set(attachmentPaths), Set([attachmentPath1, attachmentPath2]))
+        XCTAssertEqual(log.paths.last, bodyPath)
+        XCTAssertLessThan(attachmentPaths.map { log.paths.firstIndex(of: $0)! }.max()!, bodyIndex)
+
+        let bodySections = try parseNoteFile(try XCTUnwrap(log.bodyData(at: bodyIndex)))
         XCTAssertEqual(bodySections.metadata, note.metadata)
         XCTAssertEqual(bodySections.wrappedFEK, note.wrappedFEK)
         XCTAssertEqual(bodySections.encryptedPayload, note.encryptedPayload)
 
-        let attachmentPaths = log.paths.filter { $0 == attachmentPath1 || $0 == attachmentPath2 }
-        XCTAssertEqual(Set(attachmentPaths), Set([attachmentPath1, attachmentPath2]))
         XCTAssertEqual(log.count, 4)
         XCTAssertFalse(log.paths.contains(monolithicPath))
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
@@ -184,7 +189,7 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
 
         _ = try await repository.uploadNote(note)
 
-        XCTAssertEqual(log.path(at: 0), bodyPath)
+        XCTAssertEqual(log.paths.last, bodyPath)
         XCTAssertEqual(log.method(at: 1), "POST")
         XCTAssertEqual(log.path(at: 1), initPath)
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/0") })
@@ -244,9 +249,10 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
 
         _ = try await repository.uploadNote(note)
 
-        XCTAssertEqual(log.path(at: 0), bodyPath)
+        XCTAssertEqual(log.paths.last, bodyPath)
         XCTAssertEqual(log.paths.filter { $0 == attachmentPath }.count, 1)
-        XCTAssertEqual(log.bodyData(at: 1)?.count, NoteUploadSizeThreshold)
+        let attachmentIndex = try XCTUnwrap(log.paths.firstIndex(of: attachmentPath))
+        XCTAssertEqual(log.bodyData(at: attachmentIndex)?.count, NoteUploadSizeThreshold)
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
     }
 
@@ -271,9 +277,9 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
 
         try await repository.writeNote(NoteFixtures.sampleStoredNote)
 
-        XCTAssertEqual(log.method(at: 0), "PUT")
+        XCTAssertEqual(log.method(at: 0), "GET")
         XCTAssertEqual(
-            log.path(at: 0),
+            log.path(at: 1),
             "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body"
         )
         XCTAssertFalse(log.paths.contains("/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())"))

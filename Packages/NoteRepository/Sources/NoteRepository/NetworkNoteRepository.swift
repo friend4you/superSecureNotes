@@ -84,25 +84,28 @@ public actor NetworkNoteRepository: NoteRepository {
             throw NoteRepositoryError.validationError("Note must not be empty.")
         }
 
+        let metadata = note.metadata.withStoredAttachmentManifest(note.attachmentCiphertexts)
         let bodyData = try assembleNoteFile(
-            metadata: note.metadata,
+            metadata: metadata,
             wrappedFEK: note.wrappedFEK,
             encryptedPayload: note.encryptedPayload
         )
         let accessToken = try await tokenProvider.accessToken()
-        var result = try await apiClient.writeBody(
-            noteID: note.metadata.noteID,
-            data: bodyData,
-            accessToken: accessToken,
-            ifMatch: etag
+        let noteID = metadata.noteID
+
+        try await deleteRemovedAttachments(
+            noteID: noteID,
+            localAttachmentIDs: Set(note.attachmentCiphertexts.keys),
+            accessToken: accessToken
         )
 
+        var result = NoteUploadResult(syncState: .pendingSync, updatedAt: metadata.updatedAt, etag: nil)
         let attachmentEntries = note.attachmentCiphertexts.sorted {
             $0.key.uuidString.lowercased() < $1.key.uuidString.lowercased()
         }
         for (attachmentID, ciphertext) in attachmentEntries {
             let attachmentResult = try await uploadAttachment(
-                noteID: note.metadata.noteID,
+                noteID: noteID,
                 attachmentID: attachmentID,
                 ciphertext: ciphertext,
                 accessToken: accessToken,
@@ -118,13 +121,17 @@ public actor NetworkNoteRepository: NoteRepository {
             }
         }
 
-        try await deleteRemovedAttachments(
-            noteID: note.metadata.noteID,
-            localAttachmentIDs: Set(note.attachmentCiphertexts.keys),
-            accessToken: accessToken
+        let bodyResult = try await apiClient.writeBody(
+            noteID: noteID,
+            data: bodyData,
+            accessToken: accessToken,
+            ifMatch: etag
         )
-
-        return result
+        return NoteUploadResult(
+            syncState: bodyResult.syncState,
+            updatedAt: bodyResult.updatedAt,
+            etag: bodyResult.etag ?? result.etag
+        )
     }
 
     private func deleteRemovedAttachments(
