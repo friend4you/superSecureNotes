@@ -17,6 +17,7 @@ struct NoteDeleteSyncEntry: Sendable {
 protocol NoteSyncLocalStoring: Actor, NoteUploadSessionStoring, AttachmentUploadSessionStoring {
     func uploadCandidates() async throws -> [NoteSyncUploadCandidate]
     func pendingDeleteEntries() async throws -> [NoteDeleteSyncEntry]
+    func listNoteSummaries() async throws -> [NoteSummary]
     func markNoteSynced(noteID: UUID, updatedAt: UInt64, etag: String?) async throws
     func finalizeDeletedNote(noteID: UUID) async throws
     func replaceNoteWithRemote(_ note: StoredNote, etag: String?) async throws
@@ -54,7 +55,7 @@ protocol AttachmentUploadSessionStoring: Actor {
 }
 
 protocol NoteSyncRemoteStoring: Actor {
-    func listNotes() async throws -> [NoteSummary]
+    func listNotes(includeDeleted: Bool) async throws -> [NoteSummary]
     func uploadNote(
         _ note: StoredNote,
         ifMatch etag: String?,
@@ -94,6 +95,10 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
         try await requireOpen()
         let rows = try await notesIndexStore.listRows(withSyncState: .pendingDelete)
         return rows.map { NoteDeleteSyncEntry(noteID: $0.noteID, etag: $0.etag) }
+    }
+
+    func listNoteSummaries() async throws -> [NoteSummary] {
+        try await listNotes()
     }
 
     func markNoteSynced(noteID: UUID, updatedAt: UInt64, etag: String?) async throws {

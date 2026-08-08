@@ -12,12 +12,19 @@ struct NoteAPIClient {
         self.decoder = NoteJSON.makeDecoder()
     }
 
-    func listNotes(accessToken: String) async throws -> [NoteSummary] {
-        let request = try makeAuthorizedRequest(
-            path: "notes",
-            method: "GET",
-            accessToken: accessToken
-        )
+    func listNotes(accessToken: String, includeDeleted: Bool = false) async throws -> [NoteSummary] {
+        var url = baseURL.appending(path: "notes")
+        if includeDeleted {
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+            components.queryItems = [URLQueryItem(name: "includeDeleted", value: "true")]
+            guard let queryURL = components.url else {
+                throw NoteRepositoryError.validationError("Invalid notes list URL.")
+            }
+            url = queryURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         let data = try await perform(request, expectedSuccessCodes: [200])
         let response = try decoder.decode([NoteSummaryResponseDTO].self, from: data)
         return try response.map { dto in

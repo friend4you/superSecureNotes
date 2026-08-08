@@ -41,6 +41,18 @@ public struct NoteMetadata: Equatable, Sendable {
         )
     }
 
+    /// Returns metadata with a zero attachment manifest for the initial body PUT on new notes.
+    public func withZeroAttachmentManifest() -> NoteMetadata {
+        NoteMetadata(
+            noteID: noteID,
+            title: title,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            attachmentCount: 0,
+            attachmentsTotalSize: 0
+        )
+    }
+
     public static func fromNoteFile(_ data: Data) throws -> NoteMetadata {
         try parseNoteFile(data).metadata
     }

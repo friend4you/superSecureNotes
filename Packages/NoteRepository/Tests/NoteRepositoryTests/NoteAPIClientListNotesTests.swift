@@ -26,6 +26,21 @@ final class NoteAPIClientListNotesTests: XCTestCase {
         XCTAssertEqual(notes, [NoteFixtures.sampleSummary])
     }
 
+    func testListNotesSendsIncludeDeletedQueryWhenRequested() async throws {
+        var capturedURL: URL?
+        URLProtocolStub.requestHandler = { request in
+            capturedURL = request.url
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            return (response, NoteFixtures.listNotesJSON())
+        }
+
+        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
+        _ = try await client.listNotes(accessToken: NoteFixtures.accessToken, includeDeleted: true)
+
+        XCTAssertEqual(capturedURL?.path, "/v1/notes")
+        XCTAssertEqual(capturedURL?.query, "includeDeleted=true")
+    }
+
     func testListNotesReturnsEmptyArray() async throws {
         URLProtocolStub.requestHandler = { request in
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)

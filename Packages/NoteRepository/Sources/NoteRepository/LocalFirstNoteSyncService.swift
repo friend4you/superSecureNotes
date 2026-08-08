@@ -57,6 +57,7 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     public func flushPending() async {
         await flushUploads()
         await flushDeletes()
+        await pullRemoteChanges()
     }
 
     public func pullVaultHeaderIfLocalMissing() async throws -> Data? {
@@ -96,10 +97,39 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     }
 
     private func importRemoteNotes() async throws {
-        let summaries = try await remoteNotes.listNotes()
+        let summaries = try await remoteNotes.listNotes(includeDeleted: false)
         for summary in summaries {
             let note = try await remoteNotes.readNote(noteID: summary.noteID)
             try await localNotes.importSyncedNote(note, etag: summary.etag)
+        }
+    }
+
+    private func pullRemoteChanges() async {
+        guard let remoteSummaries = try? await remoteNotes.listNotes(includeDeleted: true) else {
+            return
+        }
+        guard let localSummaries = try? await localNotes.listNoteSummaries() else {
+            return
+        }
+
+        let localByID = Dictionary(uniqueKeysWithValues: localSummaries.map { ($0.noteID, $0) })
+
+        for summary in remoteSummaries {
+            if let local = localByID[summary.noteID], local.syncState == .pendingSync {
+                continue
+            }
+            if let local = localByID[summary.noteID], local.etag == summary.etag {
+                continue
+            }
+
+            do {
+                let note = try await remoteNotes.readNote(noteID: summary.noteID)
+                try await localNotes.importSyncedNote(note, etag: summary.etag)
+            } catch NoteRepositoryError.noteNotFound {
+                try? await localNotes.finalizeDeletedNote(noteID: summary.noteID)
+            } catch {
+                continue
+            }
         }
     }
 

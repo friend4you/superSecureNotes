@@ -56,6 +56,9 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
 
@@ -124,7 +127,7 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
             "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
         XCTAssertEqual(log.method(at: 0), "GET")
         XCTAssertTrue(log.paths.contains(attachmentPath))
-        XCTAssertEqual(log.paths.last, bodyPath)
+        XCTAssertTrue(log.paths.contains(bodyPath))
 
         let ciphertext = try XCTUnwrap(migrated.attachmentCiphertexts[attachmentID])
         XCTAssertEqual(try decryptAttachmentFile(ciphertext, with: fek), plaintextAttachment)
@@ -157,6 +160,9 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             if path == bodyPath {

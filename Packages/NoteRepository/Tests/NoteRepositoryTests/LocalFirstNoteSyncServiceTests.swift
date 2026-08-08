@@ -28,6 +28,9 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
 
         URLProtocolStub.requestHandler = { request in
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
@@ -69,6 +72,9 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             requestCounter.increment()
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
@@ -87,7 +93,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         await syncService.flushPending()
 
-        XCTAssertEqual(requestCounter.value, 2)
+        XCTAssertEqual(requestCounter.value, 4)
     }
 
     func testFlushRetriesUploadWhenLocalNewerAfter409() async throws {
@@ -96,6 +102,9 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         var putAttempts = 0
 
         URLProtocolStub.requestHandler = { request in
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             switch request.httpMethod {
             case "PUT":
@@ -163,6 +172,9 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         var putAttempts = 0
 
         URLProtocolStub.requestHandler = { request in
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             switch request.httpMethod {
             case "PUT":
@@ -216,10 +228,13 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
     func testFlushDeletesRemotePendingDeleteNote() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440034")!
         let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
-        let captured = RequestCapture()
+        let log = RequestLog()
 
         URLProtocolStub.requestHandler = { request in
-            captured.record(request)
+            log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
             return (response, nil)
         }
@@ -235,8 +250,13 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         await syncService.flushPending()
 
-        XCTAssertEqual(captured.method, "DELETE")
-        XCTAssertEqual(captured.path, "/v1/notes/\(noteID.uuidString.lowercased())")
+        XCTAssertTrue(
+            log.paths.contains("/v1/notes/\(noteID.uuidString.lowercased())")
+        )
+        let deleteIndex = try XCTUnwrap(
+            log.paths.firstIndex(of: "/v1/notes/\(noteID.uuidString.lowercased())")
+        )
+        XCTAssertEqual(log.method(at: deleteIndex), "DELETE")
         let rowAfterFlush = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertNil(rowAfterFlush)
     }

@@ -90,7 +90,7 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         XCTAssertEqual(bodySections.wrappedFEK, note.wrappedFEK)
         XCTAssertEqual(bodySections.encryptedPayload, note.encryptedPayload)
 
-        XCTAssertEqual(log.count, 4)
+        XCTAssertEqual(log.count, 5)
         XCTAssertFalse(log.paths.contains(monolithicPath))
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
 
@@ -99,6 +99,84 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         let bodiesByPath = Dictionary(uniqueKeysWithValues: putBodies)
         XCTAssertEqual(bodiesByPath[attachmentPath1], ciphertext1)
         XCTAssertEqual(bodiesByPath[attachmentPath2], ciphertext2)
+    }
+
+    func testUploadNoteBootstrapsBodyBeforeAttachmentsWhenNoteNotOnServer() async throws {
+        let log = RequestLog()
+        let noteID = NoteFixtures.noteID
+        let attachmentID = UUID(uuidString: "880E8400-E29B-41D4-A716-446655440012")!
+        let ciphertext = Data(repeating: 0x33, count: 64)
+        let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
+        let attachmentPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+        let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
+
+        let note = StoredNote(
+            metadata: NoteMetadata(
+                noteID: noteID,
+                title: "New note with attachment",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 1,
+                attachmentsTotalSize: UInt64(ciphertext.count)
+            ),
+            wrappedFEK: Data(repeating: 0xAB, count: 60),
+            encryptedPayload: Data(repeating: 0xCD, count: 128),
+            syncState: .pendingSync,
+            attachmentCiphertexts: [attachmentID: ciphertext]
+        )
+
+        var bodyPutCount = 0
+        URLProtocolStub.requestHandler = { request in
+            log.record(request)
+            let path = request.url!.path
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+
+            if path == manifestPath && request.httpMethod == "GET" {
+                return (
+                    TestHTTP.makeResponse(url: request.url!, statusCode: 404),
+                    NoteFixtures.errorJSON(error: "note_not_found", message: "Note not found.")
+                )
+            }
+
+            if path == bodyPath && request.httpMethod == "PUT" {
+                bodyPutCount += 1
+                let bodyData = try XCTUnwrap(TestHTTP.bodyData(from: request))
+                let sections = try parseNoteFile(bodyData)
+                if bodyPutCount == 1 {
+                    XCTAssertEqual(sections.metadata.attachmentCount, 0)
+                    XCTAssertEqual(sections.metadata.attachmentsTotalSize, 0)
+                    return (response, NoteFixtures.writeNoteResponseJSON(etag: #"W/"bootstrap-etag""#))
+                }
+                XCTAssertEqual(sections.metadata.attachmentCount, 1)
+                XCTAssertEqual(sections.metadata.attachmentsTotalSize, UInt64(ciphertext.count))
+                XCTAssertEqual(request.value(forHTTPHeaderField: "If-Match"), #"W/"bootstrap-etag""#)
+                return (response, NoteFixtures.writeNoteResponseJSON(etag: #"W/"final-etag""#))
+            }
+
+            if path == attachmentPath && request.httpMethod == "PUT" {
+                return (response, NoteFixtures.writeAttachmentResponseJSON(noteEtag: #"W/"note-etag""#))
+            }
+
+            XCTFail("Unexpected path: \(path)")
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+        }
+
+        let repository = NetworkNoteRepository(
+            baseURL: NoteFixtures.baseURL,
+            tokenProvider: MockTokenProvider(),
+            session: .stubbed()
+        )
+
+        let result = try await repository.uploadNote(note)
+
+        XCTAssertEqual(result.etag, #"W/"final-etag""#)
+        XCTAssertEqual(log.method(at: 0), "GET")
+        XCTAssertEqual(log.path(at: 0), manifestPath)
+        XCTAssertEqual(log.path(at: 1), bodyPath)
+        XCTAssertEqual(log.path(at: 2), attachmentPath)
+        XCTAssertEqual(log.paths.last, bodyPath)
+        XCTAssertEqual(bodyPutCount, 2)
     }
 
     func testUploadNoteUsesChunkedPathWhenAttachmentExceedsThreshold() async throws {
@@ -190,8 +268,8 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         _ = try await repository.uploadNote(note)
 
         XCTAssertEqual(log.paths.last, bodyPath)
-        XCTAssertEqual(log.method(at: 1), "POST")
-        XCTAssertEqual(log.path(at: 1), initPath)
+        XCTAssertEqual(log.method(at: 2), "POST")
+        XCTAssertEqual(log.path(at: 2), initPath)
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/0") })
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/1") })
         XCTAssertTrue(log.paths.contains { $0.hasSuffix("/complete") })
@@ -278,8 +356,9 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         try await repository.writeNote(NoteFixtures.sampleStoredNote)
 
         XCTAssertEqual(log.method(at: 0), "GET")
+        XCTAssertEqual(log.method(at: 1), "GET")
         XCTAssertEqual(
-            log.path(at: 1),
+            log.path(at: 2),
             "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body"
         )
         XCTAssertFalse(log.paths.contains("/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())"))

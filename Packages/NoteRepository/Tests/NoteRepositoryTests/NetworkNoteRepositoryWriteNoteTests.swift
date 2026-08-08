@@ -128,7 +128,8 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
         _ = try await repository.uploadNote(NoteFixtures.sampleStoredNote)
 
         XCTAssertEqual(log.method(at: 0), "GET")
-        XCTAssertEqual(log.path(at: 1), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
+        XCTAssertEqual(log.method(at: 1), "GET")
+        XCTAssertEqual(log.path(at: 2), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
     }
 
@@ -159,7 +160,8 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
         _ = try await repository.uploadNote(note)
 
         XCTAssertEqual(log.method(at: 0), "GET")
-        XCTAssertEqual(log.path(at: 1), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
+        XCTAssertEqual(log.method(at: 1), "GET")
+        XCTAssertEqual(log.path(at: 2), "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body")
         XCTAssertFalse(log.paths.contains { $0.contains("/uploads") })
         let bodyIndex = try XCTUnwrap(log.paths.firstIndex {
             $0 == "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body"

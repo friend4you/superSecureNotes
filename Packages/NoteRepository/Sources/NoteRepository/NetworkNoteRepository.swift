@@ -22,8 +22,12 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func listNotes() async throws -> [NoteSummary] {
+        try await listNotes(includeDeleted: false)
+    }
+
+    func listNotes(includeDeleted: Bool) async throws -> [NoteSummary] {
         let accessToken = try await tokenProvider.accessToken()
-        return try await apiClient.listNotes(accessToken: accessToken)
+        return try await apiClient.listNotes(accessToken: accessToken, includeDeleted: includeDeleted)
     }
 
     public func readNote(noteID: UUID) async throws -> StoredNote {
@@ -85,19 +89,37 @@ public actor NetworkNoteRepository: NoteRepository {
         }
 
         let metadata = note.metadata.withStoredAttachmentManifest(note.attachmentCiphertexts)
-        let bodyData = try assembleNoteFile(
+        let finalBodyData = try assembleNoteFile(
             metadata: metadata,
             wrappedFEK: note.wrappedFEK,
             encryptedPayload: note.encryptedPayload
         )
         let accessToken = try await tokenProvider.accessToken()
         let noteID = metadata.noteID
+        let hasAttachments = !note.attachmentCiphertexts.isEmpty
+        let noteExistsOnServer = try await noteExistsOnServer(noteID: noteID, accessToken: accessToken)
+        var bodyIfMatch = etag
 
-        try await deleteRemovedAttachments(
-            noteID: noteID,
-            localAttachmentIDs: Set(note.attachmentCiphertexts.keys),
-            accessToken: accessToken
-        )
+        if !noteExistsOnServer, hasAttachments {
+            let bootstrapBodyData = try assembleNoteFile(
+                metadata: metadata.withZeroAttachmentManifest(),
+                wrappedFEK: note.wrappedFEK,
+                encryptedPayload: note.encryptedPayload
+            )
+            let bootstrapResult = try await apiClient.writeBody(
+                noteID: noteID,
+                data: bootstrapBodyData,
+                accessToken: accessToken,
+                ifMatch: nil
+            )
+            bodyIfMatch = bootstrapResult.etag ?? bodyIfMatch
+        } else if noteExistsOnServer {
+            try await deleteRemovedAttachments(
+                noteID: noteID,
+                localAttachmentIDs: Set(note.attachmentCiphertexts.keys),
+                accessToken: accessToken
+            )
+        }
 
         var result = NoteUploadResult(syncState: .pendingSync, updatedAt: metadata.updatedAt, etag: nil)
         let attachmentEntries = note.attachmentCiphertexts.sorted {
@@ -123,15 +145,24 @@ public actor NetworkNoteRepository: NoteRepository {
 
         let bodyResult = try await apiClient.writeBody(
             noteID: noteID,
-            data: bodyData,
+            data: finalBodyData,
             accessToken: accessToken,
-            ifMatch: etag
+            ifMatch: bodyIfMatch
         )
         return NoteUploadResult(
             syncState: bodyResult.syncState,
             updatedAt: bodyResult.updatedAt,
             etag: bodyResult.etag ?? result.etag
         )
+    }
+
+    private func noteExistsOnServer(noteID: UUID, accessToken: String) async throws -> Bool {
+        do {
+            _ = try await apiClient.listAttachments(noteID: noteID, accessToken: accessToken)
+            return true
+        } catch NoteRepositoryError.noteNotFound {
+            return false
+        }
     }
 
     private func deleteRemovedAttachments(

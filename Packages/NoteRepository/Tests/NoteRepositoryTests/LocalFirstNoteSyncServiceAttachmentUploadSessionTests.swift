@@ -36,6 +36,9 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
 
             if path == bodyPath {
@@ -123,6 +126,9 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
 
             if path == bodyPath {

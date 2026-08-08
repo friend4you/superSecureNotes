@@ -346,7 +346,7 @@ private actor HydrationRemoteStub: NoteSyncRemoteStoring {
         self.probe = probe
     }
 
-    func listNotes() async throws -> [NoteSummary] { [] }
+    func listNotes(includeDeleted: Bool) async throws -> [NoteSummary] { [] }
 
     func uploadNote(
         _ note: StoredNote,

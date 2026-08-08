@@ -79,6 +79,15 @@ enum NoteFixtures {
         )
     }
 
+    /// Handles `GET /notes` from post-push catalog pull in sync tests.
+    static func pullCatalogGETResponse(for request: URLRequest) -> (HTTPURLResponse, Data?)? {
+        guard request.httpMethod == "GET", request.url?.path == "/v1/notes" else {
+            return nil
+        }
+        let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+        return (response, listNotesJSON(summaries: []))
+    }
+
     static func writeNoteResponseJSON(
         syncState: String = "synced",
         updatedAt: UInt64 = 1_700_000_100,

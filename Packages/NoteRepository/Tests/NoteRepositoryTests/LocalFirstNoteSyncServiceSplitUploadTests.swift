@@ -39,6 +39,9 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
 
@@ -128,6 +131,9 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
+            if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+                return response
+            }
             let path = request.url!.path
 
             if path == bodyPath {
@@ -198,7 +204,7 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
         let deleteIndex = try XCTUnwrap(log.paths.firstIndex(of: removedPath))
         XCTAssertLessThan(deleteIndex, attachmentIndex)
         XCTAssertLessThan(attachmentIndex, bodyIndex)
-        XCTAssertEqual(log.paths.last, bodyPath)
+        XCTAssertTrue(log.paths.contains(bodyPath))
 
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .synced)

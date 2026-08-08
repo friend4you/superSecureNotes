@@ -236,6 +236,9 @@ final class LocalFirstNoteSyncServiceChunkedUploadTests: XCTestCase {
         chunkSize: Int,
         failChunkIndex: Int?
     ) throws -> (HTTPURLResponse, Data?) {
+        if let response = NoteFixtures.pullCatalogGETResponse(for: request) {
+            return response
+        }
         let path = request.url!.path
         let initPath =
             "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads"
