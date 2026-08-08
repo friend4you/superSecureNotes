@@ -36,12 +36,7 @@ struct NoteAPIClient {
     }
 
     func readNote(noteID: UUID, accessToken: String) async throws -> Data {
-        let request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())",
-            method: "GET",
-            accessToken: accessToken
-        )
-        return try await perform(request, expectedSuccessCodes: [200])
+        throw NoteRepositoryError.notSupported
     }
 
     func writeNote(
@@ -50,29 +45,7 @@ struct NoteAPIClient {
         accessToken: String,
         ifMatch etag: String? = nil
     ) async throws -> NoteUploadResult {
-        var request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())",
-            method: "PUT",
-            accessToken: accessToken
-        )
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        if let etag {
-            request.setValue(etag, forHTTPHeaderField: "If-Match")
-        }
-        request.httpBody = data
-        let responseData = try await perform(request, expectedSuccessCodes: [200, 204])
-        if responseData.isEmpty {
-            return NoteUploadResult(syncState: .synced, updatedAt: 0, etag: nil)
-        }
-        let response = try decoder.decode(NoteWriteResponseDTO.self, from: responseData)
-        guard let syncState = NoteSyncState(rawValue: response.syncState) else {
-            throw NoteRepositoryError.validationError("Invalid sync state in upload response.")
-        }
-        return NoteUploadResult(
-            syncState: syncState,
-            updatedAt: response.updatedAt,
-            etag: response.etag
-        )
+        throw NoteRepositoryError.notSupported
     }
 
     func readBody(noteID: UUID, accessToken: String) async throws -> Data {
@@ -247,23 +220,7 @@ struct NoteAPIClient {
         totalSize: Int,
         accessToken: String
     ) async throws -> NoteUploadSession {
-        var request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())/uploads",
-            method: "POST",
-            accessToken: accessToken
-        )
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["totalSize": totalSize])
-        let responseData = try await perform(request, expectedSuccessCodes: [200, 201])
-        let response = try decoder.decode(NoteUploadInitResponseDTO.self, from: responseData)
-        guard let uploadID = UUID(uuidString: response.uploadId) else {
-            throw NoteRepositoryError.validationError("Invalid upload ID in init response.")
-        }
-        return NoteUploadSession(
-            uploadID: uploadID,
-            chunkSize: response.chunkSize,
-            totalChunks: response.totalChunks
-        )
+        throw NoteRepositoryError.notSupported
     }
 
     func uploadChunk(
@@ -273,14 +230,7 @@ struct NoteAPIClient {
         data: Data,
         accessToken: String
     ) async throws {
-        var request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())/uploads/\(uploadID.uuidString.lowercased())/chunks/\(chunkIndex)",
-            method: "PUT",
-            accessToken: accessToken
-        )
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.httpBody = data
-        _ = try await perform(request, expectedSuccessCodes: [204])
+        throw NoteRepositoryError.notSupported
     }
 
     func completeUpload(
@@ -289,27 +239,7 @@ struct NoteAPIClient {
         accessToken: String,
         ifMatch etag: String? = nil
     ) async throws -> NoteUploadResult {
-        var request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())/uploads/\(uploadID.uuidString.lowercased())/complete",
-            method: "POST",
-            accessToken: accessToken
-        )
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let etag {
-            request.httpBody = try JSONSerialization.data(withJSONObject: ["ifMatch": etag])
-        } else {
-            request.httpBody = try JSONSerialization.data(withJSONObject: [:])
-        }
-        let responseData = try await perform(request, expectedSuccessCodes: [200])
-        let response = try decoder.decode(NoteWriteResponseDTO.self, from: responseData)
-        guard let syncState = NoteSyncState(rawValue: response.syncState) else {
-            throw NoteRepositoryError.validationError("Invalid sync state in upload response.")
-        }
-        return NoteUploadResult(
-            syncState: syncState,
-            updatedAt: response.updatedAt,
-            etag: response.etag
-        )
+        throw NoteRepositoryError.notSupported
     }
 
     func deleteNote(noteID: UUID, accessToken: String) async throws {

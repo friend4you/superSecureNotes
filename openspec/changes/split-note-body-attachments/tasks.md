@@ -72,10 +72,10 @@
 
 ## 9. App composition and cleanup
 
-- [ ] 9.1 Write failing tests: `NotesFlowDependencies` passes hydration/progress source from sync service (`NotesFlowDependenciesSplitTests`)
-- [ ] 9.2 Wire dependencies in `AppComposition`; make tests pass
-- [ ] 9.3 Write failing tests: dead monolithic note upload paths are not called (`NetworkNoteRepositoryLegacyPathRemovalTests`)
-- [ ] 9.4 Remove or no-op legacy `/v1/notes/{id}` content upload/read; make tests pass
+- [x] 9.1 Write failing tests: `NotesFlowDependencies` passes hydration/progress source from sync service (`NotesFlowDependenciesSplitTests`)
+- [x] 9.2 Wire dependencies in `AppComposition`; make tests pass
+- [x] 9.3 Write failing tests: dead monolithic note upload paths are not called (`NetworkNoteRepositoryLegacyPathRemovalTests`)
+- [x] 9.4 Remove or no-op legacy `/v1/notes/{id}` content upload/read; make tests pass
 
 ## 10. Manual verification
 

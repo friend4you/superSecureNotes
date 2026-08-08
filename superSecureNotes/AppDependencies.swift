@@ -57,7 +57,15 @@ final class AppDependencies {
             localNotes: localNoteRepository,
             remoteNotes: networkNoteRepository,
             localVault: localVaultRepository,
-            remoteVault: networkVaultRepository
+            remoteVault: networkVaultRepository,
+            noteFEKProvider: { noteID in
+                guard await vaultSession.isActive else {
+                    return nil
+                }
+                let udk = try await vaultSession.udk()
+                let note = try await localNoteRepository.readNote(noteID: noteID)
+                return try unwrapFEK(note.wrappedFEK, with: udk)
+            }
         )
     }
 }

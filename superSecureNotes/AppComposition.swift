@@ -56,14 +56,14 @@ final class AppComposition {
             authRepository: dependencies.authRepository,
             vaultSession: dependencies.vaultSession,
             navigator: navigation.navigator,
-            noteRepository: dependencies.networkNoteRepository,
+            noteRepository: dependencies.noteRepository,
             credentialStore: dependencies.credentialStore,
             noteSync: dependencies.noteSyncService,
             performLogout: performLogout
         )
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator,
-            noteRepository: dependencies.networkNoteRepository,
+            noteRepository: dependencies.noteRepository,
             vaultRepository: dependencies.networkVaultRepository,
             vaultSession: dependencies.vaultSession
         )
