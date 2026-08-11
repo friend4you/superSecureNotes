@@ -31,6 +31,8 @@ final class NoteAttachmentsSectionTests: XCTestCase {
 
         XCTAssertTrue(source.contains("openPreview(for: item)"))
         XCTAssertTrue(source.contains("onPreview(fileURL)"))
+        XCTAssertTrue(source.contains("onPreviewUnavailable(item.filename)"))
+        XCTAssertTrue(source.contains("AttachmentPreviewSupport.canPreview(fileURL: fileURL)"))
         XCTAssertTrue(source.contains("dataForPreview(item.id)"))
         XCTAssertTrue(source.contains("onTapGesture"))
         XCTAssertFalse(source.contains("fullScreenCover"))

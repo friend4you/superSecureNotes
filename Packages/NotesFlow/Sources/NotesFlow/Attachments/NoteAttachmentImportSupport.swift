@@ -4,6 +4,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 enum NoteAttachmentImportSupport {
+    static let fileImporterAllowedTypes: [UTType] = [.item]
+
     static func attachment(from item: PhotosPickerItem) async -> NotePayload.Attachment? {
         guard let photoData = try? await item.loadTransferable(type: PhotoPickerData.self) else {
             return nil

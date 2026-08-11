@@ -9,6 +9,7 @@ public struct NoteDetailView: View {
     @State private var showsFileImporter = false
     #if os(iOS)
     @State private var attachmentPreview: AttachmentPreviewPresentation?
+    @State private var previewUnavailableFilename: String?
     #endif
 
     public init(viewModel: DefaultNoteDetailViewModel) {
@@ -88,6 +89,11 @@ public struct NoteDetailView: View {
                     attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
                     #endif
                 },
+                onPreviewUnavailable: { filename in
+                    #if os(iOS)
+                    previewUnavailableFilename = filename
+                    #endif
+                },
                 progressByID: viewModel.attachmentProgressByID,
                 onRetry: { id in
                     Task {
@@ -98,6 +104,7 @@ public struct NoteDetailView: View {
         }
         #if os(iOS)
         .attachmentPreview($attachmentPreview)
+        .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.detail.title"))
         .toolbar {
@@ -137,7 +144,7 @@ public struct NoteDetailView: View {
         }
         .fileImporter(
             isPresented: $showsFileImporter,
-            allowedContentTypes: [.image, .pdf, .plainText],
+            allowedContentTypes: NoteAttachmentImportSupport.fileImporterAllowedTypes,
             allowsMultipleSelection: false
         ) { result in
             switch result {

@@ -5,6 +5,7 @@ struct NoteAttachmentsSection: View {
     let dataForPreview: (String) -> Data?
     let onRemove: (String) -> Void
     let onPreview: (URL) -> Void
+    var onPreviewUnavailable: (String) -> Void = { _ in }
     var allowsRemoval: Bool = true
     var progressByID: [String: AttachmentRowProgress] = [:]
     var onRetry: (String) -> Void = { _ in }
@@ -71,6 +72,11 @@ struct NoteAttachmentsSection: View {
 
         do {
             let fileURL = try previewStore.writePreviewFile(data: data, filename: item.filename)
+            guard AttachmentPreviewSupport.canPreview(fileURL: fileURL) else {
+                previewStore.deletePreviewFile(at: fileURL)
+                onPreviewUnavailable(item.filename)
+                return
+            }
             onPreview(fileURL)
         } catch {
             return

@@ -4,6 +4,7 @@ public struct SharedNoteDetailView: View {
     @Bindable private var viewModel: DefaultSharedNoteDetailViewModel
     #if os(iOS)
     @State private var attachmentPreview: AttachmentPreviewPresentation?
+    @State private var previewUnavailableFilename: String?
     #endif
 
     public init(viewModel: DefaultSharedNoteDetailViewModel) {
@@ -53,6 +54,11 @@ public struct SharedNoteDetailView: View {
                     attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
                     #endif
                 },
+                onPreviewUnavailable: { filename in
+                    #if os(iOS)
+                    previewUnavailableFilename = filename
+                    #endif
+                },
                 allowsRemoval: false,
                 progressByID: viewModel.attachmentProgressByID,
                 onRetry: { id in
@@ -64,6 +70,7 @@ public struct SharedNoteDetailView: View {
         }
         #if os(iOS)
         .attachmentPreview($attachmentPreview)
+        .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.shared.detail.title"))
         .task(id: viewModel.noteID) {

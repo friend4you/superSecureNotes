@@ -8,6 +8,7 @@ public struct CreateNoteView: View {
     @State private var showsFileImporter = false
     #if os(iOS)
     @State private var attachmentPreview: AttachmentPreviewPresentation?
+    @State private var previewUnavailableFilename: String?
     #endif
 
     public init(viewModel: DefaultCreateNoteViewModel) {
@@ -81,11 +82,17 @@ public struct CreateNoteView: View {
                     #if os(iOS)
                     attachmentPreview = AttachmentPreviewPresentation(fileURL: url)
                     #endif
+                },
+                onPreviewUnavailable: { filename in
+                    #if os(iOS)
+                    previewUnavailableFilename = filename
+                    #endif
                 }
             )
         }
         #if os(iOS)
         .attachmentPreview($attachmentPreview)
+        .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.create.title"))
         .toolbar {
@@ -100,7 +107,7 @@ public struct CreateNoteView: View {
         }
         .fileImporter(
             isPresented: $showsFileImporter,
-            allowedContentTypes: [.image, .pdf, .plainText],
+            allowedContentTypes: NoteAttachmentImportSupport.fileImporterAllowedTypes,
             allowsMultipleSelection: false
         ) { result in
             switch result {

@@ -14,6 +14,8 @@ final class LocalizationTests: XCTestCase {
         let keys = [
             "notes.attachments.remove",
             "notes.attachments.preview",
+            "notes.attachments.previewUnavailable.title",
+            "notes.attachments.previewUnavailable.message",
             "notes.detail.attachments",
             "notes.sync.pending",
             "notes.sync.synced",

@@ -91,8 +91,7 @@ final class CreateNoteViewTests: XCTestCase {
         XCTAssertTrue(source.contains(".fileImporter("))
         XCTAssertTrue(source.contains("importFile(from: url)"))
         XCTAssertTrue(source.contains("notes.create.addFile"))
-        XCTAssertTrue(source.contains(".plainText"))
-        XCTAssertTrue(source.contains(".pdf"))
+        XCTAssertTrue(source.contains("NoteAttachmentImportSupport.fileImporterAllowedTypes"))
     }
 
     func testCreateNoteViewSourceUsesSharedAttachmentsSection() throws {

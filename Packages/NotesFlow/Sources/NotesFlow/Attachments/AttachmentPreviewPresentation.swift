@@ -31,5 +31,32 @@ extension View {
     func attachmentPreview(_ presentation: Binding<AttachmentPreviewPresentation?>) -> some View {
         modifier(AttachmentPreviewModifier(presentation: presentation))
     }
+
+    func attachmentPreviewUnavailableAlert(filename: Binding<String?>) -> some View {
+        alert(
+            NotesFlowUILocalization.localized("notes.attachments.previewUnavailable.title"),
+            isPresented: Binding(
+                get: { filename.wrappedValue != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        filename.wrappedValue = nil
+                    }
+                }
+            )
+        ) {
+            Button(NotesFlowUILocalization.localized("common.close"), role: .cancel) {}
+        } message: {
+            if let unavailableFilename = filename.wrappedValue {
+                Text(
+                    String(
+                        format: NotesFlowUILocalization.localized(
+                            "notes.attachments.previewUnavailable.message"
+                        ),
+                        unavailableFilename
+                    )
+                )
+            }
+        }
+    }
 }
 #endif

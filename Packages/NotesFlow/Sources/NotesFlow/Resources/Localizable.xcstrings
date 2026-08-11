@@ -112,6 +112,26 @@
         }
       }
     },
+    "notes.attachments.previewUnavailable.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Look cannot open \"%@\"."
+          }
+        }
+      }
+    },
+    "notes.attachments.previewUnavailable.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot Preview"
+          }
+        }
+      }
+    },
     "notes.create.addFile" : {
       "localizations" : {
         "en" : {

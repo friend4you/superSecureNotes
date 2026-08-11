@@ -1,4 +1,5 @@
 import NotesFlow
+import UniformTypeIdentifiers
 import XCTest
 
 @testable import NotesFlow
@@ -30,6 +31,23 @@ final class AttachmentPreviewTests: XCTestCase {
 
         XCTAssertTrue(source.contains("QLPreviewController"))
         XCTAssertTrue(source.contains("#if os(iOS)"))
+    }
+
+    func testCanPreviewReturnsTrueForPlainTextFile() throws {
+        #if !os(iOS)
+        throw XCTSkip("Quick Look preview availability is validated on iOS.")
+        #endif
+
+        let store = AttachmentPreviewStore()
+        let fileURL = try store.writePreviewFile(data: Data("preview".utf8), filename: "sample.txt")
+
+        XCTAssertTrue(AttachmentPreviewSupport.canPreview(fileURL: fileURL))
+
+        store.deletePreviewFile(at: fileURL)
+    }
+
+    func testFileImporterAllowsAnyItemType() {
+        XCTAssertEqual(NoteAttachmentImportSupport.fileImporterAllowedTypes, [.item])
     }
 
     private static func quickLookPreviewSource() throws -> String {
