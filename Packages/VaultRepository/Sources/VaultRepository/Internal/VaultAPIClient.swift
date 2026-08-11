@@ -83,25 +83,24 @@ public struct VaultAPIClient {
     }
 
     private func perform(_ request: URLRequest, expectedSuccessCodes: Set<Int>) async throws -> Data {
-        let data: Data
-        let response: URLResponse
+        let refreshHandler = Self.makeRefreshHandler(from: tokenProvider)
+        return try await AuthorizedHTTPPerform.data(
+            for: request,
+            session: session,
+            expectedSuccessCodes: expectedSuccessCodes,
+            refreshAccessToken: refreshHandler,
+            mapTransportError: { VaultRepositoryError.networkError },
+            mapHTTPError: mapError
+        )
+    }
 
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw VaultRepositoryError.networkError
+    private static func makeRefreshHandler(
+        from tokenProvider: any AccessTokenProviding
+    ) -> (@Sendable () async throws -> String)? {
+        guard let refreshing = tokenProvider as? any AccessTokenRefreshing else {
+            return nil
         }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw VaultRepositoryError.networkError
-        }
-
-        let statusCode = httpResponse.statusCode
-        if expectedSuccessCodes.contains(statusCode) {
-            return data
-        }
-
-        throw mapError(statusCode: statusCode, data: data)
+        return { try await refreshing.refreshAccessToken() }
     }
 
     private func mapError(statusCode: Int, data: Data) -> VaultRepositoryError {

@@ -1,4 +1,5 @@
 import AuthRepository
+import AuthFlowProtocol
 import AuthFlowUI
 import AuthRepositoryProtocol
 import CredentialStore
@@ -29,8 +30,13 @@ final class AppDependencies {
     let biometricAuthenticator: LocalAuthenticationBiometricAuthenticator
     let networkReachability: NWPathNetworkReachability
     let authRepository: any AuthRepository
+    let sessionExpiredNotifier: SessionExpiredNotifier
 
-    init() {
+    init(
+        sessionExpiredNotifier: SessionExpiredNotifier = SessionExpiredNotifier(),
+        localAppDataWiper: FileSystemLocalAppDataWiper = FileSystemLocalAppDataWiper()
+    ) {
+        self.sessionExpiredNotifier = sessionExpiredNotifier
         notesIndexStore = NotesIndexStore()
         let localNotes = LocalNoteRepository(notesIndexStore: notesIndexStore)
         localNoteRepository = localNotes
@@ -45,7 +51,22 @@ final class AppDependencies {
         networkReachability = NWPathNetworkReachability()
 
         authRepository = NetworkAuthRepository(baseURL: Self.apiBaseURL)
-        let tokenProvider = AuthRepositoryAccessTokenProvider(repository: authRepository)
+        let notifier = sessionExpiredNotifier
+        let onSessionExpired: @Sendable () async -> Void = { [authRepository, credentialStore, notesIndexStore, vaultSession] in
+            notifier.flagSessionExpired()
+            await LogoutReset.perform(
+                authRepository: authRepository,
+                vaultSession: vaultSession,
+                notesIndexStore: notesIndexStore,
+                credentialStore: credentialStore,
+                localAppDataWiper: localAppDataWiper
+            )
+        }
+        let tokenProvider = AuthRepositoryAccessTokenProvider(
+            repository: authRepository,
+            credentialStore: credentialStore,
+            onSessionExpired: onSessionExpired
+        )
         let vaultAPIClient = VaultAPIClient(
             baseURL: Self.apiBaseURL,
             tokenProvider: tokenProvider

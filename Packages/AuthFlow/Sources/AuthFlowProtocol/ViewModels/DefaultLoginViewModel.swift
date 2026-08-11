@@ -26,6 +26,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
     private let credentialStore: any CredentialStore
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
+    private let sessionExpiredNotifier: SessionExpiredNotifier
 
     public init(
         authRepository: any AuthRepository,
@@ -36,7 +37,8 @@ public final class DefaultLoginViewModel: LoginViewModel {
         navigator: any Navigating,
         credentialStore: any CredentialStore,
         networkReachability: any NetworkReachability,
-        noteSync: any NoteSyncing = NoOpNoteSyncService()
+        noteSync: any NoteSyncing = NoOpNoteSyncService(),
+        sessionExpiredNotifier: SessionExpiredNotifier = SessionExpiredNotifier()
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -47,6 +49,13 @@ public final class DefaultLoginViewModel: LoginViewModel {
         self.credentialStore = credentialStore
         self.networkReachability = networkReachability
         self.noteSync = noteSync
+        self.sessionExpiredNotifier = sessionExpiredNotifier
+    }
+
+    public func onAppear() {
+        if sessionExpiredNotifier.consumeSessionExpiredFlag() {
+            state = .failure(.sessionExpired)
+        }
     }
 
     public func registerTapped() {

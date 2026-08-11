@@ -20,6 +20,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
     private let performLogout: () async -> Void
+    private let sessionExpiredNotifier: SessionExpiredNotifier
 
     public init(
         authRepository: any AuthRepository,
@@ -32,6 +33,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         biometricAuthenticator: any BiometricAuthenticator,
         networkReachability: any NetworkReachability,
         noteSync: any NoteSyncing = NoOpNoteSyncService(),
+        sessionExpiredNotifier: SessionExpiredNotifier = SessionExpiredNotifier(),
         performLogout: @escaping () async -> Void = {}
     ) {
         self.authRepository = authRepository
@@ -44,6 +46,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
         self.noteSync = noteSync
+        self.sessionExpiredNotifier = sessionExpiredNotifier
         self.performLogout = performLogout
     }
 
@@ -57,7 +60,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             navigator: navigator,
             credentialStore: credentialStore,
             networkReachability: networkReachability,
-            noteSync: noteSync
+            noteSync: noteSync,
+            sessionExpiredNotifier: sessionExpiredNotifier
         )
     }
 

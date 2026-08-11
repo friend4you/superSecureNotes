@@ -49,6 +49,9 @@ public struct LoginView: View {
             }
         }
         .navigationTitle(String(localized: "login.title", bundle: .module))
+        .onAppear {
+            viewModel.onAppear()
+        }
         .sheet(isPresented: biometricEnrollmentSheetBinding) {
             BiometricEnrollmentView(viewModel: viewModel.makeBiometricEnrollmentViewModel())
         }

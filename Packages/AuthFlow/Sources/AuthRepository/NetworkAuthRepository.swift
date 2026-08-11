@@ -5,6 +5,7 @@ public actor NetworkAuthRepository: AuthRepository {
     private let apiClient: AuthAPIClient
     private var session: AuthSession?
     private var user: User?
+    private var inFlightRefresh: Task<AuthSession, Error>?
 
     public init(baseURL: URL, session: URLSession = .shared) {
         self.apiClient = AuthAPIClient(baseURL: baseURL, session: session)
@@ -54,7 +55,18 @@ public actor NetworkAuthRepository: AuthRepository {
             throw AuthRepositoryError.notAuthenticated
         }
 
-        let refreshed = try await apiClient.refresh(refreshToken: session.refreshToken)
+        if let inFlightRefresh {
+            return try await inFlightRefresh.value
+        }
+
+        let refreshToken = session.refreshToken
+        let task = Task<AuthSession, Error> { [apiClient] in
+            try await apiClient.refresh(refreshToken: refreshToken)
+        }
+        inFlightRefresh = task
+        defer { inFlightRefresh = nil }
+
+        let refreshed = try await task.value
         self.session = refreshed
         return refreshed
     }

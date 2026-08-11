@@ -12,13 +12,27 @@ public actor NetworkNoteRepository: NoteRepository {
         tokenProvider: any AccessTokenProviding,
         session: URLSession = .shared
     ) {
-        self.apiClient = NoteAPIClient(baseURL: baseURL, session: session)
+        let refreshAccessToken = Self.makeRefreshHandler(from: tokenProvider)
+        self.apiClient = NoteAPIClient(
+            baseURL: baseURL,
+            session: session,
+            refreshAccessToken: refreshAccessToken
+        )
         self.tokenProvider = tokenProvider
     }
 
     init(apiClient: NoteAPIClient, tokenProvider: any AccessTokenProviding) {
         self.apiClient = apiClient
         self.tokenProvider = tokenProvider
+    }
+
+    private static func makeRefreshHandler(
+        from tokenProvider: any AccessTokenProviding
+    ) -> (@Sendable () async throws -> String)? {
+        guard let refreshing = tokenProvider as? any AccessTokenRefreshing else {
+            return nil
+        }
+        return { try await refreshing.refreshAccessToken() }
     }
 
     public func listNotes() async throws -> [NoteSummary] {

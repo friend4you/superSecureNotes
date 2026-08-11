@@ -62,6 +62,7 @@ let package = Package(
             name: "AuthRepository",
             dependencies: [
                 "AuthRepositoryProtocol",
+                "CredentialStoreProtocol",
                 .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
             ]
         ),

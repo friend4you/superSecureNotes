@@ -1,15 +1,22 @@
 import Foundation
 import NoteRepositoryProtocol
+import VaultRepository
 
 struct NoteAPIClient {
     private let baseURL: URL
     private let session: URLSession
     private let decoder: JSONDecoder
+    private let refreshAccessToken: (@Sendable () async throws -> String)?
 
-    init(baseURL: URL, session: URLSession) {
+    init(
+        baseURL: URL,
+        session: URLSession,
+        refreshAccessToken: (@Sendable () async throws -> String)? = nil
+    ) {
         self.baseURL = baseURL
         self.session = session
         self.decoder = NoteJSON.makeDecoder()
+        self.refreshAccessToken = refreshAccessToken
     }
 
     func listNotes(accessToken: String, includeDeleted: Bool = false) async throws -> [NoteSummary] {
@@ -388,25 +395,14 @@ struct NoteAPIClient {
     }
 
     private func perform(_ request: URLRequest, expectedSuccessCodes: Set<Int>) async throws -> Data {
-        let data: Data
-        let response: URLResponse
-
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw NoteRepositoryError.networkError
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NoteRepositoryError.networkError
-        }
-
-        let statusCode = httpResponse.statusCode
-        if expectedSuccessCodes.contains(statusCode) {
-            return data
-        }
-
-        throw mapError(statusCode: statusCode, data: data)
+        try await AuthorizedHTTPPerform.data(
+            for: request,
+            session: session,
+            expectedSuccessCodes: expectedSuccessCodes,
+            refreshAccessToken: refreshAccessToken,
+            mapTransportError: { NoteRepositoryError.networkError },
+            mapHTTPError: mapError
+        )
     }
 
     private func mapError(statusCode: Int, data: Data) -> NoteRepositoryError {

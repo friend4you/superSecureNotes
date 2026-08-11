@@ -50,6 +50,7 @@ final class AppComposition {
             biometricAuthenticator: dependencies.biometricAuthenticator,
             networkReachability: dependencies.networkReachability,
             noteSync: dependencies.noteSyncService,
+            sessionExpiredNotifier: dependencies.sessionExpiredNotifier,
             performLogout: performLogout
         )
         notesDependencies = NotesFlowDependencies(

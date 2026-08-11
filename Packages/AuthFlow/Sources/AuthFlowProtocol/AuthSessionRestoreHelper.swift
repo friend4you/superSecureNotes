@@ -12,6 +12,8 @@ public struct AuthSessionRestoreHelper: Sendable {
         guard let refreshToken = credentialStore.refreshToken() else {
             throw AuthRepositoryError.notAuthenticated
         }
-        return try await authRepository.restoreSession(refreshToken: refreshToken)
+        let session = try await authRepository.restoreSession(refreshToken: refreshToken)
+        try credentialStore.saveRefreshToken(session.refreshToken)
+        return session
     }
 }
