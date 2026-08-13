@@ -536,12 +536,29 @@ public actor NetworkNoteRepository: NoteRepository {
         return summaries.first { $0.noteID == noteID }
     }
 
-    func readSharedBody(noteID: UUID) async throws -> SharedNote {
+    func readSharedBody(noteID: UUID) async throws -> Data {
         let accessToken = try await tokenProvider.accessToken()
-        let dto = try await apiClient.readSharedBody(noteID: noteID, accessToken: accessToken)
+        return try await apiClient.readSharedBody(noteID: noteID, accessToken: accessToken)
+    }
+
+    func importSharedBody(noteID: UUID) async throws -> ImportedSharedNote {
+        let imported = try await fetchSharedNoteDownload(noteID: noteID)
+        return ImportedSharedNote(note: imported.note, bodyData: imported.bodyData)
+    }
+
+    public func readSharedNote(noteID: UUID) async throws -> SharedNote {
+        try await fetchSharedNoteDownload(noteID: noteID).note
+    }
+
+    private func fetchSharedNoteDownload(noteID: UUID) async throws -> (
+        note: SharedNote,
+        bodyData: Data
+    ) {
+        let accessToken = try await tokenProvider.accessToken()
+        let dto = try await apiClient.readSharedNote(noteID: noteID, accessToken: accessToken)
 
         guard let responseNoteID = UUID(uuidString: dto.noteId) else {
-            throw NoteRepositoryError.validationError("Invalid note ID in shared body response.")
+            throw NoteRepositoryError.validationError("Invalid note ID in shared note response.")
         }
         guard let bodyData = Data(base64Encoded: dto.body) else {
             throw NoteRepositoryError.validationError("Invalid shared note body encoding.")
@@ -551,39 +568,13 @@ public actor NetworkNoteRepository: NoteRepository {
         }
 
         let sections = try parseNoteFile(bodyData)
-        return SharedNote(
+        let note = SharedNote(
             noteID: responseNoteID,
             metadata: sections.metadata,
             recipientWrappedFEK: recipientWrappedFEK,
             encryptedPayload: sections.encryptedPayload
         )
-    }
-
-    func importSharedBody(noteID: UUID) async throws -> SharedNote {
-        try await readSharedBody(noteID: noteID)
-    }
-
-    public func readSharedNote(noteID: UUID) async throws -> SharedNote {
-        let accessToken = try await tokenProvider.accessToken()
-        let dto = try await apiClient.readSharedNote(noteID: noteID, accessToken: accessToken)
-
-        guard let responseNoteID = UUID(uuidString: dto.noteId) else {
-            throw NoteRepositoryError.validationError("Invalid note ID in shared note response.")
-        }
-        guard let blobData = Data(base64Encoded: dto.blob) else {
-            throw NoteRepositoryError.validationError("Invalid shared note blob encoding.")
-        }
-        guard let recipientWrappedFEK = Data(base64Encoded: dto.wrappedFek) else {
-            throw NoteRepositoryError.validationError("Invalid shared note wrapped FEK encoding.")
-        }
-
-        let sections = try parseNoteFile(blobData)
-        return SharedNote(
-            noteID: responseNoteID,
-            metadata: sections.metadata,
-            recipientWrappedFEK: recipientWrappedFEK,
-            encryptedPayload: sections.encryptedPayload
-        )
+        return (note: note, bodyData: bodyData)
     }
 
     public func deleteSharedNote(noteID: UUID) async throws {

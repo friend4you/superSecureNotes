@@ -4,6 +4,7 @@ import SecureCrypto
 
 extension LocalNoteRepository {
     static let sharedBodyFileName = "body"
+    static let sharedWrappedFEKFileName = "wrapped_fek"
     static let sharedAttachmentsDirectoryName = "attachments"
 
     var sharedRootURL: URL {
@@ -29,6 +30,11 @@ extension LocalNoteRepository {
             .appendingPathComponent(Self.sharedBodyFileName, isDirectory: false)
     }
 
+    func sharedWrappedFEKFileURL(for noteID: UUID) -> URL {
+        sharedNoteDirectoryURL(for: noteID)
+            .appendingPathComponent(Self.sharedWrappedFEKFileName, isDirectory: false)
+    }
+
     func sharedAttachmentsDirectoryURL(for noteID: UUID) -> URL {
         sharedNoteDirectoryURL(for: noteID)
             .appendingPathComponent(Self.sharedAttachmentsDirectoryName, isDirectory: true)
@@ -46,6 +52,25 @@ extension LocalNoteRepository {
 
     func readSharedBodyFile(noteID: UUID) throws -> Data {
         try readNoteBodyFile(from: sharedBodyFileURL(for: noteID))
+    }
+
+    func writeSharedWrappedFEKFile(_ wrappedFEK: Data, noteID: UUID) throws {
+        try ensureSharedRootDirectory()
+        let noteDirectory = sharedNoteDirectoryURL(for: noteID)
+        if !fileManager.fileExists(atPath: noteDirectory.path) {
+            try fileManager.createDirectory(at: noteDirectory, withIntermediateDirectories: true)
+            try excludeFromBackup(noteDirectory)
+        }
+        let url = sharedWrappedFEKFileURL(for: noteID)
+        try wrappedFEK.write(to: url, options: .atomic)
+    }
+
+    func readSharedWrappedFEKFile(noteID: UUID) throws -> Data {
+        let url = sharedWrappedFEKFileURL(for: noteID)
+        guard fileManager.fileExists(atPath: url.path) else {
+            throw NoteRepositoryError.noteNotFound
+        }
+        return try Data(contentsOf: url)
     }
 
     func persistSharedAttachmentCiphertext(

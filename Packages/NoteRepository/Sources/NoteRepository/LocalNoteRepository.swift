@@ -258,10 +258,13 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         }
 
         let bodyURL = sharedBodyFileURL(for: noteID)
+        let wrappedFEKURL = sharedWrappedFEKFileURL(for: noteID)
         if fileManager.fileExists(atPath: bodyURL.path),
+           fileManager.fileExists(atPath: wrappedFEKURL.path),
            row.bodyEtag == row.etag
         {
             let bodyData = try readSharedBodyFile(noteID: noteID)
+            let recipientWrappedFEK = try readSharedWrappedFEKFile(noteID: noteID)
             let sections = try parseNoteFile(bodyData)
             guard sections.metadata.noteID == noteID else {
                 throw NoteRepositoryError.corruptNote
@@ -269,7 +272,7 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
             return SharedNote(
                 noteID: noteID,
                 metadata: sections.metadata,
-                recipientWrappedFEK: sections.wrappedFEK,
+                recipientWrappedFEK: recipientWrappedFEK,
                 encryptedPayload: sections.encryptedPayload
             )
         }
@@ -279,14 +282,10 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         }
 
         let imported = try await importer.importSharedBody(noteID: noteID)
-        let bodyData = try assembleNoteFile(
-            metadata: imported.metadata,
-            wrappedFEK: imported.recipientWrappedFEK,
-            encryptedPayload: imported.encryptedPayload
-        )
-        try writeSharedBodyFile(bodyData, noteID: noteID)
+        try writeSharedBodyFile(imported.bodyData, noteID: noteID)
+        try writeSharedWrappedFEKFile(imported.note.recipientWrappedFEK, noteID: noteID)
         try await notesIndexStore.updateSharedBodyEtag(noteID: noteID, bodyEtag: row.etag)
-        return imported
+        return imported.note
     }
 
     public func deleteSharedNote(noteID: UUID) async throws {

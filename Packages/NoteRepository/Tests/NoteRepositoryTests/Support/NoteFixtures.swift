@@ -290,12 +290,12 @@ enum NoteFixtures {
     static func readSharedNoteJSON(
         noteID: UUID = noteID,
         wrappedFek: Data = recipientWrappedFEK,
-        blob: Data = noteBytes
+        body: Data = noteBytes
     ) -> Data {
         let payload: [String: String] = [
             "noteId": noteID.uuidString.lowercased(),
             "wrappedFek": wrappedFek.base64EncodedString(),
-            "blob": blob.base64EncodedString(),
+            "body": body.base64EncodedString(),
         ]
         return try! JSONSerialization.data(withJSONObject: payload)
     }

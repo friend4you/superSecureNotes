@@ -77,7 +77,7 @@ final class NoteSharingAPIClientTests: XCTestCase {
         XCTAssertEqual(captured.authorization, "Bearer \(NoteFixtures.accessToken)")
         XCTAssertEqual(dto.noteId, NoteFixtures.noteID.uuidString.lowercased())
         XCTAssertEqual(Data(base64Encoded: dto.wrappedFek), NoteFixtures.recipientWrappedFEK)
-        XCTAssertEqual(Data(base64Encoded: dto.blob), NoteFixtures.noteBytes)
+        XCTAssertEqual(Data(base64Encoded: dto.body), NoteFixtures.noteBytes)
     }
 
     func testShareNotePostsGrant() async throws {

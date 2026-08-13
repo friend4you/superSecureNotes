@@ -14,11 +14,11 @@ final class NoteSharingAPIClientSplitTests: XCTestCase {
         URLProtocolStub.requestHandler = { request in
             captured.record(request)
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.readSharedBodyJSON())
+            return (response, NoteFixtures.noteBytes)
         }
 
         let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
-        let dto = try await client.readSharedBody(
+        let bodyData = try await client.readSharedBody(
             noteID: NoteFixtures.noteID,
             accessToken: NoteFixtures.accessToken
         )
@@ -29,9 +29,7 @@ final class NoteSharingAPIClientSplitTests: XCTestCase {
             "/v1/notes/shared/\(NoteFixtures.noteID.uuidString.lowercased())/body"
         )
         XCTAssertEqual(captured.authorization, "Bearer \(NoteFixtures.accessToken)")
-        XCTAssertEqual(dto.noteId, NoteFixtures.noteID.uuidString.lowercased())
-        XCTAssertEqual(Data(base64Encoded: dto.wrappedFek), NoteFixtures.recipientWrappedFEK)
-        XCTAssertEqual(Data(base64Encoded: dto.body), NoteFixtures.noteBytes)
+        XCTAssertEqual(bodyData, NoteFixtures.noteBytes)
     }
 
     func testListSharedAttachmentsSendsExpectedRequestAndParsesManifest() async throws {

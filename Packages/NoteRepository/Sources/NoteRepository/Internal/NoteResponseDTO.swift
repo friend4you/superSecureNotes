@@ -21,7 +21,7 @@ struct SharedNoteSummaryResponseDTO: Decodable {
 struct SharedNoteDownloadResponseDTO: Decodable {
     let noteId: String
     let wrappedFek: String
-    let blob: String
+    let body: String
 }
 
 struct ErrorResponseDTO: Decodable {
@@ -57,12 +57,6 @@ enum AttachmentManifestDefaults {
 struct AttachmentWriteResponseDTO: Decodable {
     let etag: String
     let noteEtag: String
-}
-
-struct SharedNoteBodyResponseDTO: Decodable {
-    let noteId: String
-    let wrappedFek: String
-    let body: String
 }
 
 struct NoteUploadSession: Equatable, Sendable {

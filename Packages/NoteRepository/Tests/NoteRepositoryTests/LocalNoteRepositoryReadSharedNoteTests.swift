@@ -31,12 +31,16 @@ final class LocalNoteRepositoryReadSharedNoteTests: XCTestCase {
             )
         )
         try await repository.writeSharedBodyFileForTest(NoteFixtures.noteBytes, noteID: noteID)
+        try await repository.writeSharedWrappedFEKFileForTest(
+            NoteFixtures.recipientWrappedFEK,
+            noteID: noteID
+        )
 
         let requestCounter = RequestCounter()
         URLProtocolStub.requestHandler = { request in
             requestCounter.increment()
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.readSharedBodyJSON())
+            return (response, NoteFixtures.noteBytes)
         }
         let remote = NetworkNoteRepository(
             baseURL: NoteFixtures.baseURL,
@@ -63,7 +67,7 @@ final class LocalNoteRepositoryReadSharedNoteTests: XCTestCase {
         URLProtocolStub.requestHandler = { request in
             captured.record(request)
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.readSharedBodyJSON())
+            return (response, NoteFixtures.readSharedNoteJSON())
         }
         let remote = NetworkNoteRepository(
             baseURL: NoteFixtures.baseURL,
@@ -76,7 +80,7 @@ final class LocalNoteRepositoryReadSharedNoteTests: XCTestCase {
 
         XCTAssertEqual(
             captured.path,
-            "/v1/notes/shared/\(noteID.uuidString.lowercased())/body"
+            "/v1/notes/shared/\(noteID.uuidString.lowercased())"
         )
         let row = try await indexStore.fetchSharedNote(noteID: noteID)
         XCTAssertEqual(row?.bodyEtag, NoteFixtures.sampleSharedSummary.etag)
@@ -99,12 +103,16 @@ final class LocalNoteRepositoryReadSharedNoteTests: XCTestCase {
             )
         )
         try await repository.writeSharedBodyFileForTest(NoteFixtures.noteBytes, noteID: noteID)
+        try await repository.writeSharedWrappedFEKFileForTest(
+            NoteFixtures.recipientWrappedFEK,
+            noteID: noteID
+        )
 
         let requestCounter = RequestCounter()
         URLProtocolStub.requestHandler = { request in
             requestCounter.increment()
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.readSharedBodyJSON())
+            return (response, NoteFixtures.readSharedNoteJSON())
         }
         let remote = NetworkNoteRepository(
             baseURL: NoteFixtures.baseURL,
@@ -139,5 +147,9 @@ private final class RequestCounter: @unchecked Sendable {
 private extension LocalNoteRepository {
     func writeSharedBodyFileForTest(_ bodyData: Data, noteID: UUID) throws {
         try writeSharedBodyFile(bodyData, noteID: noteID)
+    }
+
+    func writeSharedWrappedFEKFileForTest(_ wrappedFEK: Data, noteID: UUID) throws {
+        try writeSharedWrappedFEKFile(wrappedFEK, noteID: noteID)
     }
 }

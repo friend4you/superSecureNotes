@@ -283,14 +283,13 @@ struct NoteAPIClient {
         return try decoder.decode(SharedNoteDownloadResponseDTO.self, from: data)
     }
 
-    func readSharedBody(noteID: UUID, accessToken: String) async throws -> SharedNoteBodyResponseDTO {
+    func readSharedBody(noteID: UUID, accessToken: String) async throws -> Data {
         let request = try makeAuthorizedRequest(
             path: "notes/shared/\(noteID.uuidString.lowercased())/body",
             method: "GET",
             accessToken: accessToken
         )
-        let data = try await perform(request, expectedSuccessCodes: [200])
-        return try decoder.decode(SharedNoteBodyResponseDTO.self, from: data)
+        return try await perform(request, expectedSuccessCodes: [200])
     }
 
     func listSharedAttachments(

@@ -10,12 +10,12 @@ final class NetworkNoteRepositorySharedBodyTests: XCTestCase {
         super.tearDown()
     }
 
-    func testReadSharedBodyParsesSplitEndpoint() async throws {
+    func testReadSharedBodyFetchesRawBytesFromSplitEndpoint() async throws {
         let captured = RequestCapture()
         URLProtocolStub.requestHandler = { request in
             captured.record(request)
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.readSharedBodyJSON())
+            return (response, NoteFixtures.noteBytes)
         }
 
         let repository = NetworkNoteRepository(
@@ -24,26 +24,22 @@ final class NetworkNoteRepositorySharedBodyTests: XCTestCase {
             session: .stubbed()
         )
 
-        let shared = try await repository.readSharedBody(noteID: NoteFixtures.noteID)
-        let sections = try parseNoteFile(NoteFixtures.noteBytes)
+        let bodyData = try await repository.readSharedBody(noteID: NoteFixtures.noteID)
 
         XCTAssertEqual(captured.method, "GET")
         XCTAssertEqual(
             captured.path,
             "/v1/notes/shared/\(NoteFixtures.noteID.uuidString.lowercased())/body"
         )
-        XCTAssertEqual(shared.noteID, NoteFixtures.noteID)
-        XCTAssertEqual(shared.metadata, sections.metadata)
-        XCTAssertEqual(shared.recipientWrappedFEK, NoteFixtures.recipientWrappedFEK)
-        XCTAssertEqual(shared.encryptedPayload, sections.encryptedPayload)
+        XCTAssertEqual(bodyData, NoteFixtures.noteBytes)
     }
 
-    func testReadSharedBodyDoesNotCallMonolithicBlobEndpoint() async throws {
-        let log = RequestLog()
+    func testImportSharedBodyUsesJSONDownloadWithRecipientWrappedFEK() async throws {
+        let captured = RequestCapture()
         URLProtocolStub.requestHandler = { request in
-            log.record(request)
+            captured.record(request)
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.readSharedBodyJSON())
+            return (response, NoteFixtures.readSharedNoteJSON())
         }
 
         let repository = NetworkNoteRepository(
@@ -52,9 +48,14 @@ final class NetworkNoteRepositorySharedBodyTests: XCTestCase {
             session: .stubbed()
         )
 
-        _ = try await repository.readSharedBody(noteID: NoteFixtures.noteID)
+        let imported = try await repository.importSharedBody(noteID: NoteFixtures.noteID)
 
-        let monolithicPath = "/v1/notes/shared/\(NoteFixtures.noteID.uuidString.lowercased())"
-        XCTAssertFalse(log.paths.contains(monolithicPath))
+        XCTAssertEqual(
+            captured.path,
+            "/v1/notes/shared/\(NoteFixtures.noteID.uuidString.lowercased())"
+        )
+        XCTAssertEqual(imported.bodyData, NoteFixtures.noteBytes)
+        XCTAssertEqual(imported.note.recipientWrappedFEK, NoteFixtures.recipientWrappedFEK)
+        XCTAssertNotEqual(imported.note.recipientWrappedFEK, try parseNoteFile(NoteFixtures.noteBytes).wrappedFEK)
     }
 }
