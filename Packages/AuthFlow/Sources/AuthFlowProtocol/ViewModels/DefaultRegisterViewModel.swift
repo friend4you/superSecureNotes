@@ -46,7 +46,7 @@ public final class DefaultRegisterViewModel: RegisterViewModel {
 
     public func register() async {
         guard !email.isEmpty, !password.isEmpty else {
-            state = .failure(.validationError)
+            state = .failure(.validationError(nil))
             return
         }
 

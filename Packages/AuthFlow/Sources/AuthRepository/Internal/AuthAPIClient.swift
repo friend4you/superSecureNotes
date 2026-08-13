@@ -128,10 +128,10 @@ struct AuthAPIClient {
             case "unauthorized":
                 return .notAuthenticated
             default:
-                break
+                return .serverError(statusCode: statusCode, message: errorResponse.message)
             }
         }
 
-        return .serverError(statusCode: statusCode)
+        return .serverError(statusCode: statusCode, message: nil)
     }
 }

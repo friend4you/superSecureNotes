@@ -12,7 +12,7 @@ final class DefaultLoginViewModelTests: XCTestCase {
 
         await viewModel.login()
 
-        XCTAssertEqual(viewModel.state, .failure(.validationError))
+        XCTAssertEqual(viewModel.state, .failure(.validationError(nil)))
         let loginCallCount = await authRepository.loginCallCount
         XCTAssertEqual(loginCallCount, 0)
     }
@@ -25,7 +25,7 @@ final class DefaultLoginViewModelTests: XCTestCase {
 
         await viewModel.login()
 
-        XCTAssertEqual(viewModel.state, .failure(.validationError))
+        XCTAssertEqual(viewModel.state, .failure(.validationError(nil)))
         let loginCallCount = await authRepository.loginCallCount
         XCTAssertEqual(loginCallCount, 0)
     }

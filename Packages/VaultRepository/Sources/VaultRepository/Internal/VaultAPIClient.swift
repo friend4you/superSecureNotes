@@ -112,13 +112,15 @@ public struct VaultAPIClient {
                 return .headerNotFound
             case "public_key_not_found":
                 return .publicKeyNotFound
+            case "user_not_found":
+                return .userNotFound(errorResponse.message)
             case "validation_error":
                 return .validationError(errorResponse.message)
             default:
-                break
+                return .serverError(statusCode: statusCode, message: errorResponse.message)
             }
         }
 
-        return .serverError(statusCode: statusCode)
+        return .serverError(statusCode: statusCode, message: nil)
     }
 }

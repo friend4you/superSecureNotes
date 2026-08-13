@@ -60,7 +60,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
 
     public func unlockWithPassword() async {
         guard !password.isEmpty else {
-            state = .failure(.validationError)
+            state = .failure(.validationError(nil))
             return
         }
         await performUnlock(using: password)
@@ -157,9 +157,11 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
             return .sessionExpired
         case .networkError:
             return .networkError
-        case .validationError:
-            return .validationError
-        case .emailAlreadyExists, .notAuthenticated, .serverError:
+        case let .validationError(message):
+            return .validationError(message)
+        case let .serverError(_, message):
+            return message.map(AuthFlowError.validationError) ?? .unknown
+        case .emailAlreadyExists, .notAuthenticated:
             return .unknown
         }
     }

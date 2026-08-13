@@ -8,7 +8,10 @@ enum AuthFlowErrorText {
             return String(localized: "error.invalidCredentials", bundle: .module)
         case .emailAlreadyExists:
             return String(localized: "error.emailAlreadyExists", bundle: .module)
-        case .validationError:
+        case let .validationError(message):
+            if let message, !message.isEmpty {
+                return message
+            }
             return String(localized: "error.validationError", bundle: .module)
         case .vaultNotFound:
             return String(localized: "error.vaultNotFound", bundle: .module)

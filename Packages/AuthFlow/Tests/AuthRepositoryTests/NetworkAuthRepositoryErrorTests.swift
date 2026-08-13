@@ -48,7 +48,7 @@ final class NetworkAuthRepositoryErrorTests: XCTestCase {
             )
             XCTFail("Expected serverError")
         } catch let error as AuthRepositoryError {
-            XCTAssertEqual(error, .serverError(statusCode: 500))
+            XCTAssertEqual(error, .serverError(statusCode: 500, message: nil))
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

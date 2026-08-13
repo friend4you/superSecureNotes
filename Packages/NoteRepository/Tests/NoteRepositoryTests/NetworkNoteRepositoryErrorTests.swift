@@ -46,7 +46,7 @@ final class NetworkNoteRepositoryErrorTests: XCTestCase {
             _ = try await repository.readNote(noteID: NoteFixtures.noteID)
             XCTFail("Expected serverError")
         } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .serverError(statusCode: 500))
+            XCTAssertEqual(error, .serverError(statusCode: 500, message: nil))
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

@@ -77,7 +77,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
 
     public func login() async {
         guard !email.isEmpty, !password.isEmpty else {
-            state = .failure(.validationError)
+            state = .failure(.validationError(nil))
             return
         }
 

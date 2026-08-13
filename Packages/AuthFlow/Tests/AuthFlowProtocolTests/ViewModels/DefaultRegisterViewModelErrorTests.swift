@@ -26,7 +26,7 @@ final class DefaultRegisterViewModelErrorTests: XCTestCase {
 
         await viewModel.register()
 
-        XCTAssertEqual(viewModel.state, .failure(.validationError))
+        XCTAssertEqual(viewModel.state, .failure(.validationError("Invalid email")))
     }
 
     func testRegisterMapsVaultUploadFailure() async {
@@ -45,7 +45,7 @@ final class DefaultRegisterViewModelErrorTests: XCTestCase {
         let authRepository = MockAuthRepository()
         let credentialStore = MockCredentialStore()
         let noteSync = MockNoteSyncService()
-        await noteSync.setUploadVaultHeaderError(VaultRepositoryError.serverError(statusCode: 500))
+        await noteSync.setUploadVaultHeaderError(VaultRepositoryError.serverError(statusCode: 500, message: nil))
         let viewModel = AuthFlowTestSupport.makeRegisterViewModel(
             authRepository: authRepository,
             credentialStore: credentialStore,

@@ -9,6 +9,20 @@ final class AuthRepositoryErrorTests: XCTestCase {
         XCTAssertEqual(AuthRepositoryError.validationError("bad"), .validationError("bad"))
         XCTAssertEqual(AuthRepositoryError.notAuthenticated, .notAuthenticated)
         XCTAssertEqual(AuthRepositoryError.networkError, .networkError)
-        XCTAssertEqual(AuthRepositoryError.serverError(statusCode: 500), .serverError(statusCode: 500))
+        XCTAssertEqual(
+            AuthRepositoryError.serverError(statusCode: 500, message: nil),
+            .serverError(statusCode: 500, message: nil)
+        )
+    }
+
+    func testLocalizedDescriptionUsesBackendMessage() {
+        XCTAssertEqual(
+            AuthRepositoryError.validationError("Password too short.").errorDescription,
+            "Password too short."
+        )
+        XCTAssertEqual(
+            AuthRepositoryError.serverError(statusCode: 500, message: "Boom.").errorDescription,
+            "Boom."
+        )
     }
 }

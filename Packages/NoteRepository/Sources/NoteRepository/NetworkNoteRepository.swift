@@ -502,9 +502,9 @@ public actor NetworkNoteRepository: NoteRepository {
             return false
         }
         switch error {
-        case .noteNotFound:
+        case .noteNotFound, .conflict(_):
             return true
-        case let .serverError(statusCode):
+        case let .serverError(statusCode, _):
             return statusCode == 404 || statusCode == 409 || statusCode == 410
         default:
             return false

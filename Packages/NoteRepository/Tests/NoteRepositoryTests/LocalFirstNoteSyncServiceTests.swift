@@ -111,7 +111,10 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
                 putAttempts += 1
                 if putAttempts == 1 {
                     let response = TestHTTP.makeResponse(url: request.url!, statusCode: 409)
-                    return (response, Data())
+                    return (
+                        response,
+                        NoteFixtures.errorJSON(error: "conflict", message: "Note etag does not match.")
+                    )
                 }
                 XCTAssertNil(request.value(forHTTPHeaderField: "If-Match"))
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
@@ -420,7 +423,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         do {
             try await syncService.uploadVaultHeaderOrThrow(Data([0x01]))
             XCTFail("Expected serverError")
-        } catch VaultRepositoryError.serverError(let statusCode) {
+        } catch VaultRepositoryError.serverError(let statusCode, _) {
             XCTAssertEqual(statusCode, 500)
         }
     }

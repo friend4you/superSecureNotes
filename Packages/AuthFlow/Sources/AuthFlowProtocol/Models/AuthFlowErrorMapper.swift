@@ -9,11 +9,13 @@ enum AuthFlowErrorMapper {
             return .invalidCredentials
         case .emailAlreadyExists:
             return .emailAlreadyExists
-        case .validationError:
-            return .validationError
+        case let .validationError(message):
+            return .validationError(message)
         case .networkError:
             return .networkError
-        case .notAuthenticated, .serverError:
+        case let .serverError(_, message):
+            return message.map(AuthFlowError.validationError) ?? .unknown
+        case .notAuthenticated:
             return .unknown
         }
     }
@@ -24,7 +26,13 @@ enum AuthFlowErrorMapper {
             return .vaultNotFound
         case .networkError:
             return .networkError
-        case .notAuthenticated, .publicKeyNotFound, .validationError, .serverError:
+        case let .validationError(message):
+            return .validationError(message)
+        case let .userNotFound(message):
+            return .validationError(message)
+        case let .serverError(_, message):
+            return message.map(AuthFlowError.validationError) ?? .unknown
+        case .notAuthenticated, .publicKeyNotFound:
             return .unknown
         }
     }

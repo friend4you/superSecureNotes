@@ -47,6 +47,27 @@ final class VaultAPIClientFetchPublicKeyByEmailTests: XCTestCase {
         }
     }
 
+    func testFetchPublicKeyByEmailMapsUserNotFound() async {
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 404)
+            return (
+                response,
+                VaultFixtures.errorJSON(error: "user_not_found", message: "Recipient user not found.")
+            )
+        }
+
+        let client = VaultTestSupport.makeAPIClient()
+
+        do {
+            _ = try await client.fetchPublicKey(email: VaultFixtures.email)
+            XCTFail("Expected userNotFound")
+        } catch let error as VaultRepositoryError {
+            XCTAssertEqual(error, .userNotFound("Recipient user not found."))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testFetchPublicKeyByEmailRejectsEmptyEmailLocally() async {
         let repository = VaultTestSupport.makeRepository()
         var didSendNetworkRequest = false

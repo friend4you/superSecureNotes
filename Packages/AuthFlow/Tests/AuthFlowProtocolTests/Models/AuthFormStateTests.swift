@@ -11,7 +11,7 @@ final class AuthFormStateTests: XCTestCase {
     func testAuthFlowErrorsAreEquatable() {
         XCTAssertEqual(AuthFlowError.invalidCredentials, .invalidCredentials)
         XCTAssertEqual(AuthFlowError.emailAlreadyExists, .emailAlreadyExists)
-        XCTAssertEqual(AuthFlowError.validationError, .validationError)
+        XCTAssertEqual(AuthFlowError.validationError(nil), .validationError(nil))
         XCTAssertEqual(AuthFlowError.vaultNotFound, .vaultNotFound)
         XCTAssertEqual(AuthFlowError.vaultUnlockFailed, .vaultUnlockFailed)
         XCTAssertEqual(AuthFlowError.networkError, .networkError)

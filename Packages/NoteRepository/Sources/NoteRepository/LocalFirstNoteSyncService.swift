@@ -168,7 +168,9 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
                     etag: result.etag
                 )
             )
-        } catch NoteRepositoryError.serverError(statusCode: 409) {
+        } catch NoteRepositoryError.conflict(_) {
+            await retryUploadWithoutConditionalMatch(prepared)
+        } catch NoteRepositoryError.serverError(statusCode: 409, message: _) {
             await retryUploadWithoutConditionalMatch(prepared)
         } catch {
             emitOutcome(.uploadFailed(noteID: noteID))

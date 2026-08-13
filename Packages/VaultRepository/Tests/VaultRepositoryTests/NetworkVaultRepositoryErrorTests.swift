@@ -38,7 +38,7 @@ final class NetworkVaultRepositoryErrorTests: XCTestCase {
             _ = try await repository.readHeader()
             XCTFail("Expected serverError")
         } catch let error as VaultRepositoryError {
-            XCTAssertEqual(error, .serverError(statusCode: 500))
+            XCTAssertEqual(error, .serverError(statusCode: 500, message: nil))
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

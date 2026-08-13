@@ -396,13 +396,25 @@ struct NoteAPIClient {
                 return .notAuthenticated
             case "note_not_found":
                 return .noteNotFound
+            case "attachment_not_found":
+                return .attachmentNotFound(errorResponse.message)
+            case "user_not_found":
+                return .userNotFound(errorResponse.message)
+            case "share_not_found":
+                return .shareNotFound(errorResponse.message)
+            case "already_shared":
+                return .alreadyShared(errorResponse.message)
+            case "conflict":
+                return .conflict(errorResponse.message)
+            case "internal_error":
+                return .internalError(errorResponse.message)
             case "validation_error":
                 return .validationError(errorResponse.message)
             default:
-                break
+                return .serverError(statusCode: statusCode, message: errorResponse.message)
             }
         }
 
-        return .serverError(statusCode: statusCode)
+        return .serverError(statusCode: statusCode, message: nil)
     }
 }

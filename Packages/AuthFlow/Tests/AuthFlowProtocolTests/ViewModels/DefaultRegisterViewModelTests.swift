@@ -12,7 +12,7 @@ final class DefaultRegisterViewModelTests: XCTestCase {
 
         await viewModel.register()
 
-        XCTAssertEqual(viewModel.state, .failure(.validationError))
+        XCTAssertEqual(viewModel.state, .failure(.validationError(nil)))
         let registerCallCount = await authRepository.registerCallCount
         XCTAssertEqual(registerCallCount, 0)
     }
@@ -25,7 +25,7 @@ final class DefaultRegisterViewModelTests: XCTestCase {
 
         await viewModel.register()
 
-        XCTAssertEqual(viewModel.state, .failure(.validationError))
+        XCTAssertEqual(viewModel.state, .failure(.validationError(nil)))
         let registerCallCount = await authRepository.registerCallCount
         XCTAssertEqual(registerCallCount, 0)
     }

@@ -9,7 +9,7 @@ public enum AuthFormState: Equatable, Sendable {
 public enum AuthFlowError: Error, Equatable, Sendable {
     case invalidCredentials
     case emailAlreadyExists
-    case validationError
+    case validationError(String?)
     case vaultNotFound
     case vaultUnlockFailed
     case networkError
