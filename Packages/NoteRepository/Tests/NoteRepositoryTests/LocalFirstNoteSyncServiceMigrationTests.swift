@@ -66,10 +66,13 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
                 return (response, NoteFixtures.writeNoteResponseJSON(etag: #"W/"migrated-body""#))
             }
             if path == manifestPath && request.httpMethod == "GET" {
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
-            if path.contains("/attachments/") && request.httpMethod == "PUT" {
-                return (response, NoteFixtures.writeAttachmentResponseJSON(noteEtag: #"W/"migrated-note""#))
+            if let chunked = NoteFixtures.chunkedAttachmentUploadResponse(
+                for: request,
+                noteEtag: #"W/"migrated-note""#
+            ) {
+                return chunked
             }
             XCTFail("Unexpected \(request.httpMethod ?? "") \(path)")
             return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
@@ -123,11 +126,12 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
         XCTAssertNotEqual(decrypted.attachments[0].id, "legacy-att-id")
 
         let attachmentID = try XCTUnwrap(UUID(uuidString: decrypted.attachments[0].id))
-        let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+        let attachmentUploadPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads"
         XCTAssertEqual(log.method(at: 0), "GET")
-        XCTAssertTrue(log.paths.contains(attachmentPath))
+        XCTAssertTrue(log.paths.contains(attachmentUploadPath))
         XCTAssertTrue(log.paths.contains(bodyPath))
+        XCTAssertFalse(log.paths.contains(where: NoteFixtures.isLegacyAttachmentBlobPath))
 
         let ciphertext = try XCTUnwrap(migrated.attachmentCiphertexts[attachmentID])
         XCTAssertEqual(try decryptAttachmentFile(ciphertext, with: fek), plaintextAttachment)
@@ -169,7 +173,7 @@ final class LocalFirstNoteSyncServiceMigrationTests: XCTestCase {
                 return (response, NoteFixtures.writeNoteResponseJSON())
             }
             if path == manifestPath && request.httpMethod == "GET" {
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             XCTFail("Unexpected attachment upload without migration: \(path)")
             return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())

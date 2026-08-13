@@ -121,17 +121,52 @@ enum NoteFixtures {
     static let recipientWrappedFEK = Data(repeating: 0xAB, count: 48)
 
     static func attachmentsManifestJSON(
-        attachments: [(attachmentID: UUID, sizeBytes: UInt64, contentType: String?, etag: String?)]
+        attachments: [(
+            attachmentID: UUID,
+            sizeBytes: UInt64,
+            contentType: String?,
+            etag: String?,
+            totalChunks: Int,
+            chunkSize: Int
+        )] = []
     ) -> Data {
-        let payload: [[String: Any?]] = attachments.map { item in
-            [
+        let payload: [[String: Any]] = attachments.map { item in
+            var entry: [String: Any] = [
                 "attachmentId": item.attachmentID.uuidString.lowercased(),
                 "sizeBytes": item.sizeBytes,
-                "contentType": item.contentType,
-                "etag": item.etag,
+                "totalChunks": item.totalChunks,
+                "chunkSize": item.chunkSize,
             ]
+            if let contentType = item.contentType {
+                entry["contentType"] = contentType
+            } else {
+                entry["contentType"] = NSNull()
+            }
+            if let etag = item.etag {
+                entry["etag"] = etag
+            } else {
+                entry["etag"] = NSNull()
+            }
+            return entry
         }
         return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    static func attachmentsManifestJSON(
+        attachments: [(attachmentID: UUID, sizeBytes: UInt64, contentType: String?, etag: String?)]
+    ) -> Data {
+        attachmentsManifestJSON(
+            attachments: attachments.map { item in
+                (
+                    attachmentID: item.attachmentID,
+                    sizeBytes: item.sizeBytes,
+                    contentType: item.contentType,
+                    etag: item.etag,
+                    totalChunks: 1,
+                    chunkSize: max(Int(item.sizeBytes), 1)
+                )
+            }
+        )
     }
 
     static func writeAttachmentResponseJSON(
@@ -143,6 +178,65 @@ enum NoteFixtures {
             "noteEtag": noteEtag,
         ]
         return try! JSONSerialization.data(withJSONObject: payload)
+    }
+
+    /// Responds to attachment chunked upload routes (init → chunks → complete). Returns `nil` if the path is unrelated.
+    static func chunkedAttachmentUploadResponse(
+        for request: URLRequest,
+        uploadID: UUID = uploadID,
+        chunkSize: Int = 5_242_880,
+        etag: String = #"W/"att-etag""#,
+        noteEtag: String = #"W/"note-etag""#
+    ) -> (HTTPURLResponse, Data?)? {
+        let path = request.url!.path
+        guard path.contains("/attachments/"), path.contains("/uploads") else {
+            return nil
+        }
+
+        if path.hasSuffix("/uploads"), request.httpMethod == "POST" {
+            guard
+                let bodyData = TestHTTP.bodyData(from: request),
+                let body = try? JSONSerialization.jsonObject(with: bodyData) as? [String: Any],
+                let totalSize = body["totalSize"] as? Int
+            else {
+                return (TestHTTP.makeResponse(url: request.url!, statusCode: 400), Data())
+            }
+            let totalChunks = max(1, (totalSize + chunkSize - 1) / chunkSize)
+            return (
+                TestHTTP.makeResponse(url: request.url!, statusCode: 200),
+                uploadInitResponseJSON(
+                    uploadId: uploadID,
+                    chunkSize: chunkSize,
+                    totalChunks: totalChunks
+                )
+            )
+        }
+
+        if path.contains("/chunks/"), request.httpMethod == "PUT" {
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 204), nil)
+        }
+
+        if path.hasSuffix("/complete"), request.httpMethod == "POST" {
+            return (
+                TestHTTP.makeResponse(url: request.url!, statusCode: 200),
+                writeAttachmentResponseJSON(etag: etag, noteEtag: noteEtag)
+            )
+        }
+
+        return nil
+    }
+
+    static func isLegacyAttachmentBlobPath(_ path: String) -> Bool {
+        guard path.contains("/attachments/") else {
+            return false
+        }
+        if path.contains("/uploads") || path.contains("/chunks/") {
+            return false
+        }
+        if path.hasSuffix("/attachments") {
+            return false
+        }
+        return true
     }
 
     static func readSharedBodyJSON(

@@ -46,6 +46,8 @@ struct AttachmentSummaryResponseDTO: Decodable {
     let sizeBytes: UInt64
     let contentType: String?
     let etag: String?
+    let totalChunks: Int
+    let chunkSize: Int
 }
 
 enum AttachmentManifestDefaults {
@@ -74,6 +76,8 @@ struct RemoteAttachmentSummary: Equatable, Sendable {
     let sizeBytes: UInt64
     let contentType: String
     let etag: String?
+    let totalChunks: Int
+    let chunkSize: Int
 }
 
 struct AttachmentUploadResult: Equatable, Sendable {

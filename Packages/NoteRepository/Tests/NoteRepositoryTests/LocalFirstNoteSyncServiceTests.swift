@@ -34,7 +34,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             XCTAssertEqual(request.httpMethod, "PUT")
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
@@ -78,7 +78,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
@@ -125,7 +125,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
             case "GET":
                 XCTAssertTrue(path.hasSuffix("/attachments"))
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             default:
                 XCTFail("Unexpected method: \(request.httpMethod ?? "")")
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 500)
@@ -195,7 +195,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
             case "GET":
                 XCTAssertTrue(path.hasSuffix("/attachments"))
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             default:
                 XCTFail("Unexpected method: \(request.httpMethod ?? "")")
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 500)

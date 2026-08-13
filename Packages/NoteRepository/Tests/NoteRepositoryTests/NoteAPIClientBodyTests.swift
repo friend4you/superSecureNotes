@@ -132,6 +132,8 @@ final class NoteAPIClientBodyTests: XCTestCase {
         XCTAssertEqual(attachments[0].sizeBytes, 4_096)
         XCTAssertEqual(attachments[0].contentType, "application/octet-stream")
         XCTAssertEqual(attachments[0].etag, #"W/"att-etag""#)
+        XCTAssertEqual(attachments[0].totalChunks, 1)
+        XCTAssertEqual(attachments[0].chunkSize, 4_096)
     }
 
     func testListAttachmentsDefaultsNullContentTypeAndEtag() async throws {
@@ -165,5 +167,7 @@ final class NoteAPIClientBodyTests: XCTestCase {
         XCTAssertEqual(attachments[0].sizeBytes, 512)
         XCTAssertEqual(attachments[0].contentType, "application/octet-stream")
         XCTAssertNil(attachments[0].etag)
+        XCTAssertEqual(attachments[0].totalChunks, 1)
+        XCTAssertEqual(attachments[0].chunkSize, 512)
     }
 }

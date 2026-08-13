@@ -36,9 +36,9 @@ final class AttachmentHydrationTests: XCTestCase {
 
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         let attachmentPath1 =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID1.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID1.uuidString.lowercased())/chunks/0"
         let attachmentPath2 =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID2.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID2.uuidString.lowercased())/chunks/0"
         let log = RequestLog()
 
         URLProtocolStub.requestHandler = { request in
@@ -85,7 +85,7 @@ final class AttachmentHydrationTests: XCTestCase {
 
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
 
         URLProtocolStub.requestHandler = { request in
             let path = request.url!.path
@@ -140,7 +140,9 @@ final class AttachmentHydrationTests: XCTestCase {
                     attachmentID: $0,
                     sizeBytes: 16,
                     contentType: "application/octet-stream",
-                    etag: #"W/"x""#
+                    etag: #"W/"x""#,
+                    totalChunks: 1,
+                    chunkSize: 16
                 )
             },
             probe: probe
@@ -182,7 +184,7 @@ final class AttachmentHydrationTests: XCTestCase {
 
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
         let gate = DownloadHoldGate()
 
         URLProtocolStub.requestHandler = { request in
@@ -406,20 +408,30 @@ private actor HydrationRemoteStub: NoteSyncRemoteStoring {
         return attachments
     }
 
-    func readAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
+    func readAttachment(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data {
         _ = noteID
-        _ = attachmentID
+        _ = summary
         await probe.enter()
         await probe.leave()
-        return Data(repeating: 0xAB, count: 16)
+        let data = Data(repeating: 0xAB, count: 16)
+        onBytesReceived?(UInt64(data.count))
+        return data
     }
 
     func listSharedAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary] {
         try await listAttachments(noteID: noteID)
     }
 
-    func readSharedAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
-        try await readAttachment(noteID: noteID, attachmentID: attachmentID)
+    func readSharedAttachment(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data {
+        try await readAttachment(noteID: noteID, summary: summary, onBytesReceived: onBytesReceived)
     }
 }
 

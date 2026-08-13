@@ -112,42 +112,18 @@ struct NoteAPIClient {
         return try decodeAttachmentManifest(from: data)
     }
 
-    func readAttachment(
+    func readAttachmentChunk(
         noteID: UUID,
         attachmentID: UUID,
+        chunkIndex: Int,
         accessToken: String
     ) async throws -> Data {
         let request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
+            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/\(chunkIndex)",
             method: "GET",
             accessToken: accessToken
         )
         return try await perform(request, expectedSuccessCodes: [200])
-    }
-
-    func writeAttachment(
-        noteID: UUID,
-        attachmentID: UUID,
-        data: Data,
-        accessToken: String,
-        ifMatch etag: String? = nil
-    ) async throws -> AttachmentUploadResult {
-        var request = try makeAuthorizedRequest(
-            path: "notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
-            method: "PUT",
-            accessToken: accessToken
-        )
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        if let etag {
-            request.setValue(etag, forHTTPHeaderField: "If-Match")
-        }
-        request.httpBody = data
-        let responseData = try await perform(request, expectedSuccessCodes: [200, 204])
-        if responseData.isEmpty {
-            return AttachmentUploadResult(etag: nil, noteEtag: nil)
-        }
-        let response = try decoder.decode(AttachmentWriteResponseDTO.self, from: responseData)
-        return AttachmentUploadResult(etag: response.etag, noteEtag: response.noteEtag)
     }
 
     func deleteAttachment(
@@ -175,7 +151,12 @@ struct NoteAPIClient {
             accessToken: accessToken
         )
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["totalSize": totalSize])
+        request.httpBody = try JSONSerialization.data(
+            withJSONObject: [
+                "totalSize": totalSize,
+                "contentType": AttachmentManifestDefaults.contentType,
+            ]
+        )
         let responseData = try await perform(request, expectedSuccessCodes: [200, 201])
         let response = try decoder.decode(NoteUploadInitResponseDTO.self, from: responseData)
         guard let uploadID = UUID(uuidString: response.uploadId) else {
@@ -325,13 +306,14 @@ struct NoteAPIClient {
         return try decodeAttachmentManifest(from: data)
     }
 
-    func readSharedAttachment(
+    func readSharedAttachmentChunk(
         noteID: UUID,
         attachmentID: UUID,
+        chunkIndex: Int,
         accessToken: String
     ) async throws -> Data {
         let request = try makeAuthorizedRequest(
-            path: "notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())",
+            path: "notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/\(chunkIndex)",
             method: "GET",
             accessToken: accessToken
         )
@@ -377,7 +359,9 @@ struct NoteAPIClient {
                 attachmentID: attachmentID,
                 sizeBytes: dto.sizeBytes,
                 contentType: dto.contentType ?? AttachmentManifestDefaults.contentType,
-                etag: dto.etag
+                etag: dto.etag,
+                totalChunks: dto.totalChunks,
+                chunkSize: dto.chunkSize
             )
         }
     }

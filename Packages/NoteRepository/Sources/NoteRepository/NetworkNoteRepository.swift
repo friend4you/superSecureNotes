@@ -58,11 +58,12 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func readAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
-        let accessToken = try await tokenProvider.accessToken()
-        return try await apiClient.readAttachment(
+        let summary = try await attachmentSummary(noteID: noteID, attachmentID: attachmentID, shared: false)
+        return try await downloadAttachmentChunks(
             noteID: noteID,
-            attachmentID: attachmentID,
-            accessToken: accessToken
+            summary: summary,
+            shared: false,
+            onBytesReceived: nil
         )
     }
 
@@ -76,13 +77,94 @@ public actor NetworkNoteRepository: NoteRepository {
         return try await apiClient.listSharedAttachments(noteID: noteID, accessToken: accessToken)
     }
 
-    func readSharedAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
-        let accessToken = try await tokenProvider.accessToken()
-        return try await apiClient.readSharedAttachment(
+    func readAttachment(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data {
+        try await downloadAttachmentChunks(
             noteID: noteID,
-            attachmentID: attachmentID,
-            accessToken: accessToken
+            summary: summary,
+            shared: false,
+            onBytesReceived: onBytesReceived
         )
+    }
+
+    func readSharedAttachment(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data {
+        try await downloadAttachmentChunks(
+            noteID: noteID,
+            summary: summary,
+            shared: true,
+            onBytesReceived: onBytesReceived
+        )
+    }
+
+    func readSharedAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data {
+        let summary = try await attachmentSummary(noteID: noteID, attachmentID: attachmentID, shared: true)
+        return try await downloadAttachmentChunks(
+            noteID: noteID,
+            summary: summary,
+            shared: true,
+            onBytesReceived: nil
+        )
+    }
+
+    private func attachmentSummary(
+        noteID: UUID,
+        attachmentID: UUID,
+        shared: Bool
+    ) async throws -> RemoteAttachmentSummary {
+        let attachments: [RemoteAttachmentSummary]
+        if shared {
+            attachments = try await listSharedAttachments(noteID: noteID)
+        } else {
+            attachments = try await listAttachments(noteID: noteID)
+        }
+        guard let summary = attachments.first(where: { $0.attachmentID == attachmentID }) else {
+            throw NoteRepositoryError.noteNotFound
+        }
+        return summary
+    }
+
+    private func downloadAttachmentChunks(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        shared: Bool,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data {
+        guard summary.totalChunks > 0 else {
+            throw NoteRepositoryError.validationError("Attachment manifest totalChunks must be greater than zero.")
+        }
+        let accessToken = try await tokenProvider.accessToken()
+        var concatenated = Data()
+        concatenated.reserveCapacity(Int(summary.sizeBytes))
+        var bytesReceived: UInt64 = 0
+        for chunkIndex in 0 ..< summary.totalChunks {
+            let chunk: Data
+            if shared {
+                chunk = try await apiClient.readSharedAttachmentChunk(
+                    noteID: noteID,
+                    attachmentID: summary.attachmentID,
+                    chunkIndex: chunkIndex,
+                    accessToken: accessToken
+                )
+            } else {
+                chunk = try await apiClient.readAttachmentChunk(
+                    noteID: noteID,
+                    attachmentID: summary.attachmentID,
+                    chunkIndex: chunkIndex,
+                    accessToken: accessToken
+                )
+            }
+            concatenated.append(chunk)
+            bytesReceived += UInt64(chunk.count)
+            onBytesReceived?(bytesReceived)
+        }
+        return concatenated
     }
 
     public func writeNote(_ note: StoredNote) async throws {
@@ -211,16 +293,7 @@ public actor NetworkNoteRepository: NoteRepository {
         ifMatch etag: String?,
         uploadSessionStore: (any AttachmentUploadSessionStoring)?
     ) async throws -> AttachmentUploadResult {
-        if ciphertext.count <= NoteUploadSizeThreshold {
-            return try await apiClient.writeAttachment(
-                noteID: noteID,
-                attachmentID: attachmentID,
-                data: ciphertext,
-                accessToken: accessToken,
-                ifMatch: etag
-            )
-        }
-        return try await uploadAttachmentChunked(
+        try await uploadAttachmentChunked(
             noteID: noteID,
             attachmentID: attachmentID,
             ciphertext: ciphertext,

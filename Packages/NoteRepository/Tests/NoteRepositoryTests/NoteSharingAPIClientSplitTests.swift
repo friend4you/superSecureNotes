@@ -71,9 +71,11 @@ final class NoteSharingAPIClientSplitTests: XCTestCase {
         XCTAssertEqual(attachments[0].attachmentID, attachmentID)
         XCTAssertEqual(attachments[0].sizeBytes, 2_048)
         XCTAssertEqual(attachments[0].etag, #"W/"shared-att-etag""#)
+        XCTAssertEqual(attachments[0].totalChunks, 1)
+        XCTAssertEqual(attachments[0].chunkSize, 2_048)
     }
 
-    func testReadSharedAttachmentSendsExpectedRequest() async throws {
+    func testReadSharedAttachmentChunkSendsExpectedRequest() async throws {
         let captured = RequestCapture()
         let noteID = NoteFixtures.noteID
         let attachmentID = NoteFixtures.attachmentID
@@ -85,16 +87,17 @@ final class NoteSharingAPIClientSplitTests: XCTestCase {
         }
 
         let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
-        let data = try await client.readSharedAttachment(
+        let data = try await client.readSharedAttachmentChunk(
             noteID: noteID,
             attachmentID: attachmentID,
+            chunkIndex: 0,
             accessToken: NoteFixtures.accessToken
         )
 
         XCTAssertEqual(captured.method, "GET")
         XCTAssertEqual(
             captured.path,
-            "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
         )
         XCTAssertEqual(captured.authorization, "Bearer \(NoteFixtures.accessToken)")
         XCTAssertEqual(data, ciphertext)

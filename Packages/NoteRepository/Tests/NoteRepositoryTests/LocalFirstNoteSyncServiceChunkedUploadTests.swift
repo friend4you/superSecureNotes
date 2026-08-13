@@ -44,7 +44,7 @@ final class LocalFirstNoteSyncServiceChunkedUploadTests: XCTestCase {
             }
             if path == manifestPath && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             return try self.handleChunkedUpload(
                 request: request,
@@ -107,7 +107,7 @@ final class LocalFirstNoteSyncServiceChunkedUploadTests: XCTestCase {
             }
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             let activeUploadID = log.paths.contains { $0.contains(staleUploadID.uuidString.lowercased()) }
                 ? staleUploadID
@@ -164,7 +164,7 @@ final class LocalFirstNoteSyncServiceChunkedUploadTests: XCTestCase {
             }
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             if path.contains(staleUploadID.uuidString.lowercased()) && path.contains("/chunks/") {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 404)

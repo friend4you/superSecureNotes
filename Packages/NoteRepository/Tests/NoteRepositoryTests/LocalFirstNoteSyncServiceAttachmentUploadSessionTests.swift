@@ -30,8 +30,6 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
         var bodyAttempts = 0
 
         let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
-        let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
 
         URLProtocolStub.requestHandler = { request in
@@ -60,11 +58,13 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
             }
             if path == manifestPath && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
-            if path == attachmentPath {
-                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.writeAttachmentResponseJSON(noteEtag: #"W/"retry-note-etag""#))
+            if let chunked = NoteFixtures.chunkedAttachmentUploadResponse(
+                for: request,
+                noteEtag: #"W/"retry-note-etag""#
+            ) {
+                return chunked
             }
             XCTFail("Unexpected path: \(path)")
             return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
@@ -137,7 +137,7 @@ final class LocalFirstNoteSyncServiceAttachmentUploadSessionTests: XCTestCase {
             }
             if path == manifestPath && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             if path == initPath {
                 XCTFail("Should resume existing attachment upload session")

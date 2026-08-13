@@ -14,7 +14,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (
@@ -45,7 +45,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
             return (response, nil)
@@ -113,7 +113,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())
@@ -145,7 +145,7 @@ final class NetworkNoteRepositoryWriteNoteTests: XCTestCase {
             let path = request.url!.path
             if path.hasSuffix("/attachments") && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (response, NoteFixtures.writeNoteResponseJSON())

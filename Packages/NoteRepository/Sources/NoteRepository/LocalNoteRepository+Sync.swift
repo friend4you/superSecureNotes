@@ -64,9 +64,17 @@ protocol NoteSyncRemoteStoring: Actor {
     func readNote(noteID: UUID) async throws -> StoredNote
     func deleteNote(noteID: UUID) async throws
     func listAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary]
-    func readAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data
+    func readAttachment(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data
     func listSharedAttachments(noteID: UUID) async throws -> [RemoteAttachmentSummary]
-    func readSharedAttachment(noteID: UUID, attachmentID: UUID) async throws -> Data
+    func readSharedAttachment(
+        noteID: UUID,
+        summary: RemoteAttachmentSummary,
+        onBytesReceived: (@Sendable (UInt64) -> Void)?
+    ) async throws -> Data
 }
 
 protocol NoteSyncLocalVaultStoring: Actor {

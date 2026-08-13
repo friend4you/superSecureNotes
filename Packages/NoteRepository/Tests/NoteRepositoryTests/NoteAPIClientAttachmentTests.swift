@@ -9,106 +9,40 @@ final class NoteAPIClientAttachmentTests: XCTestCase {
         super.tearDown()
     }
 
-    func testReadAttachmentSendsExpectedRequest() async throws {
-        let captured = RequestCapture()
+    func testListAttachmentsParsesChunkMetadata() async throws {
         let noteID = NoteFixtures.noteID
         let attachmentID = NoteFixtures.attachmentID
-        let ciphertext = Data(repeating: 0xAB, count: 64)
-        URLProtocolStub.requestHandler = { request in
-            captured.record(request)
-            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, ciphertext)
-        }
-
-        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
-        let data = try await client.readAttachment(
-            noteID: noteID,
-            attachmentID: attachmentID,
-            accessToken: NoteFixtures.accessToken
-        )
-
-        XCTAssertEqual(captured.method, "GET")
-        XCTAssertEqual(
-            captured.path,
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
-        )
-        XCTAssertEqual(captured.authorization, "Bearer \(NoteFixtures.accessToken)")
-        XCTAssertEqual(data, ciphertext)
-    }
-
-    func testWriteAttachmentSendsExpectedRequest() async throws {
-        let captured = RequestCapture()
-        let noteID = NoteFixtures.noteID
-        let attachmentID = NoteFixtures.attachmentID
-        let ciphertext = Data(repeating: 0xCD, count: 128)
-        URLProtocolStub.requestHandler = { request in
-            captured.record(request)
-            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.writeAttachmentResponseJSON())
-        }
-
-        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
-        _ = try await client.writeAttachment(
-            noteID: noteID,
-            attachmentID: attachmentID,
-            data: ciphertext,
-            accessToken: NoteFixtures.accessToken
-        )
-
-        XCTAssertEqual(captured.method, "PUT")
-        XCTAssertEqual(
-            captured.path,
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
-        )
-        XCTAssertEqual(captured.contentType, "application/octet-stream")
-        XCTAssertEqual(captured.authorization, "Bearer \(NoteFixtures.accessToken)")
-        XCTAssertEqual(captured.bodyData, ciphertext)
-        XCTAssertNil(captured.ifMatch)
-    }
-
-    func testWriteAttachmentSendsIfMatchWhenProvided() async throws {
-        let captured = RequestCapture()
-        let etag = #"W/"att-local-etag""#
-        URLProtocolStub.requestHandler = { request in
-            captured.record(request)
-            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, NoteFixtures.writeAttachmentResponseJSON())
-        }
-
-        let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
-        _ = try await client.writeAttachment(
-            noteID: NoteFixtures.noteID,
-            attachmentID: NoteFixtures.attachmentID,
-            data: Data([0x01]),
-            accessToken: NoteFixtures.accessToken,
-            ifMatch: etag
-        )
-
-        XCTAssertEqual(captured.ifMatch, etag)
-    }
-
-    func testWriteAttachmentParsesResponse() async throws {
         URLProtocolStub.requestHandler = { request in
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
             return (
                 response,
-                NoteFixtures.writeAttachmentResponseJSON(
-                    etag: #"W/"att-server-etag""#,
-                    noteEtag: #"W/"note-etag""#
+                NoteFixtures.attachmentsManifestJSON(
+                    attachments: [
+                        (
+                            attachmentID: attachmentID,
+                            sizeBytes: 4_096,
+                            contentType: "application/octet-stream",
+                            etag: #"W/"att-etag""#,
+                            totalChunks: 2,
+                            chunkSize: 2_048
+                        ),
+                    ]
                 )
             )
         }
 
         let client = NoteAPIClient(baseURL: NoteFixtures.baseURL, session: .stubbed())
-        let result = try await client.writeAttachment(
-            noteID: NoteFixtures.noteID,
-            attachmentID: NoteFixtures.attachmentID,
-            data: Data([0x01, 0x02]),
+        let attachments = try await client.listAttachments(
+            noteID: noteID,
             accessToken: NoteFixtures.accessToken
         )
 
-        XCTAssertEqual(result.etag, #"W/"att-server-etag""#)
-        XCTAssertEqual(result.noteEtag, #"W/"note-etag""#)
+        XCTAssertEqual(attachments.count, 1)
+        XCTAssertEqual(attachments[0].attachmentID, attachmentID)
+        XCTAssertEqual(attachments[0].sizeBytes, 4_096)
+        XCTAssertEqual(attachments[0].totalChunks, 2)
+        XCTAssertEqual(attachments[0].chunkSize, 2_048)
+        XCTAssertEqual(attachments[0].etag, #"W/"att-etag""#)
     }
 
     func testDeleteAttachmentSendsExpectedRequest() async throws {

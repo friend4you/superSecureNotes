@@ -50,17 +50,36 @@ final class NetworkNoteRepositorySplitReadTests: XCTestCase {
         let noteID = NoteFixtures.noteID
         let attachmentID = NoteFixtures.attachmentID
         let ciphertext = Data(repeating: 0xEE, count: 64)
-        let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+        let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
+        let chunkPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
         let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
 
         URLProtocolStub.requestHandler = { request in
             log.record(request)
             let path = request.url!.path
             XCTAssertEqual(request.httpMethod, "GET")
-            XCTAssertEqual(path, attachmentPath)
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, ciphertext)
+            if path == manifestPath {
+                return (
+                    response,
+                    NoteFixtures.attachmentsManifestJSON(attachments: [
+                        (
+                            attachmentID: attachmentID,
+                            sizeBytes: UInt64(ciphertext.count),
+                            contentType: "application/octet-stream",
+                            etag: #"W/"a""#,
+                            totalChunks: 1,
+                            chunkSize: ciphertext.count
+                        ),
+                    ])
+                )
+            }
+            if path == chunkPath {
+                return (response, ciphertext)
+            }
+            XCTFail("Unexpected path: \(path)")
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
         }
 
         let repository = NetworkNoteRepository(
@@ -72,8 +91,9 @@ final class NetworkNoteRepositorySplitReadTests: XCTestCase {
         let data = try await repository.readAttachment(noteID: noteID, attachmentID: attachmentID)
 
         XCTAssertEqual(data, ciphertext)
-        XCTAssertEqual(log.count, 1)
-        XCTAssertEqual(log.path(at: 0), attachmentPath)
+        XCTAssertEqual(log.count, 2)
+        XCTAssertEqual(log.path(at: 0), manifestPath)
+        XCTAssertEqual(log.path(at: 1), chunkPath)
         XCTAssertFalse(log.paths.contains(bodyPath))
         XCTAssertFalse(log.paths.contains("/v1/notes/\(noteID.uuidString.lowercased())"))
     }

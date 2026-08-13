@@ -165,15 +165,31 @@ extension LocalFirstNoteSyncService {
 
         do {
             let data: Data
+            let multicaster = hydrationProgressMulticaster
+            let attachmentID = summary.attachmentID
+            let progressTotalBytes = totalBytes
+            let onBytesReceived: @Sendable (UInt64) -> Void = { bytesReceived in
+                multicaster.yield(
+                    AttachmentHydrationProgress(
+                        noteID: noteID,
+                        attachmentID: attachmentID,
+                        bytesReceived: bytesReceived,
+                        totalBytes: progressTotalBytes == 0 ? bytesReceived : progressTotalBytes,
+                        state: .downloading
+                    )
+                )
+            }
             if shared {
                 data = try await remoteNotes.readSharedAttachment(
                     noteID: noteID,
-                    attachmentID: summary.attachmentID
+                    summary: summary,
+                    onBytesReceived: onBytesReceived
                 )
             } else {
                 data = try await remoteNotes.readAttachment(
                     noteID: noteID,
-                    attachmentID: summary.attachmentID
+                    summary: summary,
+                    onBytesReceived: onBytesReceived
                 )
             }
 

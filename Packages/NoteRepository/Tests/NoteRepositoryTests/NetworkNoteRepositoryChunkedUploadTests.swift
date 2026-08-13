@@ -50,7 +50,7 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
 
             if path == "/v1/notes/\(noteID.uuidString.lowercased())/attachments" && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
 
             if path == initPath {
@@ -146,7 +146,7 @@ final class NetworkNoteRepositoryChunkedUploadTests: XCTestCase {
 
             if path == "/v1/notes/\(noteID.uuidString.lowercased())/attachments" && request.httpMethod == "GET" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
 
             if path == initPath {

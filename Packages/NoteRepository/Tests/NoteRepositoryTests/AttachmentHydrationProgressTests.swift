@@ -33,7 +33,7 @@ final class AttachmentHydrationProgressTests: XCTestCase {
 
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
 
         URLProtocolStub.requestHandler = { request in
             let path = request.url!.path
@@ -81,6 +81,83 @@ final class AttachmentHydrationProgressTests: XCTestCase {
         XCTAssertEqual(events.last?.state, .completed)
     }
 
+    func testProgressIncrementsAsEachChunkCompletes() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440093")!
+        let attachmentID = UUID(uuidString: "880e8400-e29b-41d4-a716-446655440093")!
+        let chunk0 = Data(repeating: 0x01, count: 4)
+        let chunk1 = Data(repeating: 0x02, count: 4)
+        let chunk2 = Data(repeating: 0x03, count: 4)
+        let ciphertext = chunk0 + chunk1 + chunk2
+        let (indexStore, localRepository, syncService) = makeSyncEnvironment()
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await seedBodyOnlyNote(noteID: noteID, repository: localRepository)
+
+        let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
+        let base =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+
+        URLProtocolStub.requestHandler = { request in
+            let path = request.url!.path
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            if path == manifestPath && request.httpMethod == "GET" {
+                return (
+                    response,
+                    NoteFixtures.attachmentsManifestJSON(attachments: [
+                        (
+                            attachmentID: attachmentID,
+                            sizeBytes: UInt64(ciphertext.count),
+                            contentType: "application/octet-stream",
+                            etag: #"W/"chunks""#,
+                            totalChunks: 3,
+                            chunkSize: 4
+                        ),
+                    ])
+                )
+            }
+            if path == "\(base)/chunks/0" {
+                return (response, chunk0)
+            }
+            if path == "\(base)/chunks/1" {
+                return (response, chunk1)
+            }
+            if path == "\(base)/chunks/2" {
+                return (response, chunk2)
+            }
+            XCTFail("Unexpected path: \(path)")
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+        }
+
+        let progressTask = Task<[AttachmentHydrationProgress], Never> {
+            var collected: [AttachmentHydrationProgress] = []
+            for await progress in syncService.attachmentHydrationProgress {
+                guard progress.noteID == noteID, progress.attachmentID == attachmentID else {
+                    continue
+                }
+                collected.append(progress)
+                if progress.state == .completed || progress.state == .failed {
+                    break
+                }
+            }
+            return collected
+        }
+
+        try await Task.sleep(nanoseconds: 20_000_000)
+        await syncService.hydrateAttachments(noteID: noteID)
+
+        let events = await progressTask.value
+        let downloading = events.filter { $0.state == .downloading }
+        XCTAssertGreaterThanOrEqual(downloading.count, 4) // 0 + 3 chunk increments
+        XCTAssertEqual(downloading.first?.bytesReceived, 0)
+        XCTAssertTrue(downloading.contains { $0.bytesReceived == 4 })
+        XCTAssertTrue(downloading.contains { $0.bytesReceived == 8 })
+        XCTAssertTrue(downloading.contains { $0.bytesReceived == 12 })
+        XCTAssertEqual(events.last?.state, .completed)
+        XCTAssertEqual(events.last?.bytesReceived, UInt64(ciphertext.count))
+
+        let note = try await localRepository.readNote(noteID: noteID)
+        XCTAssertEqual(note.attachmentCiphertexts[attachmentID], ciphertext)
+    }
+
     func testRetryAttachmentDownloadsOnlyFailedId() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440091")!
         let okID = UUID(uuidString: "880e8400-e29b-41d4-a716-446655440091")!
@@ -93,9 +170,9 @@ final class AttachmentHydrationProgressTests: XCTestCase {
 
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         let okPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(okID.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(okID.uuidString.lowercased())/chunks/0"
         let failPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(failID.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(failID.uuidString.lowercased())/chunks/0"
         let failState = FailOnceState()
         let log = RequestLog()
 

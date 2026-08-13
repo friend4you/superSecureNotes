@@ -32,9 +32,11 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
 
         let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
         let attachmentPath1 =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID1.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID1.uuidString.lowercased())/uploads"
         let attachmentPath2 =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID2.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID2.uuidString.lowercased())/uploads"
+        let completePath2 =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID2.uuidString.lowercased())/uploads/\(NoteFixtures.uploadID.uuidString.lowercased())/complete"
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
 
         URLProtocolStub.requestHandler = { request in
@@ -49,16 +51,19 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
                 return (response, NoteFixtures.writeNoteResponseJSON(etag: #"W/"body-etag""#))
             }
             if path == manifestPath && request.httpMethod == "GET" {
-                return (response, NoteFixtures.attachmentsManifestJSON(attachments: []))
+                return (response, NoteFixtures.attachmentsManifestJSON())
             }
-            if path == attachmentPath1 {
-                return (response, NoteFixtures.writeAttachmentResponseJSON(noteEtag: #"W/"note-etag-1""#))
-            }
-            if path == attachmentPath2 {
+            if path == completePath2 && request.httpMethod == "POST" {
                 if failState.shouldFail() {
                     return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
                 }
                 return (response, NoteFixtures.writeAttachmentResponseJSON(noteEtag: #"W/"note-etag-2""#))
+            }
+            if let chunked = NoteFixtures.chunkedAttachmentUploadResponse(
+                for: request,
+                noteEtag: #"W/"note-etag-1""#
+            ) {
+                return chunked
             }
             XCTFail("Unexpected path: \(path)")
             return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
@@ -124,7 +129,7 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
 
         let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
         let attachmentPath =
-            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/uploads"
         let removedPath =
             "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(removedID.uuidString.lowercased())"
         let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
@@ -156,13 +161,15 @@ final class LocalFirstNoteSyncServiceSplitUploadTests: XCTestCase {
                     )
                 )
             }
-            if path == attachmentPath && request.httpMethod == "PUT" {
-                let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-                return (response, NoteFixtures.writeAttachmentResponseJSON(noteEtag: #"W/"final-etag""#))
-            }
             if path == removedPath && request.httpMethod == "DELETE" {
                 let response = TestHTTP.makeResponse(url: request.url!, statusCode: 204)
                 return (response, nil)
+            }
+            if let chunked = NoteFixtures.chunkedAttachmentUploadResponse(
+                for: request,
+                noteEtag: #"W/"final-etag""#
+            ) {
+                return chunked
             }
             XCTFail("Unexpected \(request.httpMethod ?? "") \(path)")
             return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())

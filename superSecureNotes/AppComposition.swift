@@ -64,7 +64,7 @@ final class AppComposition {
         )
         shareNoteDependencies = ShareNoteDependencies(
             navigator: navigation.navigator,
-            noteRepository: dependencies.noteRepository,
+            noteRepository: dependencies.networkNoteRepository,
             vaultRepository: dependencies.networkVaultRepository,
             vaultSession: dependencies.vaultSession
         )

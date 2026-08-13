@@ -45,6 +45,7 @@ final class NoteAPIClientAttachmentChunkedUploadTests: XCTestCase {
         )
         let initBody = try XCTUnwrap(log.jsonObject(at: 0) as? [String: Any])
         XCTAssertEqual(initBody["totalSize"] as? Int, totalSize)
+        XCTAssertEqual(initBody["contentType"] as? String, "application/octet-stream")
     }
 
     func testInitAttachmentUploadAcceptsCreatedStatus() async throws {

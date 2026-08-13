@@ -33,7 +33,7 @@ final class SharedAttachmentHydrationTests: XCTestCase {
 
         let sharedManifestPath = "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments"
         let sharedAttachmentPath =
-            "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
         let ownedAttachmentPrefix = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         let log = RequestLog()
 
@@ -75,7 +75,7 @@ final class SharedAttachmentHydrationTests: XCTestCase {
 
         let sharedManifestPath = "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments"
         let sharedAttachmentPath =
-            "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())"
+            "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
         let failState = FailOnceSharedState()
         let log = RequestLog()
 
