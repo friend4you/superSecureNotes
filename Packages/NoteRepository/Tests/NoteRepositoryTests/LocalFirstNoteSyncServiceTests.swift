@@ -355,6 +355,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         XCTAssertEqual(summaries.count, 1)
         XCTAssertEqual(summaries[0].noteID, noteID)
         XCTAssertEqual(summaries[0].syncState, .synced)
+        XCTAssertEqual(summaries[0].etag, #"W/"remote-etag""#)
 
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.syncState, .synced)
@@ -509,6 +510,46 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
         XCTAssertEqual(captured.path, "/v1/vault/header")
         XCTAssertEqual(captured.contentType, "application/octet-stream")
         XCTAssertEqual(captured.bodyData, header)
+    }
+
+    func testFlushPendingSkipsBodyPullWhenLocalEtagMatches() async throws {
+        let noteID = NoteFixtures.noteID
+        let etag = #"W/"stored-etag""#
+        let (indexStore, localRepository, _, _, syncService) = makeSyncEnvironment()
+        let bodyPath = "/v1/notes/\(noteID.uuidString.lowercased())/body"
+        let bodyRequestCounter = RequestCounter()
+
+        URLProtocolStub.requestHandler = { request in
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            switch request.url?.path {
+            case "/v1/notes":
+                return (
+                    response,
+                    NoteFixtures.pullListNotesJSON(
+                        noteID: noteID,
+                        title: "Remote note",
+                        updatedAt: 1_700_000_100,
+                        etag: etag
+                    )
+                )
+            case bodyPath:
+                bodyRequestCounter.increment()
+                return (response, NoteFixtures.noteBytes)
+            default:
+                XCTFail("Unexpected path: \(request.url?.path ?? "")")
+                return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+            }
+        }
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await syncService.pullRemoteNotesCatalog()
+        XCTAssertEqual(bodyRequestCounter.value, 1)
+
+        await syncService.flushPending()
+
+        XCTAssertEqual(bodyRequestCounter.value, 1)
+        let summaries = try await localRepository.listNotes()
+        XCTAssertEqual(summaries[0].etag, etag)
     }
 
     private func makeRemoteRepository() -> NetworkNoteRepository {

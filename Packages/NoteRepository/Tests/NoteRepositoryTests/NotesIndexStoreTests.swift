@@ -194,6 +194,31 @@ final class NotesIndexStoreTests: XCTestCase {
         XCTAssertEqual(summaries[1].syncState, .pendingSync)
     }
 
+    func testListSummariesReturnsEtag() async throws {
+        let store = makeStore()
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440016")!
+        try await store.open(passphrase: NoteTestSupport.databasePassphrase)
+        try await store.upsertNote(
+            NoteIndexRow(
+                noteID: noteID,
+                title: "Etag summary",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0,
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                syncState: .synced,
+                etag: #"W/"summary-etag""#
+            )
+        )
+
+        let summaries = try await store.listSummaries()
+
+        XCTAssertEqual(summaries.count, 1)
+        XCTAssertEqual(summaries[0].noteID, noteID)
+        XCTAssertEqual(summaries[0].etag, #"W/"summary-etag""#)
+    }
+
     func testMigrationPreservesExistingRowsWithoutEtag() async throws {
         let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440015")!
         try NoteTestSupport.seedLegacyIndexDatabase(

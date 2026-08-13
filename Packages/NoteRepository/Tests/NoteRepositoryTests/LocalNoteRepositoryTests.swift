@@ -68,6 +68,70 @@ final class LocalNoteRepositoryTests: XCTestCase {
         )
     }
 
+    func testListNotesReturnsStoredEtag() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440024")!
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: noteID,
+                title: "Etag note",
+                syncState: .synced
+            )
+        )
+        try await indexStore.upsertNote(
+            NoteIndexRow(
+                noteID: noteID,
+                title: "Etag note",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0,
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                syncState: .synced,
+                etag: #"W/"list-etag""#
+            )
+        )
+
+        let summaries = try await repository.listNotes()
+
+        XCTAssertEqual(summaries.count, 1)
+        XCTAssertEqual(summaries[0].etag, #"W/"list-etag""#)
+    }
+
+    func testWriteNotePreservesStoredEtag() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440025")!
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: temporaryDirectory)
+
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await indexStore.upsertNote(
+            NoteIndexRow(
+                noteID: noteID,
+                title: "Original",
+                createdAt: 1_700_000_000,
+                updatedAt: 1_700_000_100,
+                attachmentCount: 0,
+                attachmentsTotalSize: 0,
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                syncState: .synced,
+                bodyEtag: #"W/"body-etag""#,
+                etag: #"W/"note-etag""#
+            )
+        )
+        try await repository.writeNote(
+            NoteTestSupport.makeSampleStoredNote(
+                noteID: noteID,
+                title: "Updated title",
+                syncState: .pendingSync
+            )
+        )
+
+        let row = try await indexStore.fetchNote(noteID: noteID)
+        XCTAssertEqual(row?.etag, #"W/"note-etag""#)
+        XCTAssertEqual(row?.bodyEtag, #"W/"body-etag""#)
+    }
+
     func testListNotesOmitsPendingDeleteNotes() async throws {
         let visibleID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440022")!
         let deletedID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440023")!

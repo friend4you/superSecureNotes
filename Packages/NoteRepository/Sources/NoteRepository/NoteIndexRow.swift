@@ -14,7 +14,7 @@ struct NoteIndexRow: Equatable, Sendable {
     let bodyEtag: String?
     let etag: String?
 
-    init(storedNote: StoredNote) {
+    init(storedNote: StoredNote, preservingEtagsFrom existing: NoteIndexRow? = nil) {
         noteID = storedNote.metadata.noteID
         title = storedNote.metadata.title
         createdAt = storedNote.metadata.createdAt
@@ -23,8 +23,8 @@ struct NoteIndexRow: Equatable, Sendable {
         attachmentsTotalSize = storedNote.metadata.attachmentsTotalSize
         wrappedFEK = storedNote.wrappedFEK
         syncState = storedNote.syncState
-        bodyEtag = nil
-        etag = nil
+        bodyEtag = existing?.bodyEtag
+        etag = existing?.etag
     }
 
     init(
@@ -63,6 +63,12 @@ struct NoteIndexRow: Equatable, Sendable {
     }
 
     var summary: NoteSummary {
-        NoteSummary(noteID: noteID, title: title, updatedAt: updatedAt, syncState: syncState)
+        NoteSummary(
+            noteID: noteID,
+            title: title,
+            updatedAt: updatedAt,
+            syncState: syncState,
+            etag: etag
+        )
     }
 }

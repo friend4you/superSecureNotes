@@ -145,7 +145,13 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
             }
         }
 
-        try await notesIndexStore.upsertNote(NoteIndexRow(storedNote: storedNote))
+        let existingRow = try await notesIndexStore.fetchNote(noteID: noteID)
+        try await notesIndexStore.upsertNote(
+            NoteIndexRow(
+                storedNote: storedNote,
+                preservingEtagsFrom: existingRow
+            )
+        )
         try await syncAttachmentIndexRows(noteID: noteID, ciphertexts: storedNote.attachmentCiphertexts)
 
         if fileManager.fileExists(atPath: finalDirectoryURL.path) {

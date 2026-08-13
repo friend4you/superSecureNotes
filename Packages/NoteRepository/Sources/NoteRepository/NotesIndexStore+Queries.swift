@@ -58,18 +58,20 @@ extension NotesIndexStore {
         try withDatabase { database in
             let rows = try queryRows(
                 """
-                SELECT note_id, title, updated_at, sync_state
+                SELECT note_id, title, updated_at, sync_state, etag
                 FROM notes
                 ORDER BY updated_at DESC
                 """,
                 on: database
             )
             return rows.map { row in
-                NoteSummary(
+                let etagText = Self.textValue(row["etag"])
+                return NoteSummary(
                     noteID: UUID(uuidString: Self.textValue(row["note_id"]))!,
                     title: Self.textValue(row["title"]),
                     updatedAt: UInt64(Self.int64Value(row["updated_at"])),
-                    syncState: NoteSyncState(rawValue: Self.textValue(row["sync_state"])) ?? .pendingSync
+                    syncState: NoteSyncState(rawValue: Self.textValue(row["sync_state"])) ?? .pendingSync,
+                    etag: etagText.isEmpty ? nil : etagText
                 )
             }
         }
