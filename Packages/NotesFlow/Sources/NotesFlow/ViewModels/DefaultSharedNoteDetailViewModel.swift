@@ -73,11 +73,9 @@ public final class DefaultSharedNoteDetailViewModel: SharedNoteDetailViewModel {
         errorMessage = nil
 
         do {
-            async let sharedNoteTask = noteRepository.readSharedNote(noteID: noteID)
-            async let summariesTask = noteRepository.listSharedNotes()
-            let shared = try await sharedNoteTask
-            let summaries = try await summariesTask
-            ownerEmail = summaries.first { $0.noteID == noteID }?.ownerEmail ?? ""
+            let shared = try await noteRepository.readSharedNote(noteID: noteID)
+            let summary = try await noteRepository.fetchSharedNoteSummary(noteID: noteID)
+            ownerEmail = summary?.ownerEmail ?? ""
 
             let identityKey = try await vaultSession.identityPrivateKey()
             let loadedFEK = try unwrapSharedFEK(shared.recipientWrappedFEK, identityPrivateKey: identityKey)
@@ -92,10 +90,8 @@ public final class DefaultSharedNoteDetailViewModel: SharedNoteDetailViewModel {
                     attachmentPlaintexts[attachment.id] = data
                 }
             }
-            // Warm local cache (if composition stores shared note parts locally).
-            if let localNote = try? await noteRepository.readNote(noteID: noteID) {
-                applyCiphertexts(localNote.attachmentCiphertexts, fek: loadedFEK)
-            }
+            let ciphertexts = try await noteRepository.loadSharedAttachmentCiphertexts(noteID: noteID)
+                applyCiphertexts(ciphertexts, fek: loadedFEK)
             attachmentItems = attachments.map(\.attachmentItem)
             didLoad = true
             isLoading = false
@@ -141,8 +137,10 @@ public final class DefaultSharedNoteDetailViewModel: SharedNoteDetailViewModel {
     private func refreshAttachmentPlaintext(attachmentID: UUID) async {
         guard let fek else { return }
         do {
-            let storedNote = try await noteRepository.readNote(noteID: noteID)
-            if let ciphertext = storedNote.attachmentCiphertexts[attachmentID] {
+            if let ciphertext = try await noteRepository.readSharedAttachmentCiphertext(
+                noteID: noteID,
+                attachmentID: attachmentID
+            ) {
                 let plaintext = try decryptAttachmentFile(ciphertext, with: fek)
                 attachmentPlaintexts[attachmentID.uuidString] = plaintext
             }

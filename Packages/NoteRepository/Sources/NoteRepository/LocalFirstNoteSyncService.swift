@@ -58,6 +58,8 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         await flushUploads()
         await flushDeletes()
         await pullRemoteChanges()
+        await pullRemoteSharedChanges()
+        await flushSharedDeletes()
     }
 
     public func pullVaultHeaderIfLocalMissing() async throws -> Data? {
@@ -72,6 +74,10 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
 
     public func pullRemoteNotesCatalog() async throws {
         try await importRemoteNotes()
+    }
+
+    public func pullRemoteSharedCatalog() async throws {
+        try await importRemoteSharedNotes()
     }
 
     public func pullCatalogIfLocalVaultMissing() async throws -> Data? {
@@ -236,6 +242,54 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
             do {
                 try await remoteNotes.deleteNote(noteID: entry.noteID)
                 try await localNotes.finalizeDeletedNote(noteID: entry.noteID)
+            } catch {
+                continue
+            }
+        }
+    }
+
+    func pullRemoteSharedChanges() async {
+        guard let remoteSummaries = try? await remoteNotes.listSharedNotes() else {
+            return
+        }
+        guard let localSummaries = try? await localNotes.listSharedNoteSummaries() else {
+            return
+        }
+
+        let localByID = Dictionary(uniqueKeysWithValues: localSummaries.map { ($0.noteID, $0) })
+        let remoteIDs = Set(remoteSummaries.map(\.noteID))
+
+        for summary in remoteSummaries {
+            if let local = localByID[summary.noteID], local.etag == summary.etag {
+                continue
+            }
+            do {
+                try await localNotes.upsertSharedSummary(summary, preservingBodyEtag: true)
+            } catch {
+                continue
+            }
+        }
+
+        for local in localSummaries where !remoteIDs.contains(local.noteID) {
+            try? await localNotes.removeSharedNoteLocally(noteID: local.noteID)
+        }
+    }
+
+    private func importRemoteSharedNotes() async throws {
+        let summaries = try await remoteNotes.listSharedNotes()
+        for summary in summaries {
+            try await localNotes.upsertSharedSummary(summary, preservingBodyEtag: false)
+        }
+    }
+
+    private func flushSharedDeletes() async {
+        guard let entries = try? await localNotes.pendingSharedDeleteEntries() else {
+            return
+        }
+        for noteID in entries {
+            do {
+                try await remoteNotes.deleteSharedNote(noteID: noteID)
+                try await localNotes.finalizeSharedDelete(noteID: noteID)
             } catch {
                 continue
             }

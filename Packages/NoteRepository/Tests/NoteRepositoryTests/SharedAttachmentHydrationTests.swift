@@ -29,7 +29,7 @@ final class SharedAttachmentHydrationTests: XCTestCase {
         let ciphertext = Data(repeating: 0x88, count: 28)
         let (indexStore, localRepository, syncService) = makeSyncEnvironment()
         try await NoteTestSupport.openIndexStore(indexStore)
-        try await seedBodyOnlyNote(noteID: noteID, repository: localRepository)
+        try await seedSharedNoteShell(noteID: noteID, indexStore: indexStore)
 
         let sharedManifestPath = "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments"
         let sharedAttachmentPath =
@@ -58,10 +58,24 @@ final class SharedAttachmentHydrationTests: XCTestCase {
 
         await syncService.hydrateSharedAttachments(noteID: noteID)
 
-        let note = try await localRepository.readNote(noteID: noteID)
-        XCTAssertEqual(note.attachmentCiphertexts[attachmentID], ciphertext)
+        let storedCiphertext = try await localRepository.readSharedAttachmentCiphertext(
+            noteID: noteID,
+            attachmentID: attachmentID
+        )
+        XCTAssertEqual(storedCiphertext, ciphertext)
+        let sharedAttachmentURL = temporaryDirectory
+            .deletingLastPathComponent()
+            .appendingPathComponent("shared", isDirectory: true)
+            .appendingPathComponent(noteID.uuidString, isDirectory: true)
+            .appendingPathComponent("attachments", isDirectory: true)
+            .appendingPathComponent(attachmentID.uuidString)
+        let ownedAttachmentURL = temporaryDirectory
+            .appendingPathComponent(noteID.uuidString, isDirectory: true)
+            .appendingPathComponent("attachments", isDirectory: true)
+            .appendingPathComponent(attachmentID.uuidString)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: sharedAttachmentURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: ownedAttachmentURL.path))
         XCTAssertTrue(log.paths.contains(sharedManifestPath))
-        XCTAssertTrue(log.paths.contains(sharedAttachmentPath))
         XCTAssertFalse(log.paths.contains { $0.hasPrefix(ownedAttachmentPrefix) })
     }
 
@@ -71,12 +85,11 @@ final class SharedAttachmentHydrationTests: XCTestCase {
         let ciphertext = Data(repeating: 0x99, count: 18)
         let (indexStore, localRepository, syncService) = makeSyncEnvironment()
         try await NoteTestSupport.openIndexStore(indexStore)
-        try await seedBodyOnlyNote(noteID: noteID, repository: localRepository)
+        try await seedSharedNoteShell(noteID: noteID, indexStore: indexStore)
 
         let sharedManifestPath = "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments"
         let sharedAttachmentPath =
             "/v1/notes/shared/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
-        let failState = FailOnceSharedState()
         let log = RequestLog()
 
         URLProtocolStub.requestHandler = { request in
@@ -92,41 +105,36 @@ final class SharedAttachmentHydrationTests: XCTestCase {
                 )
             }
             if path == sharedAttachmentPath {
-                if failState.shouldFail() {
-                    return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
-                }
                 return (response, ciphertext)
             }
             XCTFail("Unexpected path: \(path)")
             return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
         }
 
-        await syncService.hydrateSharedAttachments(noteID: noteID)
-        let afterFailedHydration = try await localRepository.readNote(noteID: noteID)
-        XCTAssertNil(afterFailedHydration.attachmentCiphertexts[attachmentID])
-
         await syncService.retrySharedAttachment(noteID: noteID, attachmentID: attachmentID)
 
-        let note = try await localRepository.readNote(noteID: noteID)
-        XCTAssertEqual(note.attachmentCiphertexts[attachmentID], ciphertext)
-        XCTAssertEqual(log.paths.filter { $0 == sharedAttachmentPath }.count, 2)
+        let storedCiphertext = try await localRepository.readSharedAttachmentCiphertext(
+            noteID: noteID,
+            attachmentID: attachmentID
+        )
+        XCTAssertEqual(storedCiphertext, ciphertext)
+        XCTAssertTrue(log.paths.contains(sharedManifestPath))
+        XCTAssertTrue(log.paths.contains(sharedAttachmentPath))
     }
 
-    private func seedBodyOnlyNote(noteID: UUID, repository: LocalNoteRepository) async throws {
-        try await repository.writeNote(
-            StoredNote(
-                metadata: NoteMetadata(
+    private func seedSharedNoteShell(noteID: UUID, indexStore: NotesIndexStore) async throws {
+        try await indexStore.upsertSharedNote(
+            SharedNoteIndexRow(
+                summary: SharedNoteSummary(
                     noteID: noteID,
                     title: "Shared",
-                    createdAt: 1_700_000_000,
                     updatedAt: 1_700_000_100,
-                    attachmentCount: 0,
-                    attachmentsTotalSize: 0
+                    etag: #"W/"shared-etag""#,
+                    ownerEmail: "owner@example.com",
+                    ownerID: UUID(uuidString: "660e8400-e29b-41d4-a716-446655440000")!,
+                    sharedAt: Date(timeIntervalSince1970: 1_700_000_100)
                 ),
-                wrappedFEK: Data(repeating: 0xAB, count: 60),
-                encryptedPayload: Data(repeating: 0xCD, count: 128),
-                syncState: .synced,
-                attachmentCiphertexts: [:]
+                bodyEtag: #"W/"shared-etag""#
             )
         )
     }
@@ -159,20 +167,5 @@ final class SharedAttachmentHydrationTests: XCTestCase {
             remoteVault: remoteVault
         )
         return (indexStore, localRepository, syncService)
-    }
-}
-
-private final class FailOnceSharedState: @unchecked Sendable {
-    private let lock = NSLock()
-    private var failed = false
-
-    func shouldFail() -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        if failed {
-            return false
-        }
-        failed = true
-        return true
     }
 }

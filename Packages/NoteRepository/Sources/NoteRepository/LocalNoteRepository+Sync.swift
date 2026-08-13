@@ -31,6 +31,17 @@ protocol NoteSyncLocalStoring: Actor, NoteUploadSessionStoring, AttachmentUpload
         ciphertext: Data,
         etag: String?
     ) async throws
+    func listSharedNoteSummaries() async throws -> [SharedNoteSummary]
+    func upsertSharedSummary(_ summary: SharedNoteSummary, preservingBodyEtag: Bool) async throws
+    func removeSharedNoteLocally(noteID: UUID) async throws
+    func sharedAttachmentFileExists(noteID: UUID, attachmentID: UUID) -> Bool
+    func writeSharedAttachmentFile(
+        noteID: UUID,
+        attachmentID: UUID,
+        ciphertext: Data
+    ) async throws
+    func pendingSharedDeleteEntries() async throws -> [UUID]
+    func finalizeSharedDelete(noteID: UUID) async throws
 }
 
 protocol NoteUploadSessionStoring: Actor {
@@ -75,6 +86,8 @@ protocol NoteSyncRemoteStoring: Actor {
         summary: RemoteAttachmentSummary,
         onBytesReceived: (@Sendable (UInt64) -> Void)?
     ) async throws -> Data
+    func listSharedNotes() async throws -> [SharedNoteSummary]
+    func deleteSharedNote(noteID: UUID) async throws
 }
 
 protocol NoteSyncLocalVaultStoring: Actor {
@@ -212,9 +225,58 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
     func importSyncedNote(_ note: StoredNote, etag: String?) async throws {
         try await replaceNoteWithRemote(note, etag: etag)
     }
+
+    func listSharedNoteSummaries() async throws -> [SharedNoteSummary] {
+        try await listSharedNotes()
+    }
+
+    func upsertSharedSummary(_ summary: SharedNoteSummary, preservingBodyEtag: Bool) async throws {
+        try await requireOpen()
+        let existing = try await notesIndexStore.fetchSharedNote(noteID: summary.noteID)
+        let bodyEtag: String?
+        if preservingBodyEtag, existing?.etag == summary.etag {
+            bodyEtag = existing?.bodyEtag
+        } else {
+            bodyEtag = nil
+        }
+        try await notesIndexStore.upsertSharedNote(
+            SharedNoteIndexRow(summary: summary, bodyEtag: bodyEtag)
+        )
+    }
+
+    func removeSharedNoteLocally(noteID: UUID) async throws {
+        try await requireOpen()
+        try purgeSharedNoteDirectory(noteID: noteID)
+        try await notesIndexStore.deleteSharedNote(noteID: noteID)
+    }
+
+    func writeSharedAttachmentFile(
+        noteID: UUID,
+        attachmentID: UUID,
+        ciphertext: Data
+    ) async throws {
+        try await requireOpen()
+        try persistSharedAttachmentCiphertext(
+            noteID: noteID,
+            attachmentID: attachmentID,
+            ciphertext: ciphertext
+        )
+    }
+
+    func pendingSharedDeleteEntries() async throws -> [UUID] {
+        try await requireOpen()
+        return try await notesIndexStore.listPendingSharedDeletes()
+    }
+
+    func finalizeSharedDelete(noteID: UUID) async throws {
+        try await requireOpen()
+        try await notesIndexStore.removeSharedDeleteOutboxEntry(noteID: noteID)
+    }
 }
 
 extension NetworkNoteRepository: NoteSyncRemoteStoring {}
+
+extension NetworkNoteRepository: SharedNoteBodyImporting {}
 
 extension LocalVaultRepository: NoteSyncLocalVaultStoring {}
 

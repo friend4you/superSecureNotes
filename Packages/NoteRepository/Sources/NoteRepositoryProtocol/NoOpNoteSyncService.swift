@@ -13,6 +13,8 @@ public actor NoOpNoteSyncService: NoteSyncing {
 
     public func pullRemoteNotesCatalog() async throws {}
 
+    public func pullRemoteSharedCatalog() async throws {}
+
     public func pullCatalogIfLocalVaultMissing() async throws -> Data? {
         nil
     }

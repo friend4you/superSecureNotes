@@ -76,6 +76,7 @@ final class AppDependencies {
             baseURL: Self.apiBaseURL,
             tokenProvider: tokenProvider
         )
+        localNotes.setSharedBodyImporter(networkNoteRepository)
         noteSyncService = LocalFirstNoteSyncService(
             localNotes: localNotes,
             remoteNotes: networkNoteRepository,

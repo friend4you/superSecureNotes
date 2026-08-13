@@ -111,6 +111,7 @@ public final class DefaultLoginViewModel: LoginViewModel {
                 )
                 do {
                     try await noteSync.pullRemoteNotesCatalog()
+                    try await noteSync.pullRemoteSharedCatalog()
                 } catch {
                     await notesIndexStore.close()
                     throw error

@@ -93,7 +93,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         await syncService.flushPending()
 
-        XCTAssertEqual(requestCounter.value, 4)
+        XCTAssertEqual(requestCounter.value, 5)
     }
 
     func testFlushRetriesUploadWhenLocalNewerAfter409() async throws {
@@ -532,6 +532,8 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
                         etag: etag
                     )
                 )
+            case "/v1/notes/shared":
+                return (response, NoteFixtures.listSharedNotesJSON(summaries: []))
             case bodyPath:
                 bodyRequestCounter.increment()
                 return (response, NoteFixtures.noteBytes)

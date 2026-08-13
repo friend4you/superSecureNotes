@@ -52,10 +52,18 @@ extension LocalFirstNoteSyncService {
             let remote = try await listRemoteAttachments(noteID: noteID, shared: shared)
             var missing: [RemoteAttachmentSummary] = []
             for summary in remote {
-                let exists = await localNotes.attachmentFileExists(
-                    noteID: noteID,
-                    attachmentID: summary.attachmentID
-                )
+                let exists: Bool
+                if shared {
+                    exists = await localNotes.sharedAttachmentFileExists(
+                        noteID: noteID,
+                        attachmentID: summary.attachmentID
+                    )
+                } else {
+                    exists = await localNotes.attachmentFileExists(
+                        noteID: noteID,
+                        attachmentID: summary.attachmentID
+                    )
+                }
                 if !exists {
                     missing.append(summary)
                 }
@@ -185,20 +193,24 @@ extension LocalFirstNoteSyncService {
                     summary: summary,
                     onBytesReceived: onBytesReceived
                 )
+                try await localNotes.writeSharedAttachmentFile(
+                    noteID: noteID,
+                    attachmentID: summary.attachmentID,
+                    ciphertext: data
+                )
             } else {
                 data = try await remoteNotes.readAttachment(
                     noteID: noteID,
                     summary: summary,
                     onBytesReceived: onBytesReceived
                 )
+                try await localNotes.writeAttachmentFile(
+                    noteID: noteID,
+                    attachmentID: summary.attachmentID,
+                    ciphertext: data,
+                    etag: summary.etag
+                )
             }
-
-            try await localNotes.writeAttachmentFile(
-                noteID: noteID,
-                attachmentID: summary.attachmentID,
-                ciphertext: data,
-                etag: summary.etag
-            )
 
             let received = UInt64(data.count)
             emitHydrationProgress(

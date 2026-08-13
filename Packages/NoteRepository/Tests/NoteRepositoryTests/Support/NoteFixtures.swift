@@ -79,13 +79,19 @@ enum NoteFixtures {
         )
     }
 
-    /// Handles `GET /notes` from post-push catalog pull in sync tests.
+    /// Handles catalog pull GETs from sync flush in tests.
     static func pullCatalogGETResponse(for request: URLRequest) -> (HTTPURLResponse, Data?)? {
-        guard request.httpMethod == "GET", request.url?.path == "/v1/notes" else {
+        guard request.httpMethod == "GET", let path = request.url?.path else {
             return nil
         }
         let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-        return (response, listNotesJSON(summaries: []))
+        if path == "/v1/notes" {
+            return (response, listNotesJSON(summaries: []))
+        }
+        if path == "/v1/notes/shared" {
+            return (response, listSharedNotesJSON(summaries: []))
+        }
+        return nil
     }
 
     static func writeNoteResponseJSON(

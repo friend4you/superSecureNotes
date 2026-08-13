@@ -433,6 +433,12 @@ private actor HydrationRemoteStub: NoteSyncRemoteStoring {
     ) async throws -> Data {
         try await readAttachment(noteID: noteID, summary: summary, onBytesReceived: onBytesReceived)
     }
+
+    func listSharedNotes() async throws -> [SharedNoteSummary] { [] }
+
+    func deleteSharedNote(noteID: UUID) async throws {
+        _ = noteID
+    }
 }
 
 private final class DownloadHoldGate: @unchecked Sendable {

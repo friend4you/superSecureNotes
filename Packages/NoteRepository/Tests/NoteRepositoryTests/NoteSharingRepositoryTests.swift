@@ -75,13 +75,33 @@ final class NoteSharingRepositoryTests: XCTestCase {
         )
     }
 
-    func testLocalListSharedNotesReturnsEmpty() async throws {
+    func testLocalListSharedNotesReturnsEmptyWhenIndexOpen() async throws {
         let notesRootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let (_, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
+        try await NoteTestSupport.openIndexStore(indexStore)
 
         let notes = try await repository.listSharedNotes()
         XCTAssertTrue(notes.isEmpty)
+    }
+
+    func testLocalReadSharedNoteThrowsWhenNoImporterConfigured() async throws {
+        let notesRootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await indexStore.upsertSharedNote(
+            SharedNoteIndexRow(summary: NoteFixtures.sampleSharedSummary)
+        )
+
+        do {
+            _ = try await repository.readSharedNote(noteID: NoteFixtures.noteID)
+            XCTFail("Expected notSupported")
+        } catch let error as NoteRepositoryError {
+            XCTAssertEqual(error, .notSupported)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     func testLocalShareNoteThrowsNotSupported() async throws {
@@ -95,21 +115,6 @@ final class NoteSharingRepositoryTests: XCTestCase {
                 recipientEmail: "friend@example.com",
                 wrappedFEK: Data([0x01])
             )
-            XCTFail("Expected notSupported")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .notSupported)
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testLocalReadSharedNoteThrowsNotSupported() async throws {
-        let notesRootURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let (_, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
-
-        do {
-            _ = try await repository.readSharedNote(noteID: NoteFixtures.noteID)
             XCTFail("Expected notSupported")
         } catch let error as NoteRepositoryError {
             XCTAssertEqual(error, .notSupported)
@@ -141,18 +146,18 @@ final class NoteSharingRepositoryTests: XCTestCase {
         )
     }
 
-    func testLocalDeleteSharedNoteThrowsNotSupported() async throws {
+    func testLocalDeleteSharedNoteRemovesIndexRow() async throws {
         let notesRootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let (_, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
+        let (indexStore, repository) = NoteTestSupport.makeLocalRepository(notesRootURL: notesRootURL)
+        try await NoteTestSupport.openIndexStore(indexStore)
+        try await indexStore.upsertSharedNote(
+            SharedNoteIndexRow(summary: NoteFixtures.sampleSharedSummary)
+        )
 
-        do {
-            try await repository.deleteSharedNote(noteID: NoteFixtures.noteID)
-            XCTFail("Expected notSupported")
-        } catch let error as NoteRepositoryError {
-            XCTAssertEqual(error, .notSupported)
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
+        try await repository.deleteSharedNote(noteID: NoteFixtures.noteID)
+
+        let notes = try await repository.listSharedNotes()
+        XCTAssertTrue(notes.isEmpty)
     }
 }

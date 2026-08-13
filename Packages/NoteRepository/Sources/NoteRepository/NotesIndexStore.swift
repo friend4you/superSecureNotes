@@ -58,6 +58,7 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
             try migrateUploadSessionsIfNeeded(on: pointer)
             try migrateAttachmentsIfNeeded(on: pointer)
             try migrateAttachmentUploadSessionsIfNeeded(on: pointer)
+            try migrateSharedNotesIfNeeded(on: pointer)
             try execute("SELECT count(*) FROM notes", on: pointer)
         } catch {
             sqlite3_close(pointer)
@@ -303,6 +304,32 @@ public actor NotesIndexStore: NotesIndexStoreProtocol {
                 completed_chunk_indices TEXT NOT NULL,
                 if_match TEXT,
                 PRIMARY KEY (note_id, attachment_id)
+            )
+            """,
+            on: database
+        )
+    }
+
+    private func migrateSharedNotesIfNeeded(on database: OpaquePointer) throws {
+        try execute(
+            """
+            CREATE TABLE IF NOT EXISTS shared_notes (
+                note_id TEXT PRIMARY KEY NOT NULL,
+                title TEXT NOT NULL,
+                updated_at INTEGER NOT NULL,
+                etag TEXT NOT NULL,
+                owner_email TEXT NOT NULL,
+                owner_id TEXT NOT NULL,
+                shared_at INTEGER NOT NULL,
+                body_etag TEXT
+            )
+            """,
+            on: database
+        )
+        try execute(
+            """
+            CREATE TABLE IF NOT EXISTS shared_delete_outbox (
+                note_id TEXT PRIMARY KEY NOT NULL
             )
             """,
             on: database

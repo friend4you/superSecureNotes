@@ -9,8 +9,9 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
     private static let legacyPayloadFileName = "payload"
 
     let notesIndexStore: NotesIndexStore
-    private let notesRootURL: URL
-    private let fileManager: FileManager
+    let notesRootURL: URL
+    let fileManager: FileManager
+    nonisolated(unsafe) var sharedBodyImporter: (any SharedNoteBodyImporting)?
 
     public init(
         notesIndexStore: NotesIndexStore,
@@ -240,17 +241,74 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
     }
 
     public func listSharedNotes() async throws -> [SharedNoteSummary] {
-        []
+        try await requireOpen()
+        return try await notesIndexStore.listSharedSummaries()
+    }
+
+    public func fetchSharedNoteSummary(noteID: UUID) async throws -> SharedNoteSummary? {
+        try await requireOpen()
+        return try await notesIndexStore.fetchSharedNote(noteID: noteID)?.summary
     }
 
     public func readSharedNote(noteID: UUID) async throws -> SharedNote {
-        _ = noteID
-        throw NoteRepositoryError.notSupported
+        try await requireOpen()
+
+        guard let row = try await notesIndexStore.fetchSharedNote(noteID: noteID) else {
+            throw NoteRepositoryError.noteNotFound
+        }
+
+        let bodyURL = sharedBodyFileURL(for: noteID)
+        if fileManager.fileExists(atPath: bodyURL.path),
+           row.bodyEtag == row.etag
+        {
+            let bodyData = try readSharedBodyFile(noteID: noteID)
+            let sections = try parseNoteFile(bodyData)
+            guard sections.metadata.noteID == noteID else {
+                throw NoteRepositoryError.corruptNote
+            }
+            return SharedNote(
+                noteID: noteID,
+                metadata: sections.metadata,
+                recipientWrappedFEK: sections.wrappedFEK,
+                encryptedPayload: sections.encryptedPayload
+            )
+        }
+
+        guard let importer = sharedBodyImporter else {
+            throw NoteRepositoryError.notSupported
+        }
+
+        let imported = try await importer.importSharedBody(noteID: noteID)
+        let bodyData = try assembleNoteFile(
+            metadata: imported.metadata,
+            wrappedFEK: imported.recipientWrappedFEK,
+            encryptedPayload: imported.encryptedPayload
+        )
+        try writeSharedBodyFile(bodyData, noteID: noteID)
+        try await notesIndexStore.updateSharedBodyEtag(noteID: noteID, bodyEtag: row.etag)
+        return imported
     }
 
     public func deleteSharedNote(noteID: UUID) async throws {
-        _ = noteID
-        throw NoteRepositoryError.notSupported
+        try await requireOpen()
+
+        guard try await notesIndexStore.fetchSharedNote(noteID: noteID) != nil else {
+            throw NoteRepositoryError.noteNotFound
+        }
+
+        try purgeSharedNoteDirectory(noteID: noteID)
+        try await notesIndexStore.deleteSharedNote(noteID: noteID)
+        try await notesIndexStore.enqueueSharedDelete(noteID: noteID)
+    }
+
+    public func readSharedAttachmentCiphertext(noteID: UUID, attachmentID: UUID) async throws -> Data? {
+        try await requireOpen()
+        return try readSharedAttachmentFile(noteID: noteID, attachmentID: attachmentID)
+    }
+
+    public func loadSharedAttachmentCiphertexts(noteID: UUID) async throws -> [UUID: Data] {
+        try await requireOpen()
+        return try loadSharedAttachmentCiphertextsFromDisk(noteID: noteID)
     }
 
     func requireOpen() async throws {
@@ -280,7 +338,7 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         try excludeFromBackup(notesRootURL)
     }
 
-    private func excludeFromBackup(_ url: URL) throws {
+    func excludeFromBackup(_ url: URL) throws {
         var mutableURL = url
         var values = URLResourceValues()
         values.isExcludedFromBackup = true

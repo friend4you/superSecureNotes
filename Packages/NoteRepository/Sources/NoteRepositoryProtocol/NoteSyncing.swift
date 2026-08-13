@@ -17,6 +17,7 @@ public struct NoOpVaultHeaderUploadScheduler: VaultHeaderUploadScheduling {
 public protocol NoteCatalogPulling: Sendable {
     func pullVaultHeaderIfLocalMissing() async throws -> Data?
     func pullRemoteNotesCatalog() async throws
+    func pullRemoteSharedCatalog() async throws
     func pullCatalogIfLocalVaultMissing() async throws -> Data?
 }
 
@@ -26,6 +27,7 @@ public protocol NoteSyncing: Actor, VaultHeaderUploadScheduling, VaultHeaderUplo
     func flushPending() async
     func pullVaultHeaderIfLocalMissing() async throws -> Data?
     func pullRemoteNotesCatalog() async throws
+    func pullRemoteSharedCatalog() async throws
     func pullCatalogIfLocalVaultMissing() async throws -> Data?
     func uploadVaultHeaderOrThrow(_ header: Data) async throws
     nonisolated func scheduleFlush()
@@ -36,6 +38,8 @@ public protocol NoteSyncing: Actor, VaultHeaderUploadScheduling, VaultHeaderUplo
 }
 
 extension NoteSyncing {
+    public func pullRemoteSharedCatalog() async throws {}
+
     public nonisolated var attachmentHydrationProgress: AsyncStream<AttachmentHydrationProgress> {
         AsyncStream { $0.finish() }
     }
