@@ -141,7 +141,7 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
 
             hydrationTask = Task { @MainActor [weak self] in
                 guard let self else { return }
-                await noteSync.hydrateAttachments(noteID: noteID)
+                await noteSync.reconcileAttachments(noteID: noteID)
             }
         } catch {
             errorMessage = error.localizedDescription

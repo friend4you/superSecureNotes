@@ -57,7 +57,7 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
     public func flushPending() async {
         await flushUploads()
         await flushDeletes()
-        await pullRemoteChanges()
+        await reconcileNotesCatalog()
         await pullRemoteSharedChanges()
         await flushSharedDeletes()
     }
@@ -110,7 +110,7 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         }
     }
 
-    private func pullRemoteChanges() async {
+    public func reconcileNotesCatalog() async {
         guard let remoteSummaries = try? await remoteNotes.listNotes(includeDeleted: false) else {
             return
         }

@@ -8,8 +8,12 @@ extension LocalFirstNoteSyncService {
         hydrationProgressMulticaster.stream()
     }
 
-    public func hydrateAttachments(noteID: UUID) async {
+    public func reconcileAttachments(noteID: UUID) async {
         await startOrJoinHydration(noteID: noteID, shared: false)
+    }
+
+    public func hydrateAttachments(noteID: UUID) async {
+        await reconcileAttachments(noteID: noteID)
     }
 
     public func hydrateSharedAttachments(noteID: UUID) async {
@@ -45,37 +49,63 @@ extension LocalFirstNoteSyncService {
 
     private func runHydration(noteID: UUID, shared: Bool) async {
         do {
-            if try await hasWarmLocalAttachments(noteID: noteID) {
-                return
-            }
-
             let remote = try await listRemoteAttachments(noteID: noteID, shared: shared)
-            var missing: [RemoteAttachmentSummary] = []
-            for summary in remote {
-                let exists: Bool
-                if shared {
-                    exists = await localNotes.sharedAttachmentFileExists(
-                        noteID: noteID,
-                        attachmentID: summary.attachmentID
-                    )
-                } else {
-                    exists = await localNotes.attachmentFileExists(
-                        noteID: noteID,
-                        attachmentID: summary.attachmentID
-                    )
-                }
-                if !exists {
-                    missing.append(summary)
-                }
-            }
-            guard !missing.isEmpty else {
+            let needingFetch = try await attachmentsNeedingFetch(
+                noteID: noteID,
+                remote: remote,
+                shared: shared
+            )
+            guard !needingFetch.isEmpty else {
                 return
             }
 
-            await downloadAttachments(noteID: noteID, attachments: missing, shared: shared)
+            await downloadAttachments(noteID: noteID, attachments: needingFetch, shared: shared)
         } catch {
             return
         }
+    }
+
+    private func attachmentsNeedingFetch(
+        noteID: UUID,
+        remote: [RemoteAttachmentSummary],
+        shared: Bool
+    ) async throws -> [RemoteAttachmentSummary] {
+        if shared {
+            var needingFetch: [RemoteAttachmentSummary] = []
+            for summary in remote {
+                let exists = await localNotes.sharedAttachmentFileExists(
+                    noteID: noteID,
+                    attachmentID: summary.attachmentID
+                )
+                if !exists {
+                    needingFetch.append(summary)
+                }
+            }
+            return needingFetch
+        }
+
+        let localRows = try await localNotes.listAttachmentIndexRows(noteID: noteID)
+        let localByID = Dictionary(uniqueKeysWithValues: localRows.map { ($0.attachmentID, $0) })
+        var needingFetch: [RemoteAttachmentSummary] = []
+
+        for summary in remote {
+            guard let local = localByID[summary.attachmentID] else {
+                needingFetch.append(summary)
+                continue
+            }
+            if local.syncState == .pendingSync {
+                continue
+            }
+            let fileExists = await localNotes.attachmentFileExists(
+                noteID: noteID,
+                attachmentID: summary.attachmentID
+            )
+            if !fileExists || local.etag != summary.etag {
+                needingFetch.append(summary)
+            }
+        }
+
+        return needingFetch
     }
 
     private func retrySingleAttachment(noteID: UUID, attachmentID: UUID, shared: Bool) async {
@@ -93,23 +123,6 @@ extension LocalFirstNoteSyncService {
         } catch {
             return
         }
-    }
-
-    private func hasWarmLocalAttachments(noteID: UUID) async throws -> Bool {
-        let rows = try await localNotes.listAttachmentIndexRows(noteID: noteID)
-        guard !rows.isEmpty else {
-            return false
-        }
-        for row in rows {
-            let exists = await localNotes.attachmentFileExists(
-                noteID: noteID,
-                attachmentID: row.attachmentID
-            )
-            if !exists {
-                return false
-            }
-        }
-        return true
     }
 
     private func listRemoteAttachments(

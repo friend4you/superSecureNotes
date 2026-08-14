@@ -7,16 +7,23 @@ enum NoteAttachmentImportSupport {
     static let fileImporterAllowedTypes: [UTType] = [.item]
 
     static func attachment(from item: PhotosPickerItem) async -> NotePayload.Attachment? {
-        guard let photoData = try? await item.loadTransferable(type: PhotoPickerData.self) else {
-            return nil
+        if let video = try? await item.loadTransferable(type: MoviePickerData.self) {
+            return NotePayload.Attachment(
+                id: UUID().uuidString,
+                filename: video.filename,
+                mime: video.mimeType,
+                data: video.data
+            )
         }
-
-        return NotePayload.Attachment(
-            id: UUID().uuidString,
-            filename: photoData.filename,
-            mime: photoData.mimeType,
-            data: photoData.data
-        )
+        if let photo = try? await item.loadTransferable(type: PhotoPickerData.self) {
+            return NotePayload.Attachment(
+                id: UUID().uuidString,
+                filename: photo.filename,
+                mime: photo.mimeType,
+                data: photo.data
+            )
+        }
+        return nil
     }
 
     static func attachment(from url: URL) throws -> NotePayload.Attachment {
@@ -49,6 +56,21 @@ struct PhotoPickerData: Transferable {
                 data: data,
                 filename: "photo.jpg",
                 mimeType: UTType.image.preferredMIMEType ?? "image/jpeg"
+            )
+        }
+    }
+}
+
+struct MoviePickerData: Transferable {
+    let data: Data
+    let filename: String
+    let mimeType: String
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(importedContentType: .movie) { data in
+            MoviePickerData(
+                data: data,
+                filename: "video.mov",
+                mimeType: UTType.movie.preferredMIMEType ?? "video/quicktime"
             )
         }
     }

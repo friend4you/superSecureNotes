@@ -31,6 +31,8 @@ public protocol NoteSyncing: Actor, VaultHeaderUploadScheduling, VaultHeaderUplo
     func pullCatalogIfLocalVaultMissing() async throws -> Data?
     func uploadVaultHeaderOrThrow(_ header: Data) async throws
     nonisolated func scheduleFlush()
+    func reconcileNotesCatalog() async
+    func reconcileAttachments(noteID: UUID) async
     func hydrateAttachments(noteID: UUID) async
     func hydrateSharedAttachments(noteID: UUID) async
     func retryAttachment(noteID: UUID, attachmentID: UUID) async
@@ -44,8 +46,14 @@ extension NoteSyncing {
         AsyncStream { $0.finish() }
     }
 
-    public func hydrateAttachments(noteID: UUID) async {
+    public func reconcileNotesCatalog() async {}
+
+    public func reconcileAttachments(noteID: UUID) async {
         _ = noteID
+    }
+
+    public func hydrateAttachments(noteID: UUID) async {
+        await reconcileAttachments(noteID: noteID)
     }
 
     public func hydrateSharedAttachments(noteID: UUID) async {

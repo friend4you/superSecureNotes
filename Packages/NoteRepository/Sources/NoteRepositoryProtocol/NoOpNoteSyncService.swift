@@ -23,5 +23,11 @@ public actor NoOpNoteSyncService: NoteSyncing {
 
     public nonisolated func scheduleFlush() {}
 
+    public func reconcileNotesCatalog() async {}
+
+    public func reconcileAttachments(noteID: UUID) async {
+        _ = noteID
+    }
+
     public nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 }

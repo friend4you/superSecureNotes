@@ -245,16 +245,106 @@ final class AttachmentHydrationTests: XCTestCase {
         )
 
         let log = RequestLog()
+        let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
         URLProtocolStub.requestHandler = { request in
             log.record(request)
-            return (TestHTTP.makeResponse(url: request.url!, statusCode: 200), Data("[]".utf8))
+            let path = request.url!.path
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            if path == manifestPath && request.httpMethod == "GET" {
+                return (
+                    response,
+                    NoteFixtures.attachmentsManifestJSON(attachments: [
+                        (attachmentID, UInt64(ciphertext.count), "application/octet-stream", #"W/"warm""#),
+                    ])
+                )
+            }
+            XCTFail("Unexpected path: \(path)")
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
         }
 
-        await syncService.hydrateAttachments(noteID: noteID)
+        try await indexStore.upsertAttachment(
+            AttachmentIndexRow(
+                noteID: noteID,
+                attachmentID: attachmentID,
+                etag: #"W/"warm""#,
+                sizeBytes: UInt64(ciphertext.count),
+                syncState: .synced
+            )
+        )
 
-        XCTAssertTrue(log.paths.isEmpty)
+        await syncService.reconcileAttachments(noteID: noteID)
+
+        XCTAssertEqual(log.paths, [manifestPath])
         let note = try await localRepository.readNote(noteID: noteID)
         XCTAssertEqual(note.attachmentCiphertexts[attachmentID], ciphertext)
+    }
+
+    func testReconcileAttachmentsRedownloadsWhenEtagMismatches() async throws {
+        let noteID = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440085")!
+        let attachmentID = UUID(uuidString: "880e8400-e29b-41d4-a716-446655440085")!
+        let staleCiphertext = Data(repeating: 0x44, count: 20)
+        let freshCiphertext = Data(repeating: 0x55, count: 20)
+        let (indexStore, localRepository, syncService) = makeSyncEnvironment()
+        try await NoteTestSupport.openIndexStore(indexStore)
+
+        try await localRepository.writeNote(
+            StoredNote(
+                metadata: NoteMetadata(
+                    noteID: noteID,
+                    title: "Stale attachment",
+                    createdAt: 1_700_000_000,
+                    updatedAt: 1_700_000_100,
+                    attachmentCount: 1,
+                    attachmentsTotalSize: UInt64(staleCiphertext.count)
+                ),
+                wrappedFEK: Data(repeating: 0xAB, count: 60),
+                encryptedPayload: Data(repeating: 0xCD, count: 128),
+                syncState: .synced,
+                attachmentCiphertexts: [attachmentID: staleCiphertext]
+            )
+        )
+        try await indexStore.upsertAttachment(
+            AttachmentIndexRow(
+                noteID: noteID,
+                attachmentID: attachmentID,
+                etag: #"W/"stale""#,
+                sizeBytes: UInt64(staleCiphertext.count),
+                syncState: .synced
+            )
+        )
+
+        let manifestPath = "/v1/notes/\(noteID.uuidString.lowercased())/attachments"
+        let attachmentPath =
+            "/v1/notes/\(noteID.uuidString.lowercased())/attachments/\(attachmentID.uuidString.lowercased())/chunks/0"
+        let log = RequestLog()
+
+        URLProtocolStub.requestHandler = { request in
+            log.record(request)
+            let path = request.url!.path
+            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
+            if path == manifestPath && request.httpMethod == "GET" {
+                return (
+                    response,
+                    NoteFixtures.attachmentsManifestJSON(attachments: [
+                        (attachmentID, UInt64(freshCiphertext.count), "application/octet-stream", #"W/"fresh""#),
+                    ])
+                )
+            }
+            if path == attachmentPath {
+                return (response, freshCiphertext)
+            }
+            XCTFail("Unexpected path: \(path)")
+            return (TestHTTP.makeResponse(url: request.url!, statusCode: 500), Data())
+        }
+
+        await syncService.reconcileAttachments(noteID: noteID)
+
+        XCTAssertTrue(log.paths.contains(manifestPath))
+        XCTAssertTrue(log.paths.contains(attachmentPath))
+        let note = try await localRepository.readNote(noteID: noteID)
+        XCTAssertEqual(note.attachmentCiphertexts[attachmentID], freshCiphertext)
+        let row = try await indexStore.fetchAttachment(noteID: noteID, attachmentID: attachmentID)
+        XCTAssertEqual(row?.etag, #"W/"fresh""#)
     }
 
     private func seedBodyOnlyNote(noteID: UUID, repository: LocalNoteRepository) async throws {

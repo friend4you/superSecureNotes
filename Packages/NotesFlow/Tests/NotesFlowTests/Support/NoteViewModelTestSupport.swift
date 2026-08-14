@@ -255,9 +255,13 @@ actor RecordingNoteSyncService: NoteSyncing {
 
     nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 
-    func hydrateAttachments(noteID: UUID) async {
+    func reconcileAttachments(noteID: UUID) async {
         _ = noteID
         hydrateAttachmentsCallCount += 1
+    }
+
+    func hydrateAttachments(noteID: UUID) async {
+        await reconcileAttachments(noteID: noteID)
     }
 
     func hydrateSharedAttachments(noteID: UUID) async {
@@ -278,6 +282,7 @@ actor ControllableNoteSyncService: NoteSyncing {
     private var outcomeSubscribers: [UUID: AsyncStream<NoteSyncOutcome>.Continuation] = [:]
     private var hydrationSubscribers: [UUID: AsyncStream<AttachmentHydrationProgress>.Continuation] = [:]
     private(set) var hydrateAttachmentsCallCount = 0
+    private(set) var reconcileAttachmentsCallCount = 0
     private(set) var hydrateSharedAttachmentsCallCount = 0
     private(set) var retryAttachmentCalls: [(noteID: UUID, attachmentID: UUID)] = []
     private(set) var retrySharedAttachmentCalls: [(noteID: UUID, attachmentID: UUID)] = []
@@ -360,11 +365,16 @@ actor ControllableNoteSyncService: NoteSyncing {
 
     nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
 
-    func hydrateAttachments(noteID: UUID) async {
+    func reconcileAttachments(noteID: UUID) async {
+        reconcileAttachmentsCallCount += 1
         hydrateAttachmentsCallCount += 1
         if let hydrateAttachmentsHandler {
             await hydrateAttachmentsHandler(noteID)
         }
+    }
+
+    func hydrateAttachments(noteID: UUID) async {
+        await reconcileAttachments(noteID: noteID)
     }
 
     func hydrateSharedAttachments(noteID: UUID) async {

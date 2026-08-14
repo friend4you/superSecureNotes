@@ -49,7 +49,7 @@ public struct CreateNoteView: View {
             Section {
                 PhotosPicker(
                     selection: $selectedPhotoItem,
-                    matching: .images
+                    matching: .any(of: [.images, .videos])
                 ) {
                     Label(
                         NotesFlowUILocalization.localized("notes.create.addPhoto"),
