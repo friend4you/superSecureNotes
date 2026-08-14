@@ -9,20 +9,6 @@ final class NetworkVaultRepositoryFetchPublicKeyTests: XCTestCase {
         super.tearDown()
     }
 
-    func testFetchPublicKeyReturnsThirtyTwoBytesOnSuccess() async throws {
-        let expectedKey = Data(repeating: 0x22, count: 32)
-        URLProtocolStub.requestHandler = { request in
-            let response = TestHTTP.makeResponse(url: request.url!, statusCode: 200)
-            return (response, VaultFixtures.publicKeyJSON(publicKey: expectedKey))
-        }
-
-        let repository = VaultTestSupport.makeRepository()
-
-        let publicKey = try await repository.fetchPublicKey(userID: VaultFixtures.userID)
-        XCTAssertEqual(publicKey, expectedKey)
-        XCTAssertEqual(publicKey.count, 32)
-    }
-
     func testFetchPublicKeyMapsPublicKeyNotFound() async {
         URLProtocolStub.requestHandler = { request in
             let response = TestHTTP.makeResponse(url: request.url!, statusCode: 404)

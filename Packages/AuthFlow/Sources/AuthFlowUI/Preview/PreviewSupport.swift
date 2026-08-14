@@ -70,7 +70,6 @@ private actor PreviewAuthRepository: AuthRepository {
 private actor PreviewVaultRepository: VaultRepository {
     func readHeader() async throws -> Data { Data() }
     func writeHeader(_ header: Data) async throws {}
-    func fetchPublicKey(userID: String) async throws -> Data { Data() }
     func fetchPublicKey(email: String) async throws -> Data { Data() }
 }
 

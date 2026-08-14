@@ -254,7 +254,6 @@ private actor MockNoteRepository: NoteRepository {
 private actor MockVaultRepository: VaultRepository {
     func readHeader() async throws -> Data { Data() }
     func writeHeader(_ header: Data) async throws {}
-    func fetchPublicKey(userID: String) async throws -> Data { Data(repeating: 0, count: 32) }
     func fetchPublicKey(email: String) async throws -> Data { Data(repeating: 0, count: 32) }
 }
 

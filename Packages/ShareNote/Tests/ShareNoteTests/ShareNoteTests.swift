@@ -130,7 +130,6 @@ private enum ShareNoteTestMocks {
 
         func readHeader() async throws -> Data { Data() }
         func writeHeader(_ header: Data) async throws {}
-        func fetchPublicKey(userID: String) async throws -> Data { publicKey }
 
         func fetchPublicKey(email: String) async throws -> Data {
             fetchedEmails.append(email)

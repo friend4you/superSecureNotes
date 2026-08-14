@@ -72,12 +72,4 @@ final class LocalVaultRepositoryTests: XCTestCase {
         let values = try temporaryDirectory.resourceValues(forKeys: [.isExcludedFromBackupKey])
         XCTAssertEqual(values.isExcludedFromBackup, true)
     }
-
-    func testFetchPublicKeyReturns32ZeroBytes() async throws {
-        let repository = LocalVaultRepository(vaultDirectoryURL: temporaryDirectory)
-
-        let publicKey = try await repository.fetchPublicKey(userID: "user-123")
-
-        XCTAssertEqual(publicKey, Data(repeating: 0, count: 32))
-    }
 }

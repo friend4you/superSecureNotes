@@ -36,10 +36,6 @@ public actor LocalVaultRepository: VaultRepository {
         try header.write(to: headerFileURL, options: .atomic)
     }
 
-    public func fetchPublicKey(userID: String) async throws -> Data {
-        Data(repeating: 0, count: 32)
-    }
-
     public func fetchPublicKey(email: String) async throws -> Data {
         Data(repeating: 0, count: 32)
     }

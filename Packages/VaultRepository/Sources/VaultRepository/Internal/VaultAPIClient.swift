@@ -36,15 +36,6 @@ public struct VaultAPIClient {
         _ = try await perform(request, expectedSuccessCodes: [204])
     }
 
-    func fetchPublicKey(userID: String) async throws -> Data {
-        let request = try await makeAuthorizedRequest(
-            path: "users/\(userID)/public-key",
-            method: "GET"
-        )
-        let data = try await perform(request, expectedSuccessCodes: [200])
-        return try decodePublicKey(from: data)
-    }
-
     func fetchPublicKey(email: String) async throws -> Data {
         let request = try await makeAuthorizedRequest(
             path: "users/public-key",

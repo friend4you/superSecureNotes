@@ -20,14 +20,6 @@ public actor NetworkVaultRepository: VaultRepository {
         try await apiClient.writeHeader(header)
     }
 
-    public func fetchPublicKey(userID: String) async throws -> Data {
-        guard !userID.isEmpty else {
-            throw VaultRepositoryError.validationError("User ID must not be empty.")
-        }
-
-        return try await apiClient.fetchPublicKey(userID: userID)
-    }
-
     public func fetchPublicKey(email: String) async throws -> Data {
         guard !email.isEmpty else {
             throw VaultRepositoryError.validationError("Email must not be empty.")
