@@ -1,3 +1,4 @@
+import AuthFlowProtocol
 import AuthFlowRoutes
 import AuthRepositoryProtocol
 import CredentialStore
@@ -104,6 +105,7 @@ final class LockCoordinatorTests: XCTestCase {
             SessionRootNavigation.apply(
                 hasLocalSetup: self.credentialStore.hasLocalSetup,
                 isVaultActive: false,
+                pendingEnrollment: false,
                 to: navigator
             )
         }
@@ -112,6 +114,7 @@ final class LockCoordinatorTests: XCTestCase {
         SessionRootNavigation.apply(
             hasLocalSetup: credentialStore.hasLocalSetup,
             isVaultActive: true,
+            pendingEnrollment: false,
             to: navigator
         )
 
@@ -166,6 +169,32 @@ final class LockCoordinatorTests: XCTestCase {
         XCTAssertFalse(isActive)
     }
 
+    func testLockClearsSessionPasswordCache() async throws {
+        let sessionPasswordCache = SessionPasswordCache()
+        sessionPasswordCache.store("secret")
+        let (coordinator, waiter, _, _) = makeLockCoordinator(sessionPasswordCache: sessionPasswordCache)
+
+        await triggerLockAndWait(coordinator: coordinator, waiter: waiter) {
+            coordinator.lock()
+        }
+
+        XCTAssertNil(sessionPasswordCache.password())
+    }
+
+    func testLockPreservesPendingEnrollmentFlag() async throws {
+        let pendingStore = UserDefaultsPendingBiometricEnrollmentStore(
+            defaults: UserDefaults(suiteName: "com.superSecureNotes.lock.\(UUID().uuidString)")!
+        )
+        pendingStore.setPending(true)
+        let (coordinator, waiter, _, _) = makeLockCoordinator()
+
+        await triggerLockAndWait(coordinator: coordinator, waiter: waiter) {
+            coordinator.lock()
+        }
+
+        XCTAssertTrue(pendingStore.isPending)
+    }
+
     func testLockClearsVaultSession() async throws {
         let (coordinator, waiter, vaultSession, _) = makeLockCoordinator()
         await vaultSession.establish(sampleVaultKeys())
@@ -217,13 +246,15 @@ final class LockCoordinatorTests: XCTestCase {
         vaultSession: VaultSession = VaultSession(),
         authRepository: MockAuthRepository = MockAuthRepository(),
         notesIndexStore: NotesIndexStore = NotesIndexStore(),
+        sessionPasswordCache: SessionPasswordCache = SessionPasswordCache(),
         onLock: @escaping () -> Void = {}
     ) -> (LockCoordinator, LockWaiter, VaultSession, MockAuthRepository) {
         let waiter = LockWaiter()
         let coordinator = LockCoordinator(
             vaultSession: vaultSession,
             authRepository: authRepository,
-            notesIndexStore: notesIndexStore
+            notesIndexStore: notesIndexStore,
+            sessionPasswordCache: sessionPasswordCache
         ) {
             waiter.fulfill()
             onLock()

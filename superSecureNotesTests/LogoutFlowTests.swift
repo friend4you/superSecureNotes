@@ -75,6 +75,7 @@ final class LogoutFlowTests: XCTestCase {
         SessionRootNavigation.apply(
             hasLocalSetup: false,
             isVaultActive: true,
+            pendingEnrollment: false,
             to: navigator
         )
 
@@ -85,6 +86,7 @@ final class LogoutFlowTests: XCTestCase {
         SessionRootNavigation.apply(
             hasLocalSetup: credentialStore.hasLocalSetup,
             isVaultActive: isActive,
+            pendingEnrollment: false,
             to: navigator
         )
         XCTAssertFalse(isOpen)

@@ -14,6 +14,7 @@ public final class DefaultRegisterUseCase: RegisterUseCase {
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
     private let establishVaultSession: any EstablishVaultSessionUseCase
+    private let sessionPasswordCache: any SessionPasswordCaching
 
     public init(
         authRepository: any AuthRepository,
@@ -22,7 +23,8 @@ public final class DefaultRegisterUseCase: RegisterUseCase {
         credentialStore: any CredentialStore,
         networkReachability: any NetworkReachability,
         noteSync: any NoteSyncing,
-        establishVaultSession: any EstablishVaultSessionUseCase
+        establishVaultSession: any EstablishVaultSessionUseCase,
+        sessionPasswordCache: any SessionPasswordCaching
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -31,6 +33,7 @@ public final class DefaultRegisterUseCase: RegisterUseCase {
         self.networkReachability = networkReachability
         self.noteSync = noteSync
         self.establishVaultSession = establishVaultSession
+        self.sessionPasswordCache = sessionPasswordCache
     }
 
     public func execute(email: String, password: String) async throws -> RegisterResult {
@@ -66,6 +69,7 @@ public final class DefaultRegisterUseCase: RegisterUseCase {
                 refreshToken: session.refreshToken,
                 vaultHeader: creationOutcome.headerData
             )
+            sessionPasswordCache.store(password)
             return RegisterResult(wasFirstSetup: wasFirstSetup)
         } catch let error as AuthFlowError {
             throw error

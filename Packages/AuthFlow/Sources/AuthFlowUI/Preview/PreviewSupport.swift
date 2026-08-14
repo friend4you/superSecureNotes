@@ -31,7 +31,8 @@ enum PreviewSupport {
             navigator: navigator ?? PreviewNavigator(),
             credentialStore: PreviewCredentialStore(),
             biometricAuthenticator: PreviewBiometricAuthenticator(),
-            networkReachability: PreviewNetworkReachability()
+            networkReachability: PreviewNetworkReachability(),
+            sessionPasswordCache: SessionPasswordCache()
         )
     }
 }

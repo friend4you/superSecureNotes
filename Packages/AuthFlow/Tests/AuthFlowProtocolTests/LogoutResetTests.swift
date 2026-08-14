@@ -26,6 +26,10 @@ final class LogoutResetTests: XCTestCase {
         let vaultSession = MockVaultSession()
         let notesIndexStore = MockNotesIndexStore()
         let localAppDataWiper = MockLocalAppDataWiper()
+        let sessionPasswordCache = SessionPasswordCache()
+        sessionPasswordCache.store("secret")
+        let pendingStore = MockPendingBiometricEnrollmentStore()
+        pendingStore.setPending(true)
         await vaultSession.establish(
             VaultSessionKeys(
                 udk: SymmetricKey(size: .bits256),
@@ -39,9 +43,13 @@ final class LogoutResetTests: XCTestCase {
             vaultSession: vaultSession,
             notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
+            sessionPasswordCache: sessionPasswordCache,
+            pendingBiometricEnrollmentStore: pendingStore,
             localAppDataWiper: localAppDataWiper
         )
 
+        XCTAssertNil(sessionPasswordCache.password())
+        XCTAssertFalse(pendingStore.isPending)
         let currentSession = await authRepository.currentSession
         let establishedKeys = await vaultSession.establishedKeys
         let isOpen = await notesIndexStore.isOpen

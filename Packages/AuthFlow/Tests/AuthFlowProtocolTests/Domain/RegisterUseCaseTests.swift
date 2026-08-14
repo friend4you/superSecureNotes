@@ -55,6 +55,15 @@ final class RegisterUseCaseTests: XCTestCase {
 
         XCTAssertTrue(result.wasFirstSetup)
     }
+
+    func testRegisterPopulatesSessionPasswordCache() async throws {
+        let sessionPasswordCache = SessionPasswordCache()
+        let useCase = AuthFlowTestSupport.makeRegisterUseCase(sessionPasswordCache: sessionPasswordCache)
+
+        _ = try await useCase.execute(email: "user@example.com", password: "secret")
+
+        XCTAssertEqual(sessionPasswordCache.password(), "secret")
+    }
 }
 
 private enum TestError: Error {

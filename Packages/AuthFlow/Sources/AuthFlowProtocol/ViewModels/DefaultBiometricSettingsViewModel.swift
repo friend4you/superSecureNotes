@@ -1,3 +1,4 @@
+import AuthFlowDomainProtocol
 import CredentialStoreProtocol
 import Foundation
 import Observation
@@ -10,13 +11,31 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
     public var password = ""
 
     private let credentialStore: any CredentialStore
+    private let sessionPasswordCache: any SessionPasswordCaching
 
-    public init(credentialStore: any CredentialStore) {
+    public init(
+        credentialStore: any CredentialStore,
+        sessionPasswordCache: any SessionPasswordCaching
+    ) {
         self.credentialStore = credentialStore
+        self.sessionPasswordCache = sessionPasswordCache
         self.isBiometricsEnabled = credentialStore.bioEnabled()
     }
 
     public func enableBiometrics() async {
+        if let cachedPassword = sessionPasswordCache.password() {
+            do {
+                try credentialStore.setBioEnabled(true)
+                try credentialStore.savePassword(cachedPassword)
+                isBiometricsEnabled = true
+                requiresPasswordConfirmation = false
+                password = ""
+            } catch {
+                requiresPasswordConfirmation = true
+            }
+            return
+        }
+
         guard !password.isEmpty else {
             requiresPasswordConfirmation = true
             return

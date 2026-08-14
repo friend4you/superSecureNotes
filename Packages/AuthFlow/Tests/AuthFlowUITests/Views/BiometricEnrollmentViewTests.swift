@@ -34,12 +34,18 @@ final class BiometricEnrollmentViewTests: XCTestCase {
         XCTAssertFalse(unlockSource.contains("pendingBiometricEnrollment"))
     }
 
+    func testEnrollmentViewOmitsPasswordField() throws {
+        let source = try Self.viewSource(named: "BiometricEnrollmentView.swift")
+
+        XCTAssertFalse(source.contains("SecureField"))
+        XCTAssertFalse(source.contains("bio.enrollment.password"))
+    }
+
     func testBioEnrollmentStringsAreLocalized() throws {
         let catalog = try Self.loadStringCatalog()
         let keys = [
             "bio.enrollment.title",
             "bio.enrollment.message",
-            "bio.enrollment.password",
             "bio.enrollment.enable",
             "bio.enrollment.skip",
         ]

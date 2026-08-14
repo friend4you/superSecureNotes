@@ -1,3 +1,4 @@
+import AuthFlowDomainProtocol
 import AuthRepositoryProtocol
 import NoteRepositoryProtocol
 import SwiftUI
@@ -8,6 +9,7 @@ final class LockCoordinator {
     private let vaultSession: any VaultSessionProtocol
     private let authRepository: any AuthRepository
     private let notesIndexStore: any NotesIndexStoreProtocol
+    private let sessionPasswordCache: any SessionPasswordCaching
     private let onLock: () -> Void
     private var protectedDataObservation: Task<Void, Never>?
 
@@ -15,11 +17,13 @@ final class LockCoordinator {
         vaultSession: any VaultSessionProtocol,
         authRepository: any AuthRepository,
         notesIndexStore: any NotesIndexStoreProtocol,
+        sessionPasswordCache: any SessionPasswordCaching,
         onLock: @escaping () -> Void
     ) {
         self.vaultSession = vaultSession
         self.authRepository = authRepository
         self.notesIndexStore = notesIndexStore
+        self.sessionPasswordCache = sessionPasswordCache
         self.onLock = onLock
 
         protectedDataObservation = Task { [weak self] in
@@ -43,6 +47,7 @@ final class LockCoordinator {
 
     func lock() {
         Task {
+            sessionPasswordCache.clear()
             await notesIndexStore.close()
             await vaultSession.clear()
             await authRepository.clearSession()

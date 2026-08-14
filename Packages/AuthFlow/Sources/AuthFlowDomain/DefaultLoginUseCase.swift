@@ -14,6 +14,7 @@ public final class DefaultLoginUseCase: LoginUseCase {
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
     private let establishVaultSession: any EstablishVaultSessionUseCase
+    private let sessionPasswordCache: any SessionPasswordCaching
 
     public init(
         authRepository: any AuthRepository,
@@ -21,7 +22,8 @@ public final class DefaultLoginUseCase: LoginUseCase {
         credentialStore: any CredentialStore,
         networkReachability: any NetworkReachability,
         noteSync: any NoteSyncing,
-        establishVaultSession: any EstablishVaultSessionUseCase
+        establishVaultSession: any EstablishVaultSessionUseCase,
+        sessionPasswordCache: any SessionPasswordCaching
     ) {
         self.authRepository = authRepository
         self.vaultRepository = vaultRepository
@@ -29,6 +31,7 @@ public final class DefaultLoginUseCase: LoginUseCase {
         self.networkReachability = networkReachability
         self.noteSync = noteSync
         self.establishVaultSession = establishVaultSession
+        self.sessionPasswordCache = sessionPasswordCache
     }
 
     public func execute(email: String, password: String) async throws -> LoginResult {
@@ -66,6 +69,7 @@ public final class DefaultLoginUseCase: LoginUseCase {
                 refreshToken: session.refreshToken,
                 vaultHeader: headerData
             )
+            sessionPasswordCache.store(password)
             return LoginResult(wasFirstSetup: wasFirstSetup)
         } catch let error as AuthFlowError {
             throw error

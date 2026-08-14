@@ -1,4 +1,5 @@
 import AuthFlowDomain
+import AuthFlowDomainProtocol
 import AuthFlowProtocol
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
@@ -56,7 +57,8 @@ enum AuthFlowTestSupport {
         establishVaultSession: (any EstablishVaultSessionUseCase)? = nil,
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
-        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore()
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
+        sessionPasswordCache: any SessionPasswordCaching = SessionPasswordCache()
     ) -> DefaultLoginUseCase {
         let establish = establishVaultSession ?? makeEstablishVaultSessionUseCase(
             vaultAuthenticator: vaultAuthenticator,
@@ -70,7 +72,8 @@ enum AuthFlowTestSupport {
             credentialStore: credentialStore,
             networkReachability: networkReachability,
             noteSync: noteSync,
-            establishVaultSession: establish
+            establishVaultSession: establish,
+            sessionPasswordCache: sessionPasswordCache
         )
     }
 
@@ -83,7 +86,8 @@ enum AuthFlowTestSupport {
         noteSync: any NoteSyncing = MockNoteSyncService(),
         establishVaultSession: (any EstablishVaultSessionUseCase)? = nil,
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
-        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore()
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
+        sessionPasswordCache: any SessionPasswordCaching = SessionPasswordCache()
     ) -> DefaultRegisterUseCase {
         let establish = establishVaultSession ?? makeEstablishVaultSessionUseCase(
             vaultAuthenticator: vaultAuthenticator,
@@ -98,7 +102,8 @@ enum AuthFlowTestSupport {
             credentialStore: credentialStore,
             networkReachability: networkReachability,
             noteSync: noteSync,
-            establishVaultSession: establish
+            establishVaultSession: establish,
+            sessionPasswordCache: sessionPasswordCache
         )
     }
 
@@ -111,7 +116,8 @@ enum AuthFlowTestSupport {
         restoreOnlineSession: (any RestoreOnlineSessionUseCase)? = nil,
         authRepository: any AuthRepository = MockAuthRepository(),
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
-        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore()
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
+        sessionPasswordCache: any SessionPasswordCaching = SessionPasswordCache()
     ) -> DefaultUnlockUseCase {
         let establish = establishVaultSession ?? makeEstablishVaultSessionUseCase(
             vaultAuthenticator: vaultAuthenticator,
@@ -129,7 +135,8 @@ enum AuthFlowTestSupport {
             networkReachability: networkReachability,
             noteSync: noteSync,
             establishVaultSession: establish,
-            restoreOnlineSession: restore
+            restoreOnlineSession: restore,
+            sessionPasswordCache: sessionPasswordCache
         )
     }
 
@@ -143,7 +150,9 @@ enum AuthFlowTestSupport {
         navigator: (any Navigating)? = nil,
         credentialStore: any CredentialStore = MockCredentialStore(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
-        noteSync: any NoteSyncing = MockNoteSyncService()
+        noteSync: any NoteSyncing = MockNoteSyncService(),
+        sessionPasswordCache: any SessionPasswordCaching = SessionPasswordCache(),
+        pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring = MockPendingBiometricEnrollmentStore()
     ) -> DefaultLoginViewModel {
         let useCase = loginUseCase ?? makeLoginUseCase(
             authRepository: authRepository,
@@ -153,11 +162,14 @@ enum AuthFlowTestSupport {
             noteSync: noteSync,
             vaultAuthenticator: vaultAuthenticator,
             vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore
+            notesIndexStore: notesIndexStore,
+            sessionPasswordCache: sessionPasswordCache
         )
         return DefaultLoginViewModel(
             loginUseCase: useCase,
-            navigator: navigator ?? MockNavigating()
+            credentialStore: credentialStore,
+            navigator: navigator ?? MockNavigating(),
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore
         )
     }
 
@@ -171,7 +183,9 @@ enum AuthFlowTestSupport {
         navigator: (any Navigating)? = nil,
         credentialStore: any CredentialStore = MockCredentialStore(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
-        noteSync: any NoteSyncing = MockNoteSyncService()
+        noteSync: any NoteSyncing = MockNoteSyncService(),
+        sessionPasswordCache: any SessionPasswordCaching = SessionPasswordCache(),
+        pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring = MockPendingBiometricEnrollmentStore()
     ) -> DefaultRegisterViewModel {
         let useCase = registerUseCase ?? makeRegisterUseCase(
             authRepository: authRepository,
@@ -181,11 +195,14 @@ enum AuthFlowTestSupport {
             networkReachability: networkReachability,
             noteSync: noteSync,
             vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore
+            notesIndexStore: notesIndexStore,
+            sessionPasswordCache: sessionPasswordCache
         )
-        return DefaultRegisterViewModel(
+        return         DefaultRegisterViewModel(
             registerUseCase: useCase,
-            navigator: navigator ?? MockNavigating()
+            credentialStore: credentialStore,
+            navigator: navigator ?? MockNavigating(),
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore
         )
     }
 
@@ -201,6 +218,9 @@ enum AuthFlowTestSupport {
         biometricAuthenticator: any BiometricAuthenticator = MockBiometricAuthenticator(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false),
         noteSync: any NoteSyncing = MockNoteSyncService(),
+        navigator: (any Navigating)? = nil,
+        pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring = MockPendingBiometricEnrollmentStore(),
+        sessionPasswordCache: any SessionPasswordCaching = SessionPasswordCache(),
         performLogout: @escaping () async -> Void = {}
     ) -> DefaultUnlockViewModel {
         let unlock = unlockUseCase ?? makeUnlockUseCase(
@@ -210,7 +230,8 @@ enum AuthFlowTestSupport {
             noteSync: noteSync,
             authRepository: authRepository,
             vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore
+            notesIndexStore: notesIndexStore,
+            sessionPasswordCache: sessionPasswordCache
         )
         let biometric = biometricUnlockUseCase ?? makeBiometricUnlockUseCase(
             credentialStore: credentialStore,
@@ -220,6 +241,8 @@ enum AuthFlowTestSupport {
             email: email,
             unlockUseCase: unlock,
             biometricUnlockUseCase: biometric,
+            navigator: navigator ?? MockNavigating(),
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore,
             performLogout: performLogout
         )
     }
@@ -618,5 +641,15 @@ final class MockBiometricAuthenticator: BiometricAuthenticator, @unchecked Senda
     func authenticate(reason: String) async -> BiometricAuthResult {
         authenticateCallCount += 1
         return result
+    }
+}
+
+final class MockPendingBiometricEnrollmentStore: PendingBiometricEnrollmentStoring, @unchecked Sendable {
+    private var pending = false
+
+    var isPending: Bool { pending }
+
+    func setPending(_ pending: Bool) {
+        self.pending = pending
     }
 }

@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 public protocol BiometricEnrollmentViewModel: Observable {
-    func enableBiometrics(password: String) async throws
+    func enableBiometrics() async throws
     func skip()
 }
 

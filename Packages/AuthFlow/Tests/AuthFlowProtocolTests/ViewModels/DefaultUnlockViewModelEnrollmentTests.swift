@@ -3,45 +3,49 @@ import AuthFlowRoutes
 import XCTest
 
 @MainActor
-final class DefaultLoginViewModelEnrollmentTests: XCTestCase {
-    func testLoginPresentsEnrollmentOnWasFirstSetup() async {
+final class DefaultUnlockViewModelEnrollmentTests: XCTestCase {
+    func testUnlockPresentsEnrollmentWhenPending() async throws {
         let navigator = MockNavigating()
         let pendingStore = MockPendingBiometricEnrollmentStore()
-        let viewModel = AuthFlowTestSupport.makeLoginViewModel(
-            navigator: navigator,
-            pendingBiometricEnrollmentStore: pendingStore
-        )
-        viewModel.email = "user@example.com"
-        viewModel.password = "secret"
-
-        await viewModel.login()
-
-        XCTAssertEqual(viewModel.state, .idle)
-        XCTAssertTrue(pendingStore.isPending)
-        XCTAssertEqual(navigator.presentedRoutes.count, 1)
-        XCTAssertEqual(navigator.presentedRoutes.first?.route, AnyHashable(AuthRoute.biometricEnrollment))
-    }
-
-    func testRepeatLoginDoesNotPresentEnrollment() async throws {
-        let navigator = MockNavigating()
+        pendingStore.setPending(true)
         let credentialStore = MockCredentialStore()
-        let pendingStore = MockPendingBiometricEnrollmentStore()
         try credentialStore.saveSetup(
             email: "user@example.com",
             refreshToken: "refresh",
             vaultHeader: Data([0x01])
         )
-        let viewModel = AuthFlowTestSupport.makeLoginViewModel(
-            navigator: navigator,
+        let viewModel = AuthFlowTestSupport.makeUnlockViewModel(
             credentialStore: credentialStore,
+            navigator: navigator,
             pendingBiometricEnrollmentStore: pendingStore
         )
-        viewModel.email = "user@example.com"
         viewModel.password = "secret"
 
-        await viewModel.login()
+        await viewModel.unlockWithPassword()
 
-        XCTAssertFalse(pendingStore.isPending)
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertEqual(navigator.presentedRoutes.count, 1)
+        XCTAssertEqual(navigator.presentedRoutes.first?.route, AnyHashable(AuthRoute.biometricEnrollment))
+    }
+
+    func testUnlockDoesNotPresentEnrollmentWhenNotPending() async throws {
+        let navigator = MockNavigating()
+        let pendingStore = MockPendingBiometricEnrollmentStore()
+        let credentialStore = MockCredentialStore()
+        try credentialStore.saveSetup(
+            email: "user@example.com",
+            refreshToken: "refresh",
+            vaultHeader: Data([0x01])
+        )
+        let viewModel = AuthFlowTestSupport.makeUnlockViewModel(
+            credentialStore: credentialStore,
+            navigator: navigator,
+            pendingBiometricEnrollmentStore: pendingStore
+        )
+        viewModel.password = "secret"
+
+        await viewModel.unlockWithPassword()
+
         XCTAssertTrue(navigator.presentedRoutes.isEmpty)
     }
 }

@@ -12,6 +12,7 @@ public final class DefaultUnlockUseCase: UnlockUseCase {
     private let noteSync: any NoteSyncing
     private let establishVaultSession: any EstablishVaultSessionUseCase
     private let restoreOnlineSession: any RestoreOnlineSessionUseCase
+    private let sessionPasswordCache: any SessionPasswordCaching
 
     public init(
         credentialStore: any CredentialStore,
@@ -19,7 +20,8 @@ public final class DefaultUnlockUseCase: UnlockUseCase {
         networkReachability: any NetworkReachability,
         noteSync: any NoteSyncing,
         establishVaultSession: any EstablishVaultSessionUseCase,
-        restoreOnlineSession: any RestoreOnlineSessionUseCase
+        restoreOnlineSession: any RestoreOnlineSessionUseCase,
+        sessionPasswordCache: any SessionPasswordCaching
     ) {
         self.credentialStore = credentialStore
         self.vaultAuthenticator = vaultAuthenticator
@@ -27,6 +29,7 @@ public final class DefaultUnlockUseCase: UnlockUseCase {
         self.noteSync = noteSync
         self.establishVaultSession = establishVaultSession
         self.restoreOnlineSession = restoreOnlineSession
+        self.sessionPasswordCache = sessionPasswordCache
     }
 
     public func execute(password: String, email: String) async throws {
@@ -48,6 +51,7 @@ public final class DefaultUnlockUseCase: UnlockUseCase {
                 password: password,
                 policy: .standardUnlock
             )
+            sessionPasswordCache.store(password)
             if networkReachability.isOnline {
                 await noteSync.flushPending()
             }

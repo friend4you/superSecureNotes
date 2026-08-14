@@ -2,7 +2,6 @@ import AuthFlowProtocol
 import SwiftUI
 
 public struct BiometricEnrollmentView: View {
-    @State private var password = ""
     private let viewModel: DefaultBiometricEnrollmentViewModel
 
     public init(viewModel: DefaultBiometricEnrollmentViewModel) {
@@ -17,16 +16,9 @@ public struct BiometricEnrollmentView: View {
                 }
 
                 Section {
-                    SecureField(
-                        String(localized: "bio.enrollment.password", bundle: .module),
-                        text: $password
-                    )
-                }
-
-                Section {
                     Button(String(localized: "bio.enrollment.enable", bundle: .module)) {
                         Task {
-                            try? await viewModel.enableBiometrics(password: password)
+                            try? await viewModel.enableBiometrics()
                         }
                     }
 

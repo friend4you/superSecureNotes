@@ -1,5 +1,7 @@
 import AuthFlowDomain
+import AuthFlowRoutes
 import Foundation
+import NavigationProtocol
 import Observation
 
 @Observable
@@ -11,17 +13,23 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
 
     private let unlockUseCase: any UnlockUseCase
     private let biometricUnlockUseCase: any BiometricUnlockUseCase
+    private let navigator: any Navigating
+    private let pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring
     private let performLogout: () async -> Void
 
     public init(
         email: String,
         unlockUseCase: any UnlockUseCase,
         biometricUnlockUseCase: any BiometricUnlockUseCase,
+        navigator: any Navigating,
+        pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring,
         performLogout: @escaping () async -> Void = {}
     ) {
         self.email = email
         self.unlockUseCase = unlockUseCase
         self.biometricUnlockUseCase = biometricUnlockUseCase
+        self.navigator = navigator
+        self.pendingBiometricEnrollmentStore = pendingBiometricEnrollmentStore
         self.performLogout = performLogout
     }
 
@@ -62,6 +70,9 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
 
         do {
             try await unlockUseCase.execute(password: unlockPassword, email: email)
+            if pendingBiometricEnrollmentStore.isPending {
+                navigator.present(AuthRoute.biometricEnrollment, style: .sheet)
+            }
             state = .idle
             password = ""
         } catch let error as AuthFlowError {

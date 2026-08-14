@@ -52,6 +52,19 @@ final class UnlockUseCaseTests: XCTestCase {
         }
     }
 
+    func testUnlockPopulatesSessionPasswordCache() async throws {
+        let credentialStore = try makeConfiguredCredentialStore()
+        let sessionPasswordCache = SessionPasswordCache()
+        let useCase = AuthFlowTestSupport.makeUnlockUseCase(
+            credentialStore: credentialStore,
+            sessionPasswordCache: sessionPasswordCache
+        )
+
+        try await useCase.execute(password: "secret", email: "user@example.com")
+
+        XCTAssertEqual(sessionPasswordCache.password(), "secret")
+    }
+
     private func makeConfiguredCredentialStore() throws -> MockCredentialStore {
         let credentialStore = MockCredentialStore()
         try credentialStore.saveSetup(

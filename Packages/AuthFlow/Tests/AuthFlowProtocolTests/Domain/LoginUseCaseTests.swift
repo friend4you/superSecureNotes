@@ -49,6 +49,15 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertTrue(credentialStore.hasLocalSetup)
     }
 
+    func testLoginPopulatesSessionPasswordCache() async throws {
+        let sessionPasswordCache = SessionPasswordCache()
+        let useCase = AuthFlowTestSupport.makeLoginUseCase(sessionPasswordCache: sessionPasswordCache)
+
+        _ = try await useCase.execute(email: "user@example.com", password: "secret")
+
+        XCTAssertEqual(sessionPasswordCache.password(), "secret")
+    }
+
     func testLoginMapsInvalidCredentials() async {
         let authRepository = MockAuthRepository()
         await authRepository.setLoginError(.invalidCredentials)

@@ -185,6 +185,7 @@ final class AppCompositionTests: XCTestCase {
 
     func testSyncRootRouteRoutesToUnlockWhenSetupWithoutActiveVault() async {
         let composition = AppComposition()
+        composition.pendingBiometricEnrollmentStore.setPending(false)
 
         XCTAssertTrue(composition.navigation.registry.isRegistered(AuthRoute.self))
         XCTAssertTrue(composition.authDependencies.makeUnlockViewModel() is DefaultUnlockViewModel)

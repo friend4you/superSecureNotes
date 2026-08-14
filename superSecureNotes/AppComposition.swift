@@ -20,67 +20,99 @@ final class AppComposition {
     let shareNoteDependencies: ShareNoteDependencies
     let navigation: NavigationCoordinator
     let lockCoordinator: LockCoordinator
+    let sessionPasswordCache: SessionPasswordCache
+    let pendingBiometricEnrollmentStore: UserDefaultsPendingBiometricEnrollmentStore
 
     private var lastSyncedHasLocalSetup: Bool?
     private var lastSyncedVaultActive: Bool?
+    private var lastSyncedPendingEnrollment: Bool?
     private var syncRetryObservationTask: Task<Void, Never>?
 
     init() {
         let dependencies = AppDependencies()
-        self.appDependencies = dependencies
-        navigation = NavigationCoordinator()
+        let navigation = NavigationCoordinator()
+        let sessionPasswordCache = SessionPasswordCache()
+        let pendingBiometricEnrollmentStore = UserDefaultsPendingBiometricEnrollmentStore()
         let localAppDataWiper = FileSystemLocalAppDataWiper()
+        let credentialStore = dependencies.credentialStore
+        let navigator = navigation.navigator
+
         let performLogout: () async -> Void = {
             await LogoutReset.perform(
                 authRepository: dependencies.authRepository,
                 vaultSession: dependencies.vaultSession,
                 notesIndexStore: dependencies.notesIndexStore,
-                credentialStore: dependencies.credentialStore,
+                credentialStore: credentialStore,
+                sessionPasswordCache: sessionPasswordCache,
+                pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore,
                 localAppDataWiper: localAppDataWiper
             )
         }
-        authDependencies = AuthFlowDependencies(
+
+        let notesDependencies = NotesFlowDependencies(
+            authRepository: dependencies.authRepository,
+            vaultSession: dependencies.vaultSession,
+            navigator: navigator,
+            noteRepository: dependencies.noteRepository,
+            credentialStore: credentialStore,
+            noteSync: dependencies.noteSyncService,
+            performLogout: performLogout
+        )
+
+        let shareNoteDependencies = ShareNoteDependencies(
+            navigator: navigator,
+            noteRepository: dependencies.networkNoteRepository,
+            vaultRepository: dependencies.networkVaultRepository,
+            vaultSession: dependencies.vaultSession
+        )
+
+        let applyRootRoute: (Bool, Bool) -> Void = { hasLocalSetup, isVaultActive in
+            SessionRootNavigation.apply(
+                hasLocalSetup: hasLocalSetup,
+                isVaultActive: isVaultActive,
+                pendingEnrollment: pendingBiometricEnrollmentStore.isPending,
+                to: navigator
+            )
+        }
+
+        let authDependencies = AuthFlowDependencies(
             authRepository: dependencies.authRepository,
             vaultRepository: dependencies.vaultRepository,
             vaultAuthenticator: dependencies.vaultAuthenticator,
             vaultSession: dependencies.vaultSession,
             notesIndexStore: dependencies.notesIndexStore,
-            navigator: navigation.navigator,
-            credentialStore: dependencies.credentialStore,
+            navigator: navigator,
+            credentialStore: credentialStore,
             biometricAuthenticator: dependencies.biometricAuthenticator,
             networkReachability: dependencies.networkReachability,
             noteSync: dependencies.noteSyncService,
+            sessionPasswordCache: sessionPasswordCache,
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore,
             sessionExpiredNotifier: dependencies.sessionExpiredNotifier,
+            syncRootRoute: {
+                applyRootRoute(credentialStore.hasLocalSetup, true)
+            },
             performLogout: performLogout
         )
-        notesDependencies = NotesFlowDependencies(
-            authRepository: dependencies.authRepository,
-            vaultSession: dependencies.vaultSession,
-            navigator: navigation.navigator,
-            noteRepository: dependencies.noteRepository,
-            credentialStore: dependencies.credentialStore,
-            noteSync: dependencies.noteSyncService,
-            performLogout: performLogout
-        )
-        shareNoteDependencies = ShareNoteDependencies(
-            navigator: navigation.navigator,
-            noteRepository: dependencies.networkNoteRepository,
-            vaultRepository: dependencies.networkVaultRepository,
-            vaultSession: dependencies.vaultSession
-        )
-        let navigator = navigation.navigator
-        let credentialStore = dependencies.credentialStore
-        lockCoordinator = LockCoordinator(
+
+        let lockCoordinator = LockCoordinator(
             vaultSession: dependencies.vaultSession,
             authRepository: dependencies.authRepository,
-            notesIndexStore: dependencies.notesIndexStore
+            notesIndexStore: dependencies.notesIndexStore,
+            sessionPasswordCache: sessionPasswordCache
         ) {
-            SessionRootNavigation.apply(
-                hasLocalSetup: credentialStore.hasLocalSetup,
-                isVaultActive: false,
-                to: navigator
-            )
+            applyRootRoute(credentialStore.hasLocalSetup, false)
         }
+
+        self.appDependencies = dependencies
+        self.navigation = navigation
+        self.sessionPasswordCache = sessionPasswordCache
+        self.pendingBiometricEnrollmentStore = pendingBiometricEnrollmentStore
+        self.notesDependencies = notesDependencies
+        self.shareNoteDependencies = shareNoteDependencies
+        self.authDependencies = authDependencies
+        self.lockCoordinator = lockCoordinator
+
         navigation.registry.registerAuthRoutes(deps: authDependencies)
         navigation.registry.registerNotesRoutes(deps: notesDependencies)
         navigation.registry.registerShareNoteRoutes(deps: shareNoteDependencies)
@@ -91,14 +123,19 @@ final class AppComposition {
     }
 
     func syncRootRoute(hasLocalSetup: Bool, isVaultActive: Bool) {
-        guard lastSyncedHasLocalSetup != hasLocalSetup || lastSyncedVaultActive != isVaultActive else {
+        let pendingEnrollment = pendingBiometricEnrollmentStore.isPending
+        guard lastSyncedHasLocalSetup != hasLocalSetup
+            || lastSyncedVaultActive != isVaultActive
+            || lastSyncedPendingEnrollment != pendingEnrollment else {
             return
         }
         lastSyncedHasLocalSetup = hasLocalSetup
         lastSyncedVaultActive = isVaultActive
+        lastSyncedPendingEnrollment = pendingEnrollment
         SessionRootNavigation.apply(
             hasLocalSetup: hasLocalSetup,
             isVaultActive: isVaultActive,
+            pendingEnrollment: pendingEnrollment,
             to: navigation.navigator
         )
     }

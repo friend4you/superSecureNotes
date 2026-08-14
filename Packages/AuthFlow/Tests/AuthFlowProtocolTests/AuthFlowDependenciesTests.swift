@@ -31,7 +31,8 @@ final class AuthFlowDependenciesTests: XCTestCase {
             navigator: navigator ?? MockNavigating(),
             credentialStore: MockCredentialStore(),
             biometricAuthenticator: MockBiometricAuthenticator(),
-            networkReachability: MockNetworkReachability(isOnline: true)
+            networkReachability: MockNetworkReachability(isOnline: true),
+            sessionPasswordCache: SessionPasswordCache()
         )
     }
 }

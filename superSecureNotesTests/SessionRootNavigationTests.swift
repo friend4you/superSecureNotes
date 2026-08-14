@@ -32,6 +32,7 @@ final class SessionRootNavigationTests: XCTestCase {
         SessionRootNavigation.apply(
             hasLocalSetup: false,
             isVaultActive: false,
+            pendingEnrollment: false,
             to: navigator
         )
 
@@ -45,6 +46,7 @@ final class SessionRootNavigationTests: XCTestCase {
         SessionRootNavigation.apply(
             hasLocalSetup: true,
             isVaultActive: false,
+            pendingEnrollment: false,
             to: navigator
         )
 
@@ -58,6 +60,34 @@ final class SessionRootNavigationTests: XCTestCase {
         SessionRootNavigation.apply(
             hasLocalSetup: true,
             isVaultActive: true,
+            pendingEnrollment: false,
+            to: navigator
+        )
+
+        XCTAssertEqual(navigator.setRootRoutes.count, 1)
+        XCTAssertEqual(navigator.setRootRoutes.first?.base as? NotesRoute, .list)
+    }
+
+    func testActiveVaultWithPendingEnrollmentDoesNotNavigateToNotes() {
+        let navigator = MockNavigating()
+
+        SessionRootNavigation.apply(
+            hasLocalSetup: true,
+            isVaultActive: true,
+            pendingEnrollment: true,
+            to: navigator
+        )
+
+        XCTAssertTrue(navigator.setRootRoutes.isEmpty)
+    }
+
+    func testActiveVaultWithoutPendingEnrollmentNavigatesToNotes() {
+        let navigator = MockNavigating()
+
+        SessionRootNavigation.apply(
+            hasLocalSetup: true,
+            isVaultActive: true,
+            pendingEnrollment: false,
             to: navigator
         )
 

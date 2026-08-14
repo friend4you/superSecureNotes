@@ -1,4 +1,5 @@
 import AuthFlowDomain
+import AuthFlowDomainProtocol
 import AuthFlowRoutes
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
@@ -20,8 +21,11 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let biometricAuthenticator: any BiometricAuthenticator
     private let networkReachability: any NetworkReachability
     private let noteSync: any NoteSyncing
+    private let sessionPasswordCache: any SessionPasswordCaching
+    private let pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring
     private let performLogout: () async -> Void
     private let sessionExpiredNotifier: SessionExpiredNotifier
+    private let syncRootRoute: () -> Void
 
     private lazy var establishVaultSessionUseCase: DefaultEstablishVaultSessionUseCase = {
         DefaultEstablishVaultSessionUseCase(
@@ -53,7 +57,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             credentialStore: credentialStore,
             networkReachability: networkReachability,
             noteSync: noteSync,
-            establishVaultSession: establishVaultSessionUseCase
+            establishVaultSession: establishVaultSessionUseCase,
+            sessionPasswordCache: sessionPasswordCache
         )
     }()
 
@@ -65,7 +70,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             credentialStore: credentialStore,
             networkReachability: networkReachability,
             noteSync: noteSync,
-            establishVaultSession: establishVaultSessionUseCase
+            establishVaultSession: establishVaultSessionUseCase,
+            sessionPasswordCache: sessionPasswordCache
         )
     }()
 
@@ -76,7 +82,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             networkReachability: networkReachability,
             noteSync: noteSync,
             establishVaultSession: establishVaultSessionUseCase,
-            restoreOnlineSession: restoreOnlineSessionUseCase
+            restoreOnlineSession: restoreOnlineSessionUseCase,
+            sessionPasswordCache: sessionPasswordCache
         )
     }()
 
@@ -91,7 +98,10 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         biometricAuthenticator: any BiometricAuthenticator,
         networkReachability: any NetworkReachability,
         noteSync: any NoteSyncing = NoOpNoteSyncService(),
+        sessionPasswordCache: any SessionPasswordCaching,
+        pendingBiometricEnrollmentStore: any PendingBiometricEnrollmentStoring = UserDefaultsPendingBiometricEnrollmentStore(),
         sessionExpiredNotifier: SessionExpiredNotifier = SessionExpiredNotifier(),
+        syncRootRoute: @escaping () -> Void = {},
         performLogout: @escaping () async -> Void = {}
     ) {
         self.authRepository = authRepository
@@ -104,22 +114,29 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         self.biometricAuthenticator = biometricAuthenticator
         self.networkReachability = networkReachability
         self.noteSync = noteSync
+        self.sessionPasswordCache = sessionPasswordCache
+        self.pendingBiometricEnrollmentStore = pendingBiometricEnrollmentStore
         self.sessionExpiredNotifier = sessionExpiredNotifier
+        self.syncRootRoute = syncRootRoute
         self.performLogout = performLogout
     }
 
     public func makeLoginViewModel() -> DefaultLoginViewModel {
         DefaultLoginViewModel(
             loginUseCase: loginUseCase,
+            credentialStore: credentialStore,
             navigator: navigator,
-            sessionExpiredNotifier: sessionExpiredNotifier
+            sessionExpiredNotifier: sessionExpiredNotifier,
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore
         )
     }
 
     public func makeRegisterViewModel() -> DefaultRegisterViewModel {
         DefaultRegisterViewModel(
             registerUseCase: registerUseCase,
-            navigator: navigator
+            credentialStore: credentialStore,
+            navigator: navigator,
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore
         )
     }
 
@@ -128,6 +145,8 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             email: credentialStore.email() ?? "",
             unlockUseCase: unlockUseCase,
             biometricUnlockUseCase: biometricUnlockUseCase,
+            navigator: navigator,
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore,
             performLogout: performLogout
         )
     }
@@ -135,11 +154,17 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     public func makeBiometricEnrollmentViewModel() -> DefaultBiometricEnrollmentViewModel {
         DefaultBiometricEnrollmentViewModel(
             credentialStore: credentialStore,
-            navigator: navigator
+            sessionPasswordCache: sessionPasswordCache,
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore,
+            navigator: navigator,
+            onEnrollmentCompleted: syncRootRoute
         )
     }
 
     public func makeBiometricSettingsViewModel() -> DefaultBiometricSettingsViewModel {
-        DefaultBiometricSettingsViewModel(credentialStore: credentialStore)
+        DefaultBiometricSettingsViewModel(
+            credentialStore: credentialStore,
+            sessionPasswordCache: sessionPasswordCache
+        )
     }
 }
