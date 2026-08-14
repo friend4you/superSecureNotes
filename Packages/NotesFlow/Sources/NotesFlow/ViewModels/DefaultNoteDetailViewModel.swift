@@ -190,7 +190,11 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
 
         do {
             let udk = try await vaultSession.udk()
-            let (payload, ciphertexts) = try makeSplitWritePayload(fek: fek)
+            let existingNote = try await noteRepository.readNote(noteID: noteID)
+            let (payload, ciphertexts) = try makeSplitWritePayload(
+                fek: fek,
+                existingCiphertexts: existingNote.attachmentCiphertexts
+            )
             let encryptedPayload = try encryptPayload(payload, with: fek)
             let wrappedFEK = try wrapFEK(fek, with: udk)
             let updatedAt = UInt64(Date().timeIntervalSince1970)
@@ -295,7 +299,8 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
     }
 
     private func makeSplitWritePayload(
-        fek: SymmetricKey
+        fek: SymmetricKey,
+        existingCiphertexts: [UUID: Data]
     ) throws -> (NotePayload, [UUID: Data]) {
         var index: [NotePayload.Attachment] = []
         var ciphertexts: [UUID: Data] = [:]
@@ -309,7 +314,16 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
                     "Missing attachment bytes for '\(attachment.filename)'."
                 )
             }
-            let ciphertext = try encryptAttachmentFile(plaintext, with: fek)
+            let loadedAttachment = loadedAttachments.first { $0.id == attachment.id }
+            let ciphertext: Data
+            if let loadedAttachment,
+               attachmentMetadataMatches(loadedAttachment, attachment),
+               let existing = existingCiphertexts[attachmentID]
+            {
+                ciphertext = existing
+            } else {
+                ciphertext = try encryptAttachmentFile(plaintext, with: fek)
+            }
             ciphertexts[attachmentID] = ciphertext
             attachmentPlaintexts[attachment.id] = plaintext
             index.append(
@@ -328,6 +342,16 @@ public final class DefaultNoteDetailViewModel: NoteDetailViewModel {
             schemaVersion: 2
         )
         return (payload, ciphertexts)
+    }
+
+    private func attachmentMetadataMatches(
+        _ loaded: NotePayload.Attachment,
+        _ current: NotePayload.Attachment
+    ) -> Bool {
+        loaded.id == current.id
+            && loaded.filename == current.filename
+            && loaded.mime == current.mime
+            && loaded.size == current.size
     }
 
     private func applyPlaintexts(from payload: NotePayload) {

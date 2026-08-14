@@ -147,13 +147,22 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         }
 
         let existingRow = try await notesIndexStore.fetchNote(noteID: noteID)
+        let existingBodyData = try? readNoteBodyFile(
+            from: noteDirectoryURL(for: noteID).appendingPathComponent(Self.bodyFileName, isDirectory: false)
+        )
+        let bodyPendingSync = existingBodyData != bodyData
         try await notesIndexStore.upsertNote(
             NoteIndexRow(
                 storedNote: storedNote,
-                preservingEtagsFrom: existingRow
+                preservingEtagsFrom: existingRow,
+                bodyPendingSync: bodyPendingSync
             )
         )
-        try await syncAttachmentIndexRows(noteID: noteID, ciphertexts: storedNote.attachmentCiphertexts)
+        try await syncAttachmentIndexRows(
+            noteID: noteID,
+            ciphertexts: storedNote.attachmentCiphertexts,
+            noteSyncState: storedNote.syncState
+        )
 
         if fileManager.fileExists(atPath: finalDirectoryURL.path) {
             _ = try fileManager.replaceItemAt(finalDirectoryURL, withItemAt: tempDirectoryURL)
@@ -418,7 +427,11 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         )
     }
 
-    private func syncAttachmentIndexRows(noteID: UUID, ciphertexts: [UUID: Data]) async throws {
+    private func syncAttachmentIndexRows(
+        noteID: UUID,
+        ciphertexts: [UUID: Data],
+        noteSyncState: NoteSyncState
+    ) async throws {
         let existing = try await notesIndexStore.listAttachments(noteID: noteID)
         let existingIDs = Set(existing.map(\.attachmentID))
         let newIDs = Set(ciphertexts.keys)
@@ -428,16 +441,37 @@ public actor LocalNoteRepository: NoteRepository, InlineAttachmentMigrating {
         }
 
         for (attachmentID, ciphertext) in ciphertexts {
+            let existingRow = existing.first { $0.attachmentID == attachmentID }
+            let existingData = existingAttachmentCiphertext(noteID: noteID, attachmentID: attachmentID)
+            let unchanged = existingData == ciphertext
+            let syncState: NoteSyncState
+            if unchanged, let existingRow, existingRow.syncState == .synced {
+                syncState = .synced
+            } else if unchanged, noteSyncState == .synced {
+                syncState = .synced
+            } else {
+                syncState = .pendingSync
+            }
             try await notesIndexStore.upsertAttachment(
                 AttachmentIndexRow(
                     noteID: noteID,
                     attachmentID: attachmentID,
-                    etag: existing.first { $0.attachmentID == attachmentID }?.etag,
+                    etag: existingRow?.etag,
                     sizeBytes: UInt64(ciphertext.count),
-                    syncState: .pendingSync
+                    syncState: syncState
                 )
             )
         }
+    }
+
+    private func existingAttachmentCiphertext(noteID: UUID, attachmentID: UUID) -> Data? {
+        let url = noteDirectoryURL(for: noteID)
+            .appendingPathComponent(Self.attachmentsDirectoryName, isDirectory: true)
+            .appendingPathComponent(attachmentID.uuidString, isDirectory: false)
+        guard fileManager.fileExists(atPath: url.path) else {
+            return nil
+        }
+        return try? Data(contentsOf: url)
     }
 
     private func migrateLegacyPayloadLayout(

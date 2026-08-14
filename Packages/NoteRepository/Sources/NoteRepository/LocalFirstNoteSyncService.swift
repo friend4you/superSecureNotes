@@ -155,11 +155,19 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
             let result = try await remoteNotes.uploadNote(
                 prepared.note,
                 ifMatch: prepared.etag,
-                uploadSessionStore: localNotes
+                attachmentIDsToUpload: prepared.attachmentIDsToUpload,
+                uploadBody: prepared.uploadBody,
+                uploadSessionStore: localNotes,
+                attachmentReplacementEtags: prepared.attachmentReplacementEtags
             )
             let updatedAt = resolvedUpdatedAt(
                 server: result.updatedAt,
                 local: prepared.note.metadata.updatedAt
+            )
+            try await localNotes.markAttachmentsSynced(
+                noteID: noteID,
+                attachmentIDs: prepared.attachmentIDsToUpload,
+                etags: result.uploadedAttachmentEtags
             )
             try await localNotes.markNoteSynced(
                 noteID: noteID,
@@ -210,7 +218,10 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         guard let result = try? await remoteNotes.uploadNote(
             candidate.note,
             ifMatch: nil,
-            uploadSessionStore: localNotes
+            attachmentIDsToUpload: candidate.attachmentIDsToUpload,
+            uploadBody: candidate.uploadBody,
+            uploadSessionStore: localNotes,
+            attachmentReplacementEtags: candidate.attachmentReplacementEtags
         ) else {
             emitOutcome(.uploadFailed(noteID: noteID))
             return
@@ -218,6 +229,11 @@ public actor LocalFirstNoteSyncService: NoteSyncing {
         let updatedAt = resolvedUpdatedAt(
             server: result.updatedAt,
             local: candidate.note.metadata.updatedAt
+        )
+        try? await localNotes.markAttachmentsSynced(
+            noteID: noteID,
+            attachmentIDs: candidate.attachmentIDsToUpload,
+            etags: result.uploadedAttachmentEtags
         )
         try? await localNotes.markNoteSynced(
             noteID: noteID,

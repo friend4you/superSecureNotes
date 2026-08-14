@@ -129,7 +129,7 @@ final class LocalNoteRepositoryTests: XCTestCase {
 
         let row = try await indexStore.fetchNote(noteID: noteID)
         XCTAssertEqual(row?.etag, #"W/"note-etag""#)
-        XCTAssertEqual(row?.bodyEtag, #"W/"body-etag""#)
+        XCTAssertNil(row?.bodyEtag)
     }
 
     func testListNotesOmitsPendingDeleteNotes() async throws {

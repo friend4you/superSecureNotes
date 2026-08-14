@@ -172,13 +172,39 @@ public actor NetworkNoteRepository: NoteRepository {
     }
 
     public func uploadNote(_ note: StoredNote, ifMatch etag: String? = nil) async throws -> NoteUploadResult {
-        try await uploadNote(note, ifMatch: etag, uploadSessionStore: nil)
+        try await uploadNote(
+            note,
+            ifMatch: etag,
+            attachmentIDsToUpload: nil,
+            uploadBody: true,
+            uploadSessionStore: nil
+        )
     }
 
     func uploadNote(
         _ note: StoredNote,
         ifMatch etag: String?,
+        attachmentIDsToUpload: Set<UUID>?,
+        uploadBody: Bool,
         uploadSessionStore: (any AttachmentUploadSessionStoring)?
+    ) async throws -> NoteUploadResult {
+        try await uploadNote(
+            note,
+            ifMatch: etag,
+            attachmentIDsToUpload: attachmentIDsToUpload,
+            uploadBody: uploadBody,
+            uploadSessionStore: uploadSessionStore,
+            attachmentReplacementEtags: [:]
+        )
+    }
+
+    func uploadNote(
+        _ note: StoredNote,
+        ifMatch etag: String?,
+        attachmentIDsToUpload: Set<UUID>?,
+        uploadBody: Bool,
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?,
+        attachmentReplacementEtags: [UUID: String]
     ) async throws -> NoteUploadResult {
         guard !note.encryptedPayload.isEmpty else {
             throw NoteRepositoryError.validationError("Note must not be empty.")
@@ -193,8 +219,14 @@ public actor NetworkNoteRepository: NoteRepository {
         let accessToken = try await tokenProvider.accessToken()
         let noteID = metadata.noteID
         let hasAttachments = !note.attachmentCiphertexts.isEmpty
-        let noteExistsOnServer = try await noteExistsOnServer(noteID: noteID, accessToken: accessToken)
+        let remoteAttachments = try? await apiClient.listAttachments(
+            noteID: noteID,
+            accessToken: accessToken
+        )
+        let noteExistsOnServer = remoteAttachments != nil
         var bodyIfMatch = etag
+        let resolvedAttachmentIDs = attachmentIDsToUpload
+            ?? Set(note.attachmentCiphertexts.keys)
 
         if !noteExistsOnServer, hasAttachments {
             let bootstrapBodyData = try assembleNoteFile(
@@ -209,34 +241,49 @@ public actor NetworkNoteRepository: NoteRepository {
                 ifMatch: nil
             )
             bodyIfMatch = bootstrapResult.etag ?? bodyIfMatch
-        } else if noteExistsOnServer {
+        } else if let remoteAttachments {
             try await deleteRemovedAttachments(
                 noteID: noteID,
                 localAttachmentIDs: Set(note.attachmentCiphertexts.keys),
+                remoteAttachments: remoteAttachments,
                 accessToken: accessToken
             )
         }
 
         var result = NoteUploadResult(syncState: .pendingSync, updatedAt: metadata.updatedAt, etag: nil)
-        let attachmentEntries = note.attachmentCiphertexts.sorted {
-            $0.key.uuidString.lowercased() < $1.key.uuidString.lowercased()
-        }
+        var uploadedAttachmentEtags: [UUID: String] = [:]
+        let attachmentEntries = note.attachmentCiphertexts
+            .filter { resolvedAttachmentIDs.contains($0.key) }
+            .sorted { $0.key.uuidString.lowercased() < $1.key.uuidString.lowercased() }
         for (attachmentID, ciphertext) in attachmentEntries {
             let attachmentResult = try await uploadAttachment(
                 noteID: noteID,
                 attachmentID: attachmentID,
                 ciphertext: ciphertext,
                 accessToken: accessToken,
-                ifMatch: nil,
+                ifMatch: attachmentReplacementEtags[attachmentID],
                 uploadSessionStore: uploadSessionStore
             )
+            if let attachmentEtag = attachmentResult.etag {
+                uploadedAttachmentEtags[attachmentID] = attachmentEtag
+            }
             if let noteEtag = attachmentResult.noteEtag {
                 result = NoteUploadResult(
                     syncState: result.syncState,
                     updatedAt: result.updatedAt,
-                    etag: noteEtag
+                    etag: noteEtag,
+                    uploadedAttachmentEtags: uploadedAttachmentEtags
                 )
             }
+        }
+
+        if !uploadBody {
+            return NoteUploadResult(
+                syncState: .synced,
+                updatedAt: metadata.updatedAt,
+                etag: result.etag ?? etag,
+                uploadedAttachmentEtags: uploadedAttachmentEtags
+            )
         }
 
         let bodyResult = try await apiClient.writeBody(
@@ -248,34 +295,17 @@ public actor NetworkNoteRepository: NoteRepository {
         return NoteUploadResult(
             syncState: bodyResult.syncState,
             updatedAt: bodyResult.updatedAt,
-            etag: bodyResult.etag ?? result.etag
+            etag: bodyResult.etag ?? result.etag,
+            uploadedAttachmentEtags: uploadedAttachmentEtags
         )
-    }
-
-    private func noteExistsOnServer(noteID: UUID, accessToken: String) async throws -> Bool {
-        do {
-            _ = try await apiClient.listAttachments(noteID: noteID, accessToken: accessToken)
-            return true
-        } catch NoteRepositoryError.noteNotFound {
-            return false
-        }
     }
 
     private func deleteRemovedAttachments(
         noteID: UUID,
         localAttachmentIDs: Set<UUID>,
+        remoteAttachments: [RemoteAttachmentSummary],
         accessToken: String
     ) async throws {
-        let remoteAttachments: [RemoteAttachmentSummary]
-        do {
-            remoteAttachments = try await apiClient.listAttachments(
-                noteID: noteID,
-                accessToken: accessToken
-            )
-        } catch NoteRepositoryError.noteNotFound {
-            return
-        }
-
         for remote in remoteAttachments where !localAttachmentIDs.contains(remote.attachmentID) {
             try await apiClient.deleteAttachment(
                 noteID: noteID,

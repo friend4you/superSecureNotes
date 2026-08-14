@@ -251,8 +251,8 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         _ = try await repository.uploadNote(note)
 
         XCTAssertEqual(log.paths.last, bodyPath)
-        XCTAssertEqual(log.method(at: 2), "POST")
-        XCTAssertEqual(log.path(at: 2), initPath)
+        XCTAssertEqual(log.method(at: 1), "POST")
+        XCTAssertEqual(log.path(at: 1), initPath)
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/0") })
         XCTAssertTrue(log.paths.contains { $0.contains("/chunks/1") })
         XCTAssertTrue(log.paths.contains { $0.hasSuffix("/complete") })
@@ -345,9 +345,8 @@ final class NetworkNoteRepositorySplitUploadTests: XCTestCase {
         try await repository.writeNote(NoteFixtures.sampleStoredNote)
 
         XCTAssertEqual(log.method(at: 0), "GET")
-        XCTAssertEqual(log.method(at: 1), "GET")
         XCTAssertEqual(
-            log.path(at: 2),
+            log.path(at: 1),
             "/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())/body"
         )
         XCTAssertFalse(log.paths.contains("/v1/notes/\(NoteFixtures.noteID.uuidString.lowercased())"))

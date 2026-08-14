@@ -7,6 +7,9 @@ import VaultRepositoryProtocol
 struct NoteSyncUploadCandidate: Sendable {
     let note: StoredNote
     let etag: String?
+    let attachmentIDsToUpload: Set<UUID>
+    let attachmentReplacementEtags: [UUID: String]
+    let uploadBody: Bool
 }
 
 struct NoteDeleteSyncEntry: Sendable {
@@ -25,6 +28,11 @@ protocol NoteSyncLocalStoring: Actor, NoteUploadSessionStoring, AttachmentUpload
     func migrateInlineAttachmentsToSplit(noteID: UUID, fek: SymmetricKey) async throws
     func attachmentFileExists(noteID: UUID, attachmentID: UUID) -> Bool
     func listAttachmentIndexRows(noteID: UUID) async throws -> [AttachmentIndexRow]
+    func markAttachmentsSynced(
+        noteID: UUID,
+        attachmentIDs: Set<UUID>,
+        etags: [UUID: String]
+    ) async throws
     func writeAttachmentFile(
         noteID: UUID,
         attachmentID: UUID,
@@ -70,7 +78,10 @@ protocol NoteSyncRemoteStoring: Actor {
     func uploadNote(
         _ note: StoredNote,
         ifMatch etag: String?,
-        uploadSessionStore: (any AttachmentUploadSessionStoring)?
+        attachmentIDsToUpload: Set<UUID>?,
+        uploadBody: Bool,
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?,
+        attachmentReplacementEtags: [UUID: String]
     ) async throws -> NoteUploadResult
     func readNote(noteID: UUID) async throws -> StoredNote
     func deleteNote(noteID: UUID) async throws
@@ -107,7 +118,23 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
         var candidates: [NoteSyncUploadCandidate] = []
         for row in rows {
             let note = try await readNote(noteID: row.noteID)
-            candidates.append(NoteSyncUploadCandidate(note: note, etag: row.etag))
+            let attachmentRows = try await notesIndexStore.listAttachments(noteID: row.noteID)
+            let pendingAttachments = attachmentRows.filter { $0.syncState == .pendingSync }
+            let attachmentIDsToUpload = Set(pendingAttachments.map(\.attachmentID))
+            let attachmentReplacementEtags = Dictionary(
+                uniqueKeysWithValues: pendingAttachments.compactMap { attachment in
+                    attachment.etag.map { (attachment.attachmentID, $0) }
+                }
+            )
+            candidates.append(
+                NoteSyncUploadCandidate(
+                    note: note,
+                    etag: row.etag,
+                    attachmentIDsToUpload: attachmentIDsToUpload,
+                    attachmentReplacementEtags: attachmentReplacementEtags,
+                    uploadBody: row.bodyEtag == nil
+                )
+            )
         }
         return candidates
     }
@@ -137,7 +164,7 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
                 attachmentsTotalSize: row.attachmentsTotalSize,
                 wrappedFEK: row.wrappedFEK,
                 syncState: .synced,
-                bodyEtag: row.bodyEtag,
+                bodyEtag: etag,
                 etag: etag
             )
         )
@@ -271,6 +298,31 @@ extension LocalNoteRepository: NoteSyncLocalStoring {
     func finalizeSharedDelete(noteID: UUID) async throws {
         try await requireOpen()
         try await notesIndexStore.removeSharedDeleteOutboxEntry(noteID: noteID)
+    }
+
+    func markAttachmentsSynced(
+        noteID: UUID,
+        attachmentIDs: Set<UUID>,
+        etags: [UUID: String]
+    ) async throws {
+        try await requireOpen()
+        for attachmentID in attachmentIDs {
+            guard let row = try await notesIndexStore.fetchAttachment(
+                noteID: noteID,
+                attachmentID: attachmentID
+            ) else {
+                continue
+            }
+            try await notesIndexStore.upsertAttachment(
+                AttachmentIndexRow(
+                    noteID: noteID,
+                    attachmentID: attachmentID,
+                    etag: etags[attachmentID] ?? row.etag,
+                    sizeBytes: row.sizeBytes,
+                    syncState: .synced
+                )
+            )
+        }
     }
 }
 

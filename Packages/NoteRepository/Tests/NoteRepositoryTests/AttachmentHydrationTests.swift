@@ -392,7 +392,10 @@ private actor HydrationRemoteStub: NoteSyncRemoteStoring {
     func uploadNote(
         _ note: StoredNote,
         ifMatch etag: String?,
-        uploadSessionStore: (any AttachmentUploadSessionStoring)?
+        attachmentIDsToUpload: Set<UUID>?,
+        uploadBody: Bool,
+        uploadSessionStore: (any AttachmentUploadSessionStoring)?,
+        attachmentReplacementEtags: [UUID: String]
     ) async throws -> NoteUploadResult {
         NoteUploadResult(syncState: .synced, updatedAt: 0, etag: etag)
     }

@@ -93,7 +93,7 @@ final class LocalFirstNoteSyncServiceTests: XCTestCase {
 
         await syncService.flushPending()
 
-        XCTAssertEqual(requestCounter.value, 5)
+        XCTAssertEqual(requestCounter.value, 4)
     }
 
     func testFlushRetriesUploadWhenLocalNewerAfter409() async throws {
