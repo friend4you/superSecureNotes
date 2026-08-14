@@ -22,6 +22,7 @@
       }
     },
     "bio.enrollment.password" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -272,6 +273,16 @@
         }
       }
     },
+    "unlock.logout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log Out"
+          }
+        }
+      }
+    },
     "unlock.password" : {
       "localizations" : {
         "en" : {
@@ -308,16 +319,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use Biometrics"
-          }
-        }
-      }
-    },
-    "unlock.logout" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log Out"
           }
         }
       }

@@ -33,8 +33,12 @@ final class AppComposition {
         let navigation = NavigationCoordinator()
         let sessionPasswordCache = SessionPasswordCache()
         let pendingBiometricEnrollmentStore = UserDefaultsPendingBiometricEnrollmentStore()
-        let localAppDataWiper = FileSystemLocalAppDataWiper()
         let credentialStore = dependencies.credentialStore
+        InstallMarker.reconcileOrphanedCredentialsIfNeeded(
+            credentialStore: credentialStore,
+            pendingBiometricEnrollmentStore: pendingBiometricEnrollmentStore
+        )
+        let localAppDataWiper = FileSystemLocalAppDataWiper()
         let navigator = navigation.navigator
 
         let performLogout: () async -> Void = {
