@@ -1,5 +1,6 @@
-import AuthRepositoryProtocol
+import AuthFlowDomain
 import AuthFlowProtocol
+import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import CryptoKit
 import Foundation
@@ -9,13 +10,131 @@ import NoteRepositoryProtocol
 import SecureCrypto
 import VaultRepositoryProtocol
 import VaultSessionProtocol
-import XCTest
-
-@testable import AuthFlowProtocol
 
 @MainActor
 enum AuthFlowTestSupport {
+    static func makeEstablishVaultSessionUseCase(
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
+        noteSync: any NoteSyncing = MockNoteSyncService()
+    ) -> DefaultEstablishVaultSessionUseCase {
+        DefaultEstablishVaultSessionUseCase(
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
+            noteSync: noteSync
+        )
+    }
+
+    static func makeRestoreOnlineSessionUseCase(
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        authRepository: any AuthRepository = MockAuthRepository()
+    ) -> DefaultRestoreOnlineSessionUseCase {
+        DefaultRestoreOnlineSessionUseCase(
+            credentialStore: credentialStore,
+            authRepository: authRepository
+        )
+    }
+
+    static func makeBiometricUnlockUseCase(
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        biometricAuthenticator: any BiometricAuthenticator = MockBiometricAuthenticator()
+    ) -> DefaultBiometricUnlockUseCase {
+        DefaultBiometricUnlockUseCase(
+            credentialStore: credentialStore,
+            biometricAuthenticator: biometricAuthenticator
+        )
+    }
+
+    static func makeLoginUseCase(
+        authRepository: any AuthRepository = MockAuthRepository(),
+        vaultRepository: any VaultRepository = MockVaultRepository(),
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
+        noteSync: any NoteSyncing = MockNoteSyncService(),
+        establishVaultSession: (any EstablishVaultSessionUseCase)? = nil,
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore()
+    ) -> DefaultLoginUseCase {
+        let establish = establishVaultSession ?? makeEstablishVaultSessionUseCase(
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
+            noteSync: noteSync
+        )
+        return DefaultLoginUseCase(
+            authRepository: authRepository,
+            vaultRepository: vaultRepository,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability,
+            noteSync: noteSync,
+            establishVaultSession: establish
+        )
+    }
+
+    static func makeRegisterUseCase(
+        authRepository: any AuthRepository = MockAuthRepository(),
+        vaultRepository: any VaultRepository = MockVaultRepository(),
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
+        noteSync: any NoteSyncing = MockNoteSyncService(),
+        establishVaultSession: (any EstablishVaultSessionUseCase)? = nil,
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore()
+    ) -> DefaultRegisterUseCase {
+        let establish = establishVaultSession ?? makeEstablishVaultSessionUseCase(
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
+            noteSync: noteSync
+        )
+        return DefaultRegisterUseCase(
+            authRepository: authRepository,
+            vaultRepository: vaultRepository,
+            vaultAuthenticator: vaultAuthenticator,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability,
+            noteSync: noteSync,
+            establishVaultSession: establish
+        )
+    }
+
+    static func makeUnlockUseCase(
+        credentialStore: any CredentialStore = MockCredentialStore(),
+        vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
+        networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: false),
+        noteSync: any NoteSyncing = MockNoteSyncService(),
+        establishVaultSession: (any EstablishVaultSessionUseCase)? = nil,
+        restoreOnlineSession: (any RestoreOnlineSessionUseCase)? = nil,
+        authRepository: any AuthRepository = MockAuthRepository(),
+        vaultSession: any VaultSessionProtocol = MockVaultSession(),
+        notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore()
+    ) -> DefaultUnlockUseCase {
+        let establish = establishVaultSession ?? makeEstablishVaultSessionUseCase(
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
+            noteSync: noteSync
+        )
+        let restore = restoreOnlineSession ?? makeRestoreOnlineSessionUseCase(
+            credentialStore: credentialStore,
+            authRepository: authRepository
+        )
+        return DefaultUnlockUseCase(
+            credentialStore: credentialStore,
+            vaultAuthenticator: vaultAuthenticator,
+            networkReachability: networkReachability,
+            noteSync: noteSync,
+            establishVaultSession: establish,
+            restoreOnlineSession: restore
+        )
+    }
+
     static func makeLoginViewModel(
+        loginUseCase: (any LoginUseCase)? = nil,
         authRepository: any AuthRepository = MockAuthRepository(),
         vaultRepository: any VaultRepository = MockVaultRepository(),
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
@@ -26,42 +145,54 @@ enum AuthFlowTestSupport {
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
         noteSync: any NoteSyncing = MockNoteSyncService()
     ) -> DefaultLoginViewModel {
-        DefaultLoginViewModel(
+        let useCase = loginUseCase ?? makeLoginUseCase(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
-            vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore,
-            navigator: navigator ?? MockNavigating(),
             credentialStore: credentialStore,
             networkReachability: networkReachability,
-            noteSync: noteSync
+            noteSync: noteSync,
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore
+        )
+        return DefaultLoginViewModel(
+            loginUseCase: useCase,
+            navigator: navigator ?? MockNavigating()
         )
     }
 
     static func makeRegisterViewModel(
+        registerUseCase: (any RegisterUseCase)? = nil,
         authRepository: any AuthRepository = MockAuthRepository(),
         vaultRepository: any VaultRepository = MockVaultRepository(),
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
         vaultSession: any VaultSessionProtocol = MockVaultSession(),
         notesIndexStore: any NotesIndexStoreProtocol = MockNotesIndexStore(),
+        navigator: (any Navigating)? = nil,
         credentialStore: any CredentialStore = MockCredentialStore(),
         networkReachability: any NetworkReachability = MockNetworkReachability(isOnline: true),
         noteSync: any NoteSyncing = MockNoteSyncService()
     ) -> DefaultRegisterViewModel {
-        DefaultRegisterViewModel(
+        let useCase = registerUseCase ?? makeRegisterUseCase(
             authRepository: authRepository,
             vaultRepository: vaultRepository,
             vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore,
             credentialStore: credentialStore,
             networkReachability: networkReachability,
-            noteSync: noteSync
+            noteSync: noteSync,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore
+        )
+        return DefaultRegisterViewModel(
+            registerUseCase: useCase,
+            navigator: navigator ?? MockNavigating()
         )
     }
 
     static func makeUnlockViewModel(
+        email: String = "user@example.com",
+        unlockUseCase: (any UnlockUseCase)? = nil,
+        biometricUnlockUseCase: (any BiometricUnlockUseCase)? = nil,
         credentialStore: any CredentialStore = MockCredentialStore(),
         authRepository: any AuthRepository = MockAuthRepository(),
         vaultAuthenticator: any VaultAuthenticator = MockVaultAuthenticator(),
@@ -72,41 +203,25 @@ enum AuthFlowTestSupport {
         noteSync: any NoteSyncing = MockNoteSyncService(),
         performLogout: @escaping () async -> Void = {}
     ) -> DefaultUnlockViewModel {
-        DefaultUnlockViewModel(
+        let unlock = unlockUseCase ?? makeUnlockUseCase(
             credentialStore: credentialStore,
-            authRepository: authRepository,
             vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore,
-            biometricAuthenticator: biometricAuthenticator,
             networkReachability: networkReachability,
             noteSync: noteSync,
+            authRepository: authRepository,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore
+        )
+        let biometric = biometricUnlockUseCase ?? makeBiometricUnlockUseCase(
+            credentialStore: credentialStore,
+            biometricAuthenticator: biometricAuthenticator
+        )
+        return DefaultUnlockViewModel(
+            email: email,
+            unlockUseCase: unlock,
+            biometricUnlockUseCase: biometric,
             performLogout: performLogout
         )
-    }
-}
-
-final class AuthFlowMocksSmokeTests: XCTestCase {
-    @MainActor
-    func testMocksAreUsable() async throws {
-        let authRepository = MockAuthRepository()
-        let vaultRepository = MockVaultRepository()
-        let authenticator = MockVaultAuthenticator()
-        let vaultSession = MockVaultSession()
-
-        let viewModel = DefaultLoginViewModel(
-            authRepository: authRepository,
-            vaultRepository: vaultRepository,
-            vaultAuthenticator: authenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: MockNotesIndexStore(),
-            navigator: MockNavigating(),
-            credentialStore: MockCredentialStore(),
-            networkReachability: MockNetworkReachability(isOnline: true),
-            noteSync: MockNoteSyncService()
-        )
-
-        XCTAssertEqual(viewModel.state, .idle)
     }
 }
 
@@ -283,6 +398,7 @@ final class MockVaultAuthenticator: VaultAuthenticator, @unchecked Sendable {
 
 actor MockVaultSession: VaultSessionProtocol {
     private(set) var establishedKeys: VaultSessionKeys?
+    private(set) var clearCallCount = 0
     var onEstablish: (@Sendable () -> Void)?
 
     var isActive: Bool {
@@ -301,6 +417,7 @@ actor MockVaultSession: VaultSessionProtocol {
     }
 
     func clear() {
+        clearCallCount += 1
         establishedKeys = nil
     }
 
@@ -322,6 +439,7 @@ actor MockVaultSession: VaultSessionProtocol {
 @MainActor
 final class MockNavigating: Navigating {
     private(set) var pushedRoutes: [AnyHashable] = []
+    private(set) var presentedRoutes: [(route: AnyHashable, style: RoutePresentation)] = []
     private(set) var dismissPresentationCallCount = 0
 
     func setRoot<R: Route>(_ route: R) {
@@ -332,7 +450,9 @@ final class MockNavigating: Navigating {
         pushedRoutes.append(AnyHashable(route))
     }
 
-    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {
+        presentedRoutes.append((AnyHashable(route), style))
+    }
 
     func pop() {}
 
@@ -410,28 +530,12 @@ struct MockNetworkReachability: NetworkReachability {
     }
 }
 
-final class MockVaultHeaderUploadScheduler: VaultHeaderUploadScheduling, @unchecked Sendable {
-    private let lock = NSLock()
-    private var headers: [Data] = []
-
-    var scheduledHeaders: [Data] {
-        lock.lock()
-        defer { lock.unlock() }
-        return headers
-    }
-
-    func scheduleVaultHeaderUpload(_ header: Data) {
-        lock.lock()
-        headers.append(header)
-        lock.unlock()
-    }
-}
-
 actor MockNoteSyncService: NoteSyncing {
     private(set) var flushCallCount = 0
     private(set) var uploadVaultHeaderCallCount = 0
     private(set) var pullVaultHeaderCallCount = 0
     private(set) var pullRemoteNotesCatalogCallCount = 0
+    private(set) var pullRemoteSharedCatalogCallCount = 0
     var uploadVaultHeaderError: Error?
     var pullVaultHeaderError: Error?
     var pullVaultHeaderResult: Data?
@@ -458,6 +562,10 @@ actor MockNoteSyncService: NoteSyncing {
     func pullRemoteNotesCatalog() async throws {
         pullRemoteNotesCatalogCallCount += 1
         onPullRemoteNotesCatalog?()
+    }
+
+    func pullRemoteSharedCatalog() async throws {
+        pullRemoteSharedCatalogCallCount += 1
     }
 
     func pullCatalogIfLocalVaultMissing() async throws -> Data? {

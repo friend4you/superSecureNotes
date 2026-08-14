@@ -10,57 +10,70 @@ public struct UnlockView: View {
 
     public var body: some View {
         Form {
-            Section {
-                Text(viewModel.email)
-                    .foregroundStyle(.secondary)
-
-                if showsPasswordField {
-                    SecureField(
-                        AuthFlowUILocalization.localized("unlock.password"),
-                        text: $viewModel.password
-                    )
-                    .textContentType(.password)
-                }
-            }
-
-            if case .failure(let error) = viewModel.state {
-                Section {
-                    Text(AuthFlowErrorText.localized(error))
-                        .foregroundStyle(.red)
-                }
-            }
-
-            Section {
-                if showsPasswordField {
-                    Button(AuthFlowUILocalization.localized("unlock.submit")) {
-                        Task {
-                            await viewModel.unlockWithPassword()
-                        }
-                    }
-                    .disabled(viewModel.state == .loading)
-                }
-
-                if showsBiometricRetry {
-                    Button(AuthFlowUILocalization.localized("unlock.useBiometrics")) {
-                        Task {
-                            await viewModel.retryBiometrics()
-                        }
-                    }
-                }
-
-                Button(AuthFlowUILocalization.localized("unlock.logout"), role: .destructive) {
-                    Task {
-                        await viewModel.logout()
-                    }
-                }
-                .disabled(viewModel.state == .loading)
-            }
+            credentialsSection
+            errorSection
+            actionsSection
         }
-        .navigationTitle(AuthFlowUILocalization.localized("unlock.title"))
+        .navigationTitle(String(localized: "unlock.title", bundle: .module))
         .onAppear {
             Task {
                 await viewModel.onAppear()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var credentialsSection: some View {
+        Section {
+            Text(viewModel.email)
+                .foregroundStyle(.secondary)
+
+            if showsPasswordField {
+                SecureField(
+                    String(localized: "unlock.password", bundle: .module),
+                    text: $viewModel.password
+                )
+                .textContentType(.password)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var errorSection: some View {
+        if case .failure(let error) = viewModel.state {
+            Section {
+                Text(AuthFlowErrorText.localized(error))
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionsSection: some View {
+        Section {
+            if showsPasswordField {
+                Button(String(localized: "unlock.submit", bundle: .module)) {
+                    Task {
+                        await viewModel.unlockWithPassword()
+                    }
+                }
+                .disabled(viewModel.state == .loading)
+            }
+
+            if showsBiometricRetry {
+                Button(String(localized: "unlock.useBiometrics", bundle: .module)) {
+                    Task {
+                        await viewModel.retryBiometrics()
+                    }
+                }
+            }
+
+            Button(String(localized: "unlock.logout", bundle: .module), role: .destructive) {
+                Task {
+                    await viewModel.logout()
+                }
+            }
+            .disabled(viewModel.state == .loading)
         }
     }
 

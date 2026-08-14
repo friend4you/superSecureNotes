@@ -15,6 +15,10 @@ final class AuthRouteTests: XCTestCase {
         XCTAssertNotEqual(AuthRoute.login, .register)
     }
 
+    func testAuthRouteIncludesBiometricEnrollment() {
+        XCTAssertEqual(AuthRoute.biometricEnrollment, .biometricEnrollment)
+    }
+
     func testAuthRouteIsSendable() {
         let route: any Route & Sendable = AuthRoute.login
         XCTAssertTrue(route is AuthRoute)

@@ -21,6 +21,5 @@ final class DefaultLoginViewModelPersistenceTests: XCTestCase {
         XCTAssertEqual(credentialStore.refreshToken(), "refresh")
         let headerData = await vaultRepository.headerData
         XCTAssertEqual(credentialStore.vaultHeader(), headerData)
-        XCTAssertTrue(viewModel.pendingBiometricEnrollment)
     }
 }

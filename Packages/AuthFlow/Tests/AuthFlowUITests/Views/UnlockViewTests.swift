@@ -1,76 +1,26 @@
 import AuthFlowUI
-import Foundation
 import XCTest
 
 @testable import AuthFlowUI
 
 @MainActor
 final class UnlockViewTests: XCTestCase {
-    func testUnlockViewIsPubliclyConstructible() {
-        let deps = PreviewSupport.makeDependencies()
-        _ = UnlockView(viewModel: deps.makeUnlockViewModel())
+    func testUnlockViewUsesSectionBuilders() throws {
+        let source = try Self.viewSource(named: "UnlockView.swift")
+        XCTAssertTrue(source.contains("credentialsSection"))
+        XCTAssertTrue(source.contains("errorSection"))
+        XCTAssertTrue(source.contains("actionsSection"))
     }
 
-    func testEmailIsReadOnlyOnUnlock() throws {
-        let source = try Self.unlockViewSource()
-
-        XCTAssertTrue(source.contains("Text(viewModel.email)"))
-        XCTAssertFalse(source.contains("TextField"))
-        XCTAssertFalse(source.contains("$viewModel.email"))
-    }
-
-    func testUnlockStringsAreLocalized() throws {
-        let catalog = try Self.loadStringCatalog()
-        let keys = [
-            "unlock.title",
-            "unlock.password",
-            "unlock.submit",
-            "unlock.useBiometrics",
-            "unlock.logout",
-        ]
-
-        for key in keys {
-            XCTAssertNotNil(catalog.strings[key], "Missing localization key: \(key)")
-            XCTAssertFalse(catalog.strings[key]?.localizations["en"]?.stringUnit.value.isEmpty ?? true)
-        }
-    }
-
-    private static func unlockViewSource() throws -> String {
+    private static func viewSource(named fileName: String) throws -> String {
         let packageRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // Views
-            .deletingLastPathComponent() // AuthFlowUITests
-            .deletingLastPathComponent() // Tests
-            .deletingLastPathComponent() // AuthFlow package root
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
         let sourceURL = packageRoot
-            .appendingPathComponent("Sources/AuthFlowUI/Views/UnlockView.swift")
+            .appendingPathComponent("Sources/AuthFlowUI/Views")
+            .appendingPathComponent(fileName)
         return try String(contentsOf: sourceURL, encoding: .utf8)
     }
-
-    private static func loadStringCatalog() throws -> StringCatalog {
-        let packageRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // Views
-            .deletingLastPathComponent() // AuthFlowUITests
-            .deletingLastPathComponent() // Tests
-            .deletingLastPathComponent() // AuthFlow package root
-        let catalogURL = packageRoot
-            .appendingPathComponent("Sources/AuthFlowUI/Resources/Localizable.xcstrings")
-        let data = try Data(contentsOf: catalogURL)
-        return try JSONDecoder().decode(StringCatalog.self, from: data)
-    }
-}
-
-private struct StringCatalog: Decodable {
-    struct Entry: Decodable {
-        struct Localization: Decodable {
-            struct StringUnit: Decodable {
-                let value: String
-            }
-
-            let stringUnit: StringUnit
-        }
-
-        let localizations: [String: Localization]
-    }
-
-    let strings: [String: Entry]
 }

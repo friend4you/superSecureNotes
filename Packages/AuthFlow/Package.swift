@@ -19,6 +19,14 @@ let package = Package(
             targets: ["AuthRepositoryProtocol"]
         ),
         .library(
+            name: "AuthFlowDomainProtocol",
+            targets: ["AuthFlowDomainProtocol"]
+        ),
+        .library(
+            name: "AuthFlowDomain",
+            targets: ["AuthFlowDomain"]
+        ),
+        .library(
             name: "AuthFlowProtocol",
             targets: ["AuthFlowProtocol"]
         ),
@@ -67,8 +75,34 @@ let package = Package(
             ]
         ),
         .target(
+            name: "AuthFlowDomainProtocol",
+            dependencies: [
+                "AuthRepositoryProtocol",
+                "CredentialStoreProtocol",
+                .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
+                .product(name: "VaultSessionProtocol", package: "VaultSession"),
+                .product(name: "NetworkProtocol", package: "Network"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+            ]
+        ),
+        .target(
+            name: "AuthFlowDomain",
+            dependencies: [
+                "AuthFlowDomainProtocol",
+                "AuthRepositoryProtocol",
+                "CredentialStoreProtocol",
+                .product(name: "VaultRepositoryProtocol", package: "VaultRepository"),
+                .product(name: "VaultSessionProtocol", package: "VaultSession"),
+                .product(name: "NetworkProtocol", package: "Network"),
+                .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
+                .product(name: "SecureCrypto", package: "SecureCrypto"),
+            ]
+        ),
+        .target(
             name: "AuthFlowProtocol",
             dependencies: [
+                "AuthFlowDomain",
+                "AuthFlowDomainProtocol",
                 "AuthFlowRoutes",
                 "AuthRepositoryProtocol",
                 "CredentialStoreProtocol",
@@ -77,7 +111,6 @@ let package = Package(
                 .product(name: "NavigationProtocol", package: "Navigation"),
                 .product(name: "NetworkProtocol", package: "Network"),
                 .product(name: "NoteRepositoryProtocol", package: "NoteRepository"),
-                .product(name: "SecureCrypto", package: "SecureCrypto"),
             ]
         ),
         .target(
@@ -120,6 +153,8 @@ let package = Package(
         .testTarget(
             name: "AuthFlowProtocolTests",
             dependencies: [
+                "AuthFlowDomain",
+                "AuthFlowDomainProtocol",
                 "AuthFlowProtocol",
                 "AuthFlowRoutes",
                 "CredentialStoreProtocol",

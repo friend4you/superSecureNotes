@@ -5,4 +5,5 @@ public enum AuthRoute: Route {
     case register
     case unlock
     case settings
+    case biometricEnrollment
 }

@@ -1,5 +1,4 @@
 import AuthFlowRoutes
-import AuthRepositoryProtocol
 import CredentialStoreProtocol
 import NavigationProtocol
 import VaultRepositoryProtocol
@@ -10,6 +9,6 @@ public protocol AuthFlowDependencyProviding: AnyObject {
     func makeLoginViewModel() -> DefaultLoginViewModel
     func makeRegisterViewModel() -> DefaultRegisterViewModel
     func makeUnlockViewModel() -> DefaultUnlockViewModel
-    func makeBiometricEnrollmentViewModel(onComplete: @escaping () -> Void) -> DefaultBiometricEnrollmentViewModel
+    func makeBiometricEnrollmentViewModel() -> DefaultBiometricEnrollmentViewModel
     func makeBiometricSettingsViewModel() -> DefaultBiometricSettingsViewModel
 }

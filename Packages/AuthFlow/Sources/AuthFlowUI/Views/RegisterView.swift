@@ -10,55 +10,54 @@ public struct RegisterView: View {
 
     public var body: some View {
         Form {
-            Section {
-                TextField(
-                    String(localized: "register.email", bundle: .module),
-                    text: $viewModel.email
-                )
-                .textContentType(.emailAddress)
-                #if os(iOS)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.emailAddress)
-                #endif
-
-                SecureField(
-                    String(localized: "register.password", bundle: .module),
-                    text: $viewModel.password
-                )
-                .textContentType(.newPassword)
-            }
-
-            if case .failure(let error) = viewModel.state {
-                Section {
-                    Text(AuthFlowErrorText.localized(error))
-                        .foregroundStyle(.red)
-                }
-            }
-
-            Section {
-                Button(String(localized: "register.submit", bundle: .module)) {
-                    Task {
-                        await viewModel.register()
-                    }
-                }
-                .disabled(viewModel.state == .loading)
-            }
+            credentialsSection
+            errorSection
+            actionsSection
         }
         .navigationTitle(String(localized: "register.title", bundle: .module))
-        .sheet(isPresented: biometricEnrollmentSheetBinding) {
-            BiometricEnrollmentView(viewModel: viewModel.makeBiometricEnrollmentViewModel())
+    }
+
+    @ViewBuilder
+    private var credentialsSection: some View {
+        Section {
+            TextField(
+                String(localized: "register.email", bundle: .module),
+                text: $viewModel.email
+            )
+            .textContentType(.emailAddress)
+            #if os(iOS)
+            .textInputAutocapitalization(.never)
+            .keyboardType(.emailAddress)
+            #endif
+
+            SecureField(
+                String(localized: "register.password", bundle: .module),
+                text: $viewModel.password
+            )
+            .textContentType(.newPassword)
         }
     }
 
-    private var biometricEnrollmentSheetBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.pendingBiometricEnrollment },
-            set: { isPresented in
-                if !isPresented {
-                    viewModel.dismissBiometricEnrollment()
+    @ViewBuilder
+    private var errorSection: some View {
+        if case .failure(let error) = viewModel.state {
+            Section {
+                Text(AuthFlowErrorText.localized(error))
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionsSection: some View {
+        Section {
+            Button(String(localized: "register.submit", bundle: .module)) {
+                Task {
+                    await viewModel.register()
                 }
             }
-        )
+            .disabled(viewModel.state == .loading)
+        }
     }
 }
 

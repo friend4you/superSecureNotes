@@ -9,23 +9,26 @@ final class BiometricEnrollmentViewTests: XCTestCase {
     func testBiometricEnrollmentViewIsPubliclyConstructible() {
         let deps = PreviewSupport.makeDependencies()
         _ = BiometricEnrollmentView(
-            viewModel: deps.makeBiometricEnrollmentViewModel(onComplete: {})
+            viewModel: deps.makeBiometricEnrollmentViewModel()
         )
     }
 
-    func testEnrollmentShownAfterFirstLogin() throws {
-        let loginSource = try Self.loginViewSource()
-        XCTAssertTrue(loginSource.contains("pendingBiometricEnrollment"))
-        XCTAssertTrue(loginSource.contains(".sheet"))
-        XCTAssertTrue(loginSource.contains("BiometricEnrollmentView"))
+    func testLoginViewHasNoEnrollmentSheet() throws {
+        let loginSource = try Self.viewSource(named: "LoginView.swift")
+        XCTAssertFalse(loginSource.contains(".sheet"))
+        XCTAssertFalse(loginSource.contains("pendingBiometricEnrollment"))
+        XCTAssertFalse(loginSource.contains("BiometricEnrollmentView"))
+    }
 
-        let registerSource = try Self.registerViewSource()
-        XCTAssertTrue(registerSource.contains("pendingBiometricEnrollment"))
-        XCTAssertTrue(registerSource.contains("BiometricEnrollmentView"))
+    func testRegisterViewHasNoEnrollmentSheet() throws {
+        let registerSource = try Self.viewSource(named: "RegisterView.swift")
+        XCTAssertFalse(registerSource.contains(".sheet"))
+        XCTAssertFalse(registerSource.contains("pendingBiometricEnrollment"))
+        XCTAssertFalse(registerSource.contains("BiometricEnrollmentView"))
     }
 
     func testEnrollmentNotShownOnSubsequentUnlocks() throws {
-        let unlockSource = try Self.unlockViewSource()
+        let unlockSource = try Self.viewSource(named: "UnlockView.swift")
 
         XCTAssertFalse(unlockSource.contains("BiometricEnrollmentView"))
         XCTAssertFalse(unlockSource.contains("pendingBiometricEnrollment"))
@@ -45,18 +48,6 @@ final class BiometricEnrollmentViewTests: XCTestCase {
             XCTAssertNotNil(catalog.strings[key], "Missing localization key: \(key)")
             XCTAssertFalse(catalog.strings[key]?.localizations["en"]?.stringUnit.value.isEmpty ?? true)
         }
-    }
-
-    private static func loginViewSource() throws -> String {
-        try viewSource(named: "LoginView.swift")
-    }
-
-    private static func registerViewSource() throws -> String {
-        try viewSource(named: "RegisterView.swift")
-    }
-
-    private static func unlockViewSource() throws -> String {
-        try viewSource(named: "UnlockView.swift")
     }
 
     private static func viewSource(named fileName: String) throws -> String {

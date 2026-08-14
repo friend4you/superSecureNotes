@@ -13,29 +13,29 @@ public struct BiometricEnrollmentView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text(AuthFlowUILocalization.localized("bio.enrollment.message"))
+                    Text(String(localized: "bio.enrollment.message", bundle: .module))
                 }
 
                 Section {
                     SecureField(
-                        AuthFlowUILocalization.localized("bio.enrollment.password"),
+                        String(localized: "bio.enrollment.password", bundle: .module),
                         text: $password
                     )
                 }
 
                 Section {
-                    Button(AuthFlowUILocalization.localized("bio.enrollment.enable")) {
+                    Button(String(localized: "bio.enrollment.enable", bundle: .module)) {
                         Task {
                             try? await viewModel.enableBiometrics(password: password)
                         }
                     }
 
-                    Button(AuthFlowUILocalization.localized("bio.enrollment.skip")) {
+                    Button(String(localized: "bio.enrollment.skip", bundle: .module)) {
                         viewModel.skip()
                     }
                 }
             }
-            .navigationTitle(AuthFlowUILocalization.localized("bio.enrollment.title"))
+            .navigationTitle(String(localized: "bio.enrollment.title", bundle: .module))
         }
     }
 }

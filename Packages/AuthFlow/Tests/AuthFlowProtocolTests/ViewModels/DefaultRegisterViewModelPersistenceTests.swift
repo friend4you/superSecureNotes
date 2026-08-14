@@ -20,6 +20,5 @@ final class DefaultRegisterViewModelPersistenceTests: XCTestCase {
         XCTAssertEqual(credentialStore.email(), "user@example.com")
         XCTAssertEqual(credentialStore.refreshToken(), "refresh")
         XCTAssertEqual(credentialStore.vaultHeader(), authenticator.creationOutcome.headerData)
-        XCTAssertTrue(viewModel.pendingBiometricEnrollment)
     }
 }

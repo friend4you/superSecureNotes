@@ -123,10 +123,24 @@
       }
     },
     "error.networkRequired" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An internet connection is required for first-time setup."
+          }
+        }
+      }
     },
     "error.sessionExpired" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your session has expired. Please sign in again."
+          }
+        }
+      }
     },
     "error.unknown" : {
       "localizations" : {

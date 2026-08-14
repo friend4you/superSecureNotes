@@ -1,3 +1,4 @@
+import AuthFlowDomain
 import AuthFlowRoutes
 import AuthRepositoryProtocol
 import CredentialStoreProtocol
@@ -21,6 +22,63 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     private let noteSync: any NoteSyncing
     private let performLogout: () async -> Void
     private let sessionExpiredNotifier: SessionExpiredNotifier
+
+    private lazy var establishVaultSessionUseCase: DefaultEstablishVaultSessionUseCase = {
+        DefaultEstablishVaultSessionUseCase(
+            vaultAuthenticator: vaultAuthenticator,
+            vaultSession: vaultSession,
+            notesIndexStore: notesIndexStore,
+            noteSync: noteSync
+        )
+    }()
+
+    private lazy var restoreOnlineSessionUseCase: DefaultRestoreOnlineSessionUseCase = {
+        DefaultRestoreOnlineSessionUseCase(
+            credentialStore: credentialStore,
+            authRepository: authRepository
+        )
+    }()
+
+    private lazy var biometricUnlockUseCase: DefaultBiometricUnlockUseCase = {
+        DefaultBiometricUnlockUseCase(
+            credentialStore: credentialStore,
+            biometricAuthenticator: biometricAuthenticator
+        )
+    }()
+
+    private lazy var loginUseCase: DefaultLoginUseCase = {
+        DefaultLoginUseCase(
+            authRepository: authRepository,
+            vaultRepository: vaultRepository,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability,
+            noteSync: noteSync,
+            establishVaultSession: establishVaultSessionUseCase
+        )
+    }()
+
+    private lazy var registerUseCase: DefaultRegisterUseCase = {
+        DefaultRegisterUseCase(
+            authRepository: authRepository,
+            vaultRepository: vaultRepository,
+            vaultAuthenticator: vaultAuthenticator,
+            credentialStore: credentialStore,
+            networkReachability: networkReachability,
+            noteSync: noteSync,
+            establishVaultSession: establishVaultSessionUseCase
+        )
+    }()
+
+    private lazy var unlockUseCase: DefaultUnlockUseCase = {
+        DefaultUnlockUseCase(
+            credentialStore: credentialStore,
+            vaultAuthenticator: vaultAuthenticator,
+            networkReachability: networkReachability,
+            noteSync: noteSync,
+            establishVaultSession: establishVaultSessionUseCase,
+            restoreOnlineSession: restoreOnlineSessionUseCase
+        )
+    }()
 
     public init(
         authRepository: any AuthRepository,
@@ -52,52 +110,32 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
 
     public func makeLoginViewModel() -> DefaultLoginViewModel {
         DefaultLoginViewModel(
-            authRepository: authRepository,
-            vaultRepository: vaultRepository,
-            vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore,
+            loginUseCase: loginUseCase,
             navigator: navigator,
-            credentialStore: credentialStore,
-            networkReachability: networkReachability,
-            noteSync: noteSync,
             sessionExpiredNotifier: sessionExpiredNotifier
         )
     }
 
     public func makeRegisterViewModel() -> DefaultRegisterViewModel {
         DefaultRegisterViewModel(
-            authRepository: authRepository,
-            vaultRepository: vaultRepository,
-            vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore,
-            credentialStore: credentialStore,
-            networkReachability: networkReachability,
-            noteSync: noteSync
+            registerUseCase: registerUseCase,
+            navigator: navigator
         )
     }
 
     public func makeUnlockViewModel() -> DefaultUnlockViewModel {
         DefaultUnlockViewModel(
-            credentialStore: credentialStore,
-            authRepository: authRepository,
-            vaultAuthenticator: vaultAuthenticator,
-            vaultSession: vaultSession,
-            notesIndexStore: notesIndexStore,
-            biometricAuthenticator: biometricAuthenticator,
-            networkReachability: networkReachability,
-            noteSync: noteSync,
+            email: credentialStore.email() ?? "",
+            unlockUseCase: unlockUseCase,
+            biometricUnlockUseCase: biometricUnlockUseCase,
             performLogout: performLogout
         )
     }
 
-    public func makeBiometricEnrollmentViewModel(
-        onComplete: @escaping () -> Void
-    ) -> DefaultBiometricEnrollmentViewModel {
+    public func makeBiometricEnrollmentViewModel() -> DefaultBiometricEnrollmentViewModel {
         DefaultBiometricEnrollmentViewModel(
             credentialStore: credentialStore,
-            onComplete: onComplete
+            navigator: navigator
         )
     }
 

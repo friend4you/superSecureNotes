@@ -18,7 +18,13 @@ public enum AuthNavigation {
             unlockView(deps: deps)
         case .settings:
             settingsView(deps: deps)
+        case .biometricEnrollment:
+            biometricEnrollmentView(deps: deps)
         }
+    }
+
+    public static func biometricEnrollmentView(deps: any AuthFlowDependencyProviding) -> BiometricEnrollmentView {
+        BiometricEnrollmentView(viewModel: deps.makeBiometricEnrollmentViewModel())
     }
 
     public static func loginView(deps: any AuthFlowDependencyProviding) -> LoginView {

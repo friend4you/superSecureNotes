@@ -11,7 +11,7 @@ public struct BiometricSettingsView: View {
     public var body: some View {
         Form {
             Toggle(
-                AuthFlowUILocalization.localized("bio.settings.toggle"),
+                String(localized: "bio.settings.toggle", bundle: .module),
                 isOn: Binding(
                     get: { viewModel.isBiometricsEnabled },
                     set: { isEnabled in
@@ -28,11 +28,11 @@ public struct BiometricSettingsView: View {
 
             if viewModel.requiresPasswordConfirmation {
                 SecureField(
-                    AuthFlowUILocalization.localized("bio.settings.password"),
+                    String(localized: "bio.settings.password", bundle: .module),
                     text: $viewModel.password
                 )
             }
         }
-        .navigationTitle(AuthFlowUILocalization.localized("bio.settings.title"))
+        .navigationTitle(String(localized: "bio.settings.title", bundle: .module))
     }
 }

@@ -1,3 +1,4 @@
+import AuthFlowDomainProtocol
 import AuthRepositoryProtocol
 import Foundation
 import VaultRepositoryProtocol
@@ -33,6 +34,21 @@ enum AuthFlowErrorMapper {
         case let .serverError(_, message):
             return message.map(AuthFlowError.validationError) ?? .unknown
         case .notAuthenticated, .publicKeyNotFound:
+            return .unknown
+        }
+    }
+
+    static func mapUnlockAuthError(_ error: AuthRepositoryError) -> AuthFlowError {
+        switch error {
+        case .invalidCredentials:
+            return .sessionExpired
+        case .networkError:
+            return .networkError
+        case let .validationError(message):
+            return .validationError(message)
+        case let .serverError(_, message):
+            return message.map(AuthFlowError.validationError) ?? .unknown
+        case .emailAlreadyExists, .notAuthenticated:
             return .unknown
         }
     }

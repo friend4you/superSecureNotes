@@ -1,36 +1,37 @@
 import AuthFlowProtocol
+import NavigationProtocol
 import XCTest
 
 @MainActor
 final class BiometricEnrollmentViewModelTests: XCTestCase {
-    func testUserCanSkipEnrollment() {
+    func testSkipDismissesPresentation() {
         let credentialStore = MockCredentialStore()
-        var didComplete = false
+        let navigator = MockNavigating()
 
         let viewModel = DefaultBiometricEnrollmentViewModel(
             credentialStore: credentialStore,
-            onComplete: { didComplete = true }
+            navigator: navigator
         )
 
         viewModel.skip()
 
         XCTAssertFalse(credentialStore.bioEnabled())
-        XCTAssertTrue(didComplete)
+        XCTAssertEqual(navigator.dismissPresentationCallCount, 1)
     }
 
-    func testEnableBiometricsSavesPasswordAndSetsFlag() async throws {
+    func testEnableBiometricsSavesPasswordAndDismissesPresentation() async throws {
         let credentialStore = MockCredentialStore()
-        var didComplete = false
+        let navigator = MockNavigating()
 
         let viewModel = DefaultBiometricEnrollmentViewModel(
             credentialStore: credentialStore,
-            onComplete: { didComplete = true }
+            navigator: navigator
         )
 
         try await viewModel.enableBiometrics(password: "secret")
 
         XCTAssertTrue(credentialStore.bioEnabled())
         XCTAssertEqual(try credentialStore.loadPasswordWithBiometrics(), "secret")
-        XCTAssertTrue(didComplete)
+        XCTAssertEqual(navigator.dismissPresentationCallCount, 1)
     }
 }
