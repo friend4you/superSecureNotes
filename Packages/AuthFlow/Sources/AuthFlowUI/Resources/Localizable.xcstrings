@@ -82,6 +82,26 @@
         }
       }
     },
+    "bio.settings.done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "bio.settings.logout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log Out"
+          }
+        }
+      }
+    },
     "common.loading" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import NavigationProtocol
 import NoteRepositoryProtocol
 import Observation
 import SecureCrypto
@@ -19,6 +20,7 @@ public protocol SharedNoteDetailViewModel: Observable {
     func load() async
     func attachmentData(for id: String) -> Data?
     func retryAttachment(id: String) async
+    func delete() async
 }
 
 @MainActor
@@ -35,6 +37,7 @@ public final class DefaultSharedNoteDetailViewModel: SharedNoteDetailViewModel {
 
     private let noteRepository: any NoteRepository
     private let vaultSession: any VaultSessionProtocol
+    private let navigator: any Navigating
     private let noteSync: any NoteSyncing
     private var attachments: [NotePayload.Attachment] = []
     private var attachmentPlaintexts: [String: Data] = [:]
@@ -47,11 +50,13 @@ public final class DefaultSharedNoteDetailViewModel: SharedNoteDetailViewModel {
         noteID: UUID,
         noteRepository: any NoteRepository,
         vaultSession: any VaultSessionProtocol,
+        navigator: any Navigating,
         noteSync: any NoteSyncing = NoOpNoteSyncService()
     ) {
         self.noteID = noteID
         self.noteRepository = noteRepository
         self.vaultSession = vaultSession
+        self.navigator = navigator
         self.noteSync = noteSync
         hydrationObservation = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -118,6 +123,19 @@ public final class DefaultSharedNoteDetailViewModel: SharedNoteDetailViewModel {
             state: .downloading
         )
         await noteSync.retrySharedAttachment(noteID: noteID, attachmentID: attachmentID)
+    }
+
+    public func delete() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await noteRepository.deleteSharedNote(noteID: noteID)
+            navigator.pop()
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
+        }
     }
 
     private func handleHydrationProgress(_ progress: AttachmentHydrationProgress) {

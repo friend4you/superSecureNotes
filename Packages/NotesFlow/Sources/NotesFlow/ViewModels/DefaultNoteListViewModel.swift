@@ -156,7 +156,7 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     }
 
     public func openSettings() {
-        navigator.push(AuthRoute.settings)
+        navigator.present(AuthRoute.settings, style: .sheet)
     }
 
     public func logout() async {

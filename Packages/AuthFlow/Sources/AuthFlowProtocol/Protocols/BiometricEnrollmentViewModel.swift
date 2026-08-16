@@ -14,4 +14,6 @@ public protocol BiometricSettingsViewModel: Observable {
 
     func enableBiometrics() async
     func disableBiometrics() async
+    func logout() async
+    func dismiss()
 }

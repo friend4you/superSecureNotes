@@ -3,12 +3,44 @@ import XCTest
 
 @MainActor
 final class BiometricSettingsViewModelTests: XCTestCase {
+    func testLogoutCallsPerformLogout() async {
+        var logoutCallCount = 0
+        let viewModel = DefaultBiometricSettingsViewModel(
+            credentialStore: MockCredentialStore(),
+            sessionPasswordCache: SessionPasswordCache(),
+            navigator: MockNavigating(),
+            performLogout: {
+                logoutCallCount += 1
+            }
+        )
+
+        await viewModel.logout()
+
+        XCTAssertEqual(logoutCallCount, 1)
+    }
+
+    func testDismissCallsNavigatorDismissPresentation() {
+        let navigator = MockNavigating()
+        let viewModel = DefaultBiometricSettingsViewModel(
+            credentialStore: MockCredentialStore(),
+            sessionPasswordCache: SessionPasswordCache(),
+            navigator: navigator,
+            performLogout: {}
+        )
+
+        viewModel.dismiss()
+
+        XCTAssertEqual(navigator.dismissPresentationCallCount, 1)
+    }
+
     func testEnablingRequiresPasswordConfirmationWhenCacheEmpty() async {
         let credentialStore = MockCredentialStore()
         let sessionPasswordCache = SessionPasswordCache()
         let viewModel = DefaultBiometricSettingsViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache
+            sessionPasswordCache: sessionPasswordCache,
+            navigator: MockNavigating(),
+            performLogout: {}
         )
 
         await viewModel.enableBiometrics()
@@ -24,7 +56,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
         sessionPasswordCache.store("secret")
         let viewModel = DefaultBiometricSettingsViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache
+            sessionPasswordCache: sessionPasswordCache,
+            navigator: MockNavigating(),
+            performLogout: {}
         )
 
         await viewModel.enableBiometrics()
@@ -40,7 +74,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
         let sessionPasswordCache = SessionPasswordCache()
         let viewModel = DefaultBiometricSettingsViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache
+            sessionPasswordCache: sessionPasswordCache,
+            navigator: MockNavigating(),
+            performLogout: {}
         )
         viewModel.password = "secret"
 
@@ -61,7 +97,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
 
         let viewModel = DefaultBiometricSettingsViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache
+            sessionPasswordCache: sessionPasswordCache,
+            navigator: MockNavigating(),
+            performLogout: {}
         )
         XCTAssertTrue(viewModel.isBiometricsEnabled)
 

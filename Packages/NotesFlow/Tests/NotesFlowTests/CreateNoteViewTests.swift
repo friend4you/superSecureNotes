@@ -71,6 +71,22 @@ final class CreateNoteViewTests: XCTestCase {
         XCTAssertTrue(viewModel.canSave)
     }
 
+    func testCreateNoteViewSourceUsesInlineNavigationTitleOnly() throws {
+        let source = try Self.createNoteViewSource()
+
+        XCTAssertFalse(source.contains("ToolbarItem(placement: .principal)"))
+        XCTAssertTrue(source.contains("notes.create.title"))
+        XCTAssertTrue(source.contains(".navigationBarTitleDisplayMode(.inline)"))
+    }
+
+    func testCreateNoteViewSourceHasTitleFormSection() throws {
+        let source = try Self.createNoteViewSource()
+        let formSection = source.components(separatedBy: ".toolbar").first ?? source
+
+        XCTAssertTrue(formSection.contains("TextField("))
+        XCTAssertTrue(formSection.contains("$viewModel.title"))
+    }
+
     func testCreateNoteViewSourceDisablesSaveWhenCannotSave() throws {
         let source = try Self.createNoteViewSource()
 

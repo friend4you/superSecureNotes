@@ -121,6 +121,51 @@ final class NoteDetailViewTests: XCTestCase {
         XCTAssertTrue(source.contains("await viewModel.delete()"))
     }
 
+    func testNoteDetailViewSourceUsesPrincipalSyncStatus() throws {
+        let source = try Self.noteDetailViewSource()
+
+        XCTAssertTrue(source.contains("ToolbarItem(placement: .principal)"))
+        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: viewModel.syncState)"))
+        XCTAssertFalse(source.contains("displayStyle: .iconOnly"))
+        XCTAssertTrue(source.contains(".navigationBarTitleDisplayMode(.inline)"))
+    }
+
+    func testNoteDetailViewSourceHasTitleFormSection() throws {
+        let source = try Self.noteDetailViewSource()
+        let formSection = source.components(separatedBy: ".toolbar").first ?? source
+
+        XCTAssertTrue(formSection.contains("TextField("))
+        XCTAssertTrue(formSection.contains("$viewModel.title"))
+    }
+
+    func testNoteDetailViewSourceHasNoToolbarSyncIcon() throws {
+        let source = try Self.noteDetailViewSource()
+        let toolbarSection = source.components(separatedBy: ".toolbar {").last?
+            .components(separatedBy: ".alert(").first ?? ""
+
+        XCTAssertFalse(toolbarSection.contains("displayStyle: .iconOnly"))
+    }
+
+    func testNoteDetailViewSourceOverflowMenuContainsShareAndDelete() throws {
+        let source = try Self.noteDetailViewSource()
+
+        XCTAssertTrue(source.contains("Menu {"))
+        XCTAssertTrue(source.contains("ellipsis.circle"))
+        XCTAssertTrue(source.contains("viewModel.share()"))
+        XCTAssertTrue(source.contains("showsDeleteConfirmation = true"))
+    }
+
+    func testNoteDetailViewSourceHasNoStandaloneShareOrDeleteToolbarButtons() throws {
+        let source = try Self.noteDetailViewSource()
+
+        XCTAssertFalse(source.contains("placement: .destructiveAction)"))
+        let toolbarSection = source.components(separatedBy: ".toolbar {").last?
+            .components(separatedBy: ".alert(").first ?? ""
+        let outsideMenu = toolbarSection.components(separatedBy: "Menu {").first ?? ""
+        XCTAssertFalse(outsideMenu.contains("common.share"))
+        XCTAssertFalse(outsideMenu.contains("common.delete"))
+    }
+
     func testNoteDetailViewSourceUsesTitleFieldBodyEditorAndAttachments() throws {
         let source = try Self.noteDetailViewSource()
 
@@ -158,7 +203,7 @@ final class NoteDetailViewTests: XCTestCase {
         let source = try Self.noteDetailViewSource()
 
         XCTAssertTrue(source.contains("viewModel.syncState"))
-        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: viewModel.syncState)"))
+        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: viewModel.syncState"))
     }
 
     func testNoteDetailViewSourceObservesSyncStateFromViewModel() throws {

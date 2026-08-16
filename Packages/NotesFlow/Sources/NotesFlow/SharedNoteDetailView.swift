@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct SharedNoteDetailView: View {
     @Bindable private var viewModel: DefaultSharedNoteDetailViewModel
+    @State private var showsDeleteConfirmation = false
     #if os(iOS)
     @State private var attachmentPreview: AttachmentPreviewPresentation?
     @State private var previewUnavailableFilename: String?
@@ -27,12 +28,6 @@ public struct SharedNoteDetailView: View {
                 Section {
                     Text(errorMessage)
                         .foregroundStyle(.red)
-                }
-            }
-
-            if !viewModel.ownerEmail.isEmpty {
-                Section(NotesFlowUILocalization.localized("notes.shared.detail.owner")) {
-                    Text(viewModel.ownerEmail)
                 }
             }
 
@@ -73,6 +68,57 @@ public struct SharedNoteDetailView: View {
         .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.shared.detail.title"))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            if !viewModel.ownerEmail.isEmpty {
+                ToolbarItem(placement: .principal) {
+                    Text(
+                        String(
+                            format: NotesFlowUILocalization.localized("notes.shared.detail.ownerCaption"),
+                            viewModel.ownerEmail
+                        )
+                    )
+                    .lineLimit(1)
+                }
+            }
+
+            #if os(iOS)
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                        showsDeleteConfirmation = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+            #else
+            ToolbarItem(placement: .automatic) {
+                Menu {
+                    Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                        showsDeleteConfirmation = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+            #endif
+        }
+        .alert(
+            NotesFlowUILocalization.localized("common.delete"),
+            isPresented: $showsDeleteConfirmation
+        ) {
+            Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                Task {
+                    await viewModel.delete()
+                }
+            }
+            Button(NotesFlowUILocalization.localized("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(NotesFlowUILocalization.localized("notes.shared.delete.confirmation"))
+        }
         .task(id: viewModel.noteID) {
             await viewModel.load()
         }

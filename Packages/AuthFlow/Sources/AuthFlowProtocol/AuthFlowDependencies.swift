@@ -164,7 +164,9 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
     public func makeBiometricSettingsViewModel() -> DefaultBiometricSettingsViewModel {
         DefaultBiometricSettingsViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache
+            sessionPasswordCache: sessionPasswordCache,
+            navigator: navigator,
+            performLogout: performLogout
         )
     }
 }

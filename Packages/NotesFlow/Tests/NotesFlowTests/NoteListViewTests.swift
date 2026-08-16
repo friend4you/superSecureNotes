@@ -115,6 +115,39 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("notes.shared.delete.confirmation"))
     }
 
+    func testNoteListViewSourceOwnedRowUsesTrailingIconOnlySync() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: note.syncState, displayStyle: .iconOnly)"))
+        XCTAssertTrue(source.contains("HStack"))
+        XCTAssertTrue(source.contains("Text(note.title)"))
+        XCTAssertTrue(source.contains("Spacer()"))
+    }
+
+    func testNoteListViewSourceSharedRowHasNoSync() throws {
+        let source = try Self.noteListViewSource()
+
+        let sharedSection = source.components(separatedBy: "viewModel.sharedNotes").last ?? ""
+        XCTAssertFalse(sharedSection.contains("NoteSyncStatusLabel"))
+    }
+
+    func testNoteListViewSourceToolbarUsesGearshapeLeadingAndPlusTrailing() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("gearshape"))
+        XCTAssertTrue(source.contains("Image(systemName: \"plus\")"))
+        XCTAssertTrue(source.contains("placement: .topBarLeading"))
+        XCTAssertTrue(source.contains("placement: .primaryAction"))
+    }
+
+    func testNoteListViewSourceHasNoLogoutButton() throws {
+        let source = try Self.noteListViewSource()
+        let bodySection = source.components(separatedBy: "public var body: some View").last ?? source
+
+        XCTAssertFalse(bodySection.contains("notes.list.logout"))
+        XCTAssertFalse(bodySection.contains("viewModel.logout()"))
+    }
+
     func testNoteListViewSourceSettingsButtonOpensSettings() throws {
         let source = try Self.noteListViewSource()
 
@@ -139,7 +172,7 @@ final class NoteListViewTests: XCTestCase {
         let source = try Self.noteListViewSource()
 
         XCTAssertTrue(source.contains("note.syncState"))
-        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: note.syncState)"))
+        XCTAssertTrue(source.contains("NoteSyncStatusLabel(syncState: note.syncState, displayStyle: .iconOnly)"))
     }
 
     func testNoteListViewSourceReloadsSummariesOnAppear() throws {

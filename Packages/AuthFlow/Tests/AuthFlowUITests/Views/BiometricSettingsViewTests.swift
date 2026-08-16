@@ -11,6 +11,23 @@ final class BiometricSettingsViewTests: XCTestCase {
         _ = BiometricSettingsView(viewModel: deps.makeBiometricSettingsViewModel())
     }
 
+    func testBiometricSettingsViewSourceWrapsNavigationStackWithDoneDismiss() throws {
+        let source = try Self.biometricSettingsViewSource()
+
+        XCTAssertTrue(source.contains("NavigationStack {"))
+        XCTAssertTrue(source.contains("ToolbarItem(placement: .cancellationAction)"))
+        XCTAssertTrue(source.contains("bio.settings.done"))
+        XCTAssertTrue(source.contains("viewModel.dismiss()"))
+    }
+
+    func testBiometricSettingsViewSourceHasLogoutWithoutDebugGuard() throws {
+        let source = try Self.biometricSettingsViewSource()
+
+        XCTAssertTrue(source.contains("bio.settings.logout"))
+        XCTAssertTrue(source.contains("viewModel.logout()"))
+        XCTAssertFalse(source.contains("#if DEBUG"))
+    }
+
     func testToggleWiresToBiometricSettingsViewModel() throws {
         let source = try Self.biometricSettingsViewSource()
 
@@ -28,6 +45,8 @@ final class BiometricSettingsViewTests: XCTestCase {
             "bio.settings.title",
             "bio.settings.toggle",
             "bio.settings.password",
+            "bio.settings.done",
+            "bio.settings.logout",
         ]
 
         for key in keys {

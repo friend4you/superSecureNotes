@@ -36,22 +36,15 @@ public struct NoteDetailView: View {
             }
 
             Section {
-                NoteSyncStatusLabel(syncState: viewModel.syncState)
-                    .font(.subheadline)
-            }
-
-            Section {
                 TextField(
                     NotesFlowUILocalization.localized("notes.detail.titleField"),
                     text: $viewModel.title
                 )
-            }
-
-            Section {
+                
                 TextEditor(text: $viewModel.body)
                     .frame(minHeight: 200)
             }
-
+            
             Section {
                 PhotosPicker(
                     selection: $selectedPhotoItem,
@@ -106,9 +99,16 @@ public struct NoteDetailView: View {
         .attachmentPreview($attachmentPreview)
         .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
-        .navigationTitle(NotesFlowUILocalization.localized("notes.detail.title"))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .topBarLeading) {
+                NoteSyncStatusLabel(syncState: viewModel.syncState)
+                    .font(.subheadline)
+            }
+            
+            ToolbarItem(placement: .destructiveAction) {
                 Button(NotesFlowUILocalization.localized("common.save")) {
                     Task {
                         await viewModel.save()
@@ -116,18 +116,34 @@ public struct NoteDetailView: View {
                 }
                 .disabled(!viewModel.canSave)
             }
-
+            
+            #if os(iOS)
+            ToolbarItem(placement: .confirmationAction) {
+                Menu {
+                    Button(NotesFlowUILocalization.localized("common.share")) {
+                        viewModel.share()
+                    }
+                    Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                        showsDeleteConfirmation = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+            #else
             ToolbarItem(placement: .automatic) {
-                Button(NotesFlowUILocalization.localized("common.share")) {
-                    viewModel.share()
+                Menu {
+                    Button(NotesFlowUILocalization.localized("common.share")) {
+                        viewModel.share()
+                    }
+                    Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                        showsDeleteConfirmation = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
-
-            ToolbarItem(placement: .destructiveAction) {
-                Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
-                    showsDeleteConfirmation = true
-                }
-            }
+            #endif
         }
         .alert(
             NotesFlowUILocalization.localized("common.delete"),

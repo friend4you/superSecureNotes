@@ -1,11 +1,22 @@
 import CryptoKit
 import Foundation
+import NavigationProtocol
 import NoteRepositoryProtocol
 import SecureCrypto
 import VaultSessionProtocol
 import XCTest
 
 @testable import NotesFlow
+
+@MainActor
+private final class MockNavigating: Navigating {
+    func setRoot<R: Route>(_ route: R) {}
+    func push<R: Route>(_ route: R) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func pop() {}
+    func popToRoot() {}
+    func dismissPresentation() {}
+}
 
 @MainActor
 final class DefaultSharedNoteDetailViewModelHydrationTests: XCTestCase {
@@ -63,6 +74,7 @@ final class DefaultSharedNoteDetailViewModelHydrationTests: XCTestCase {
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: SharedDetailMockVaultSession(identityPrivateKey: identity.privateKey),
+            navigator: MockNavigating(),
             noteSync: noteSync
         )
 
@@ -112,6 +124,7 @@ final class DefaultSharedNoteDetailViewModelHydrationTests: XCTestCase {
                 sharedSummaries: []
             ),
             vaultSession: SharedDetailMockVaultSession(identityPrivateKey: identity.privateKey),
+            navigator: MockNavigating(),
             noteSync: noteSync
         )
         await viewModel.load()

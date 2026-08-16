@@ -60,7 +60,8 @@ private final class MockNotesDependencies: NotesDependencyProviding {
         return DefaultSharedNoteDetailViewModel(
             noteID: noteID,
             noteRepository: noteRepository,
-            vaultSession: MockVaultSession()
+            vaultSession: MockVaultSession(),
+            navigator: MockNavigating()
         )
     }
 

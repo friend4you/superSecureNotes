@@ -61,23 +61,23 @@
 - **WHEN** `NoteSyncStatusLabel` is rendered in icon-only mode with `syncState: .synced`
 - **THEN** only the synced icon is visible and the accessibility label describes synced state
 
-### Requirement: Note detail editable navigation title
+### Requirement: Note detail form title and principal sync status
 
-`NoteDetailView` SHALL bind the note title to an editable `TextField` in the navigation bar (`.principal` placement with inline display mode). The form SHALL NOT include a separate title section. The body editor SHALL be the first content section after loading/error states.
+`NoteDetailView` SHALL use a static inline navigation title (`notes.detail.title`). The note title SHALL be edited in a form `TextField` section before the body. A full `NoteSyncStatusLabel` (icon and text) SHALL appear in `ToolbarItem(placement: .principal)`. The toolbar SHALL NOT include a separate sync indicator.
 
-#### Scenario: Title is edited in navigation bar
+#### Scenario: Title is edited in the form
 
 - **WHEN** `NoteDetailView` is rendered after load
-- **THEN** the navigation bar contains an editable text field bound to `viewModel.title` and no title `TextField` appears in the form body
+- **THEN** an editable `TextField` bound to `viewModel.title` appears in the form and the navigation bar does not bind the note title
 
-#### Scenario: Body section follows without title section
+#### Scenario: Sync status in principal
 
-- **WHEN** `NoteDetailView` form content is rendered
-- **THEN** the body `TextEditor` is not preceded by a dedicated title form section
+- **WHEN** `NoteDetailView` toolbar is rendered for a loaded note
+- **THEN** a `NoteSyncStatusLabel` with icon and text appears in `.principal` and no icon-only sync label appears elsewhere in the toolbar
 
 ### Requirement: Note detail toolbar actions
 
-`NoteDetailView` SHALL show Save as the primary trailing action, a trailing icon-only sync status indicator, and a trailing overflow `Menu` (ellipsis) containing Share and Delete actions. Delete SHALL continue to require a confirmation alert. Share and Delete SHALL NOT appear as standalone toolbar text buttons.
+`NoteDetailView` SHALL show Save as the primary trailing action and a trailing overflow `Menu` (ellipsis) containing Share and Delete actions. Delete SHALL continue to require a confirmation alert. Share and Delete SHALL NOT appear as standalone toolbar text buttons.
 
 #### Scenario: Overflow menu contains share and delete
 
@@ -89,33 +89,33 @@
 - **WHEN** `NoteDetailView` toolbar is rendered
 - **THEN** Save is the primary trailing toolbar button and is disabled when `!canSave`
 
-#### Scenario: Sync icon in toolbar
+### Requirement: Create note inline title and form title field
 
-- **WHEN** `NoteDetailView` toolbar is rendered for a loaded note
-- **THEN** an icon-only `NoteSyncStatusLabel` appears in the trailing toolbar area
+`CreateNoteView` SHALL use a static inline navigation title (`notes.create.title`) with no `.principal` toolbar item. The note title SHALL be edited in a form `TextField` section before the body.
 
-### Requirement: Create note editable navigation title
-
-`CreateNoteView` SHALL bind the note title to an editable `TextField` in the navigation bar using the same pattern as `NoteDetailView`. The form SHALL NOT include a separate title section.
-
-#### Scenario: Create title is edited in navigation bar
+#### Scenario: Create uses inline screen title only
 
 - **WHEN** `CreateNoteView` is rendered
-- **THEN** the navigation bar contains an editable text field bound to `viewModel.title` and no title `TextField` appears in the form body
+- **THEN** the navigation bar shows the localized create title inline and has no principal toolbar field
 
-### Requirement: Shared note detail navigation title and owner metadata
+#### Scenario: Create title is edited in the form
 
-`SharedNoteDetailView` SHALL display the note title in the navigation bar as read-only text. Owner information SHALL appear as a single caption-style line above the body using tertiary foreground styling, without a "Shared by" form section header.
+- **WHEN** `CreateNoteView` form content is rendered
+- **THEN** an editable `TextField` bound to `viewModel.title` appears before the body editor
 
-#### Scenario: Shared title in navigation bar
+### Requirement: Shared note detail principal owner and form title
 
-- **WHEN** `SharedNoteDetailView` is rendered after load
-- **THEN** the navigation bar shows the note title as read-only text, not the generic "Shared Note" label as the principal title
+`SharedNoteDetailView` SHALL use a static inline navigation title (`notes.shared.detail.title`). Owner information SHALL appear as text in `ToolbarItem(placement: .principal)` using `notes.shared.detail.ownerCaption`. The note title SHALL appear as read-only text in the form before the body.
 
-#### Scenario: Owner metadata is de-emphasized
+#### Scenario: Shared by text in principal
 
-- **WHEN** `SharedNoteDetailView` renders owner email
-- **THEN** it appears as caption-style text above the body without a form section header titled "Shared by"
+- **WHEN** `SharedNoteDetailView` is rendered after load with owner email
+- **THEN** the navigation bar principal shows the localized shared-by caption and not the note title
+
+#### Scenario: Shared title in form
+
+- **WHEN** `SharedNoteDetailView` form content is rendered
+- **THEN** the note title appears as read-only `Text(viewModel.title)` before the body
 
 #### Scenario: No sync on shared detail
 

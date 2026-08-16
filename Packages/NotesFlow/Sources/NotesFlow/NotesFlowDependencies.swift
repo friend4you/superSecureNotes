@@ -88,6 +88,7 @@ public final class NotesFlowDependencies: NotesDependencyProviding {
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: vaultSession,
+            navigator: navigator,
             noteSync: noteSync
         )
         sharedNoteDetailViewModels[noteID] = viewModel

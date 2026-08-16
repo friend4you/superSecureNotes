@@ -1,6 +1,8 @@
 import SwiftUI
 
 public struct NoteListView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @Bindable private var viewModel: DefaultNoteListViewModel
     @State private var pendingDeleteNoteID: UUID?
     @State private var pendingDeleteSharedNoteID: UUID?
@@ -52,12 +54,9 @@ public struct NoteListView: View {
                 ForEach(viewModel.notes, id: \.noteID) { note in
                     Group {
                         HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(note.title)
-                                NoteSyncStatusLabel(syncState: note.syncState)
-                                    .font(.caption)
-                            }
+                            Text(note.title)
                             Spacer()
+                            NoteSyncStatusLabel(syncState: note.syncState, displayStyle: .iconOnly)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
@@ -108,6 +107,26 @@ public struct NoteListView: View {
             await viewModel.refresh()
         }
         .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    viewModel.openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel(NotesFlowUILocalization.localized("notes.list.settings"))
+            }
+            #else
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    viewModel.openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel(NotesFlowUILocalization.localized("notes.list.settings"))
+            }
+            #endif
+
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     viewModel.createNote()
@@ -116,22 +135,6 @@ public struct NoteListView: View {
                 }
                 .accessibilityLabel(NotesFlowUILocalization.localized("notes.create.title"))
             }
-
-            ToolbarItem(placement: .automatic) {
-                Button(NotesFlowUILocalization.localized("notes.list.settings")) {
-                    viewModel.openSettings()
-                }
-            }
-
-            #if DEBUG
-            ToolbarItem(placement: .automatic) {
-                Button(NotesFlowUILocalization.localized("notes.list.logout")) {
-                    Task {
-                        await viewModel.logout()
-                    }
-                }
-            }
-            #endif
         }
         .alert(
             NotesFlowUILocalization.localized("common.delete"),

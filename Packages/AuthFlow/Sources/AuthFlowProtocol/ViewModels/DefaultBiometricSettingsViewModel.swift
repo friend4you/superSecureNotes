@@ -1,6 +1,7 @@
 import AuthFlowDomainProtocol
 import CredentialStoreProtocol
 import Foundation
+import NavigationProtocol
 import Observation
 
 @Observable
@@ -12,13 +13,19 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
 
     private let credentialStore: any CredentialStore
     private let sessionPasswordCache: any SessionPasswordCaching
+    private let navigator: any Navigating
+    private let performLogout: () async -> Void
 
     public init(
         credentialStore: any CredentialStore,
-        sessionPasswordCache: any SessionPasswordCaching
+        sessionPasswordCache: any SessionPasswordCaching,
+        navigator: any Navigating,
+        performLogout: @escaping () async -> Void
     ) {
         self.credentialStore = credentialStore
         self.sessionPasswordCache = sessionPasswordCache
+        self.navigator = navigator
+        self.performLogout = performLogout
         self.isBiometricsEnabled = credentialStore.bioEnabled()
     }
 
@@ -61,5 +68,13 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
         } catch {
             requiresPasswordConfirmation = false
         }
+    }
+
+    public func logout() async {
+        await performLogout()
+    }
+
+    public func dismiss() {
+        navigator.dismissPresentation()
     }
 }

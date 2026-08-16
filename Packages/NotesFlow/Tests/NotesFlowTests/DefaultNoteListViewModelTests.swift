@@ -89,14 +89,16 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         XCTAssertEqual(navigator.pushedRoutes.first?.base as? NotesRoute, .create)
     }
 
-    func testOpenSettingsPushesSettingsRoute() {
+    func testOpenSettingsPresentsSettingsSheet() {
         let navigator = MockNavigating()
         let viewModel = makeViewModel(navigator: navigator)
 
         viewModel.openSettings()
 
-        XCTAssertEqual(navigator.pushedRoutes.count, 1)
-        XCTAssertEqual(navigator.pushedRoutes.first?.base as? AuthRoute, .settings)
+        XCTAssertEqual(navigator.presentedRoutes.count, 1)
+        XCTAssertEqual(navigator.presentedRoutes.first?.style, .sheet)
+        XCTAssertEqual(navigator.presentedRoutes.first?.route.base as? AuthRoute, .settings)
+        XCTAssertTrue(navigator.pushedRoutes.isEmpty)
     }
 
     func testSharePresentsShareSheet() {

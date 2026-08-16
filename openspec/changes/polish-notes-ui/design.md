@@ -9,9 +9,9 @@ Shared notes have no `syncState` in `SharedNoteSummary` / `SharedNote` — sync 
 **Goals:**
 
 - Calmer list rows: title left, sync icon right (owned notes only)
-- Detail and create screens: note title is the screen title (editable where applicable)
-- Detail toolbar: Save + sync icon + `⋯` menu (Share, Delete)
-- Shared detail: read-only title in nav bar, subtle owner metadata, Delete in `⋯` menu
+- Detail screen: editable title in form; full sync status in `.principal`; Save + `⋯` menu (Share, Delete)
+- Create screen: inline static navigation title; editable title in form
+- Shared detail: "shared by" in `.principal`; read-only title in form; Delete in `⋯` menu
 - Settings: sheet presentation with Done dismiss; gear icon on list leading toolbar; `+` on trailing
 - Logout: production row on settings screen using existing `performLogout` / `LogoutReset` flow
 - Keep list long-press context menus unchanged
@@ -27,19 +27,19 @@ Shared notes have no `syncState` in `SharedNoteSummary` / `SharedNote` — sync 
 
 ## Decisions
 
-### 1. Editable navigation title via `.principal`
+### 1. Form title with `.principal` metadata
 
-Owned note detail and create screens bind `viewModel.title` to a `TextField` in `ToolbarItem(placement: .principal)` with `.navigationBarTitleDisplayMode(.inline)`. This removes the title `Section` from the form and tightens title-to-body spacing.
+Owned note detail and create screens keep the note title in a form `TextField` section. Screen navigation titles stay generic and inline (`Note`, `New Note`). `NoteDetailView` places a full `NoteSyncStatusLabel` (icon + text) in `.principal`. `SharedNoteDetailView` places localized shared-by text in `.principal` and the note title as read-only form content.
 
 **Alternatives considered:**
-- Large navigation title with separate field — rejected; wastes vertical space
-- Title as first line of `TextEditor` — rejected; breaks metadata/body separation
+- Editable title in `.principal` — rejected; cramped on small devices and duplicates list context
+- Sync in trailing toolbar — rejected; principal keeps status visible without crowding actions
 
-Shared detail uses read-only `Text(viewModel.title)` in `.principal` (or `.navigationTitle(viewModel.title)`).
+Shared detail no longer shows owner metadata above the body; it lives in `.principal` only.
 
 ### 2. Icon-only sync via `NoteSyncStatusLabel` style parameter
 
-Add a display style (e.g. `showsText: Bool` or `NoteSyncStatusDisplayStyle.iconOnly`) rather than a separate view type. List rows and detail toolbar use icon-only; accessibility labels retain full pending/synced text.
+Add a display style (e.g. `showsText: Bool` or `NoteSyncStatusDisplayStyle.iconOnly`) rather than a separate view type. List rows use icon-only; detail `.principal` uses standard icon + text. Accessibility labels retain full pending/synced text.
 
 Pending: orange `arrow.triangle.2.circlepath`. Synced: secondary `checkmark.icloud`. Both always visible on owned-note surfaces.
 
@@ -75,11 +75,11 @@ Separate `ToolbarItem` placements; no grouped menu.
 
 ### 8. Subtle shared-by metadata
 
-Replace the "Shared by" `Section` header + body with a single caption line above the body, e.g. localized `"shared by \(email)"` using `.font(.caption)` and `.foregroundStyle(.tertiary)`, not in its own form section.
+Shared-by owner email appears as localized text in `.principal` (`notes.shared.detail.ownerCaption`), not in the form body.
 
 ## Risks / Trade-offs
 
-- **[Risk] Narrow `.principal` TextField on small devices** → Use `.lineLimit(1)`, reasonable minimum scale factor; placeholder "Untitled" when empty
+- **[Risk] Long shared-by email in `.principal`** → Use `.lineLimit(1)`; full email remains in VoiceOver from the text content
 - **[Risk] Settings sheet lacks nav stack today** → Wrap in `NavigationStack` inside presented content (proven by ShareNote)
 - **[Risk] Source-contains tests break on layout refactor** → Update `NoteDetailViewTests`, `NoteListViewTests`, `DefaultNoteListViewModelTests` alongside implementation
 - **[Trade-off] Sync icon always visible when synced** → Slightly noisier list; accepted per product decision for at-a-glance cloud state

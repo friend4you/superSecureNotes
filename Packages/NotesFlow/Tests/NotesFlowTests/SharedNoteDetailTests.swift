@@ -1,11 +1,26 @@
 import CryptoKit
 import Foundation
+import NavigationProtocol
 import NoteRepositoryProtocol
 import SecureCrypto
 import VaultSessionProtocol
 import XCTest
 
 @testable import NotesFlow
+
+@MainActor
+private final class MockNavigating: Navigating {
+    private(set) var popCount = 0
+
+    func setRoot<R: Route>(_ route: R) {}
+    func push<R: Route>(_ route: R) {}
+    func present<R: Route>(_ route: R, style: RoutePresentation) {}
+    func pop() {
+        popCount += 1
+    }
+    func popToRoot() {}
+    func dismissPresentation() {}
+}
 
 @MainActor
 final class SharedNoteDetailTests: XCTestCase {
@@ -36,6 +51,7 @@ final class SharedNoteDetailTests: XCTestCase {
             noteID: noteID,
             noteRepository: noteRepository,
             vaultSession: vaultSession,
+            navigator: MockNavigating(),
             noteSync: RecordingNoteSyncService()
         )
 
@@ -48,13 +64,45 @@ final class SharedNoteDetailTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoading)
     }
 
+    func testDeleteCallsDeleteSharedNoteAndPops() async throws {
+        let noteID = UUID()
+        let identity = generateIdentityKeyPair()
+        let shared = try NoteViewModelTestSupport.makeSharedNote(
+            noteID: noteID,
+            title: "Shared title",
+            body: "Shared body",
+            recipientPublicKey: identity.publicKey
+        )
+        let noteRepository = SharedDetailMockNoteRepository(sharedNote: shared)
+        let navigator = MockNavigating()
+        let viewModel = DefaultSharedNoteDetailViewModel(
+            noteID: noteID,
+            noteRepository: noteRepository,
+            vaultSession: SharedDetailMockVaultSession(identityPrivateKey: identity.privateKey),
+            navigator: navigator
+        )
+
+        await viewModel.delete()
+
+        let deletedNoteIDs = await noteRepository.deletedSharedNoteIDs
+        XCTAssertEqual(deletedNoteIDs, [noteID])
+        XCTAssertEqual(navigator.popCount, 1)
+    }
+
     func testSharedNoteDetailViewSourceIsReadOnly() throws {
         let source = try Self.sharedNoteDetailViewSource()
-        XCTAssertTrue(source.contains("notes.shared.detail.owner"))
+        XCTAssertTrue(source.contains("notes.shared.detail.ownerCaption"))
         XCTAssertTrue(source.contains("viewModel.ownerEmail"))
-        XCTAssertFalse(source.contains("common.save"))
+        XCTAssertTrue(source.contains("ToolbarItem(placement: .principal)"))
+        XCTAssertTrue(source.contains("Text(viewModel.title)"))
         XCTAssertFalse(source.contains("TextField("))
+        XCTAssertTrue(source.contains("Menu {"))
+        XCTAssertTrue(source.contains("ellipsis.circle"))
+        XCTAssertTrue(source.contains("showsDeleteConfirmation"))
+        XCTAssertTrue(source.contains("await viewModel.delete()"))
+        XCTAssertFalse(source.contains("common.save"))
         XCTAssertFalse(source.contains("TextEditor("))
+        XCTAssertFalse(source.contains("NoteSyncStatusLabel"))
         XCTAssertTrue(source.contains("allowsRemoval: false"))
     }
 
@@ -72,8 +120,9 @@ final class SharedNoteDetailTests: XCTestCase {
 private actor SharedDetailMockNoteRepository: NoteRepository {
     private let sharedNote: SharedNote
     private let sharedSummaries: [SharedNoteSummary]
+    private(set) var deletedSharedNoteIDs: [UUID] = []
 
-    init(sharedNote: SharedNote, sharedSummaries: [SharedNoteSummary]) {
+    init(sharedNote: SharedNote, sharedSummaries: [SharedNoteSummary] = []) {
         self.sharedNote = sharedNote
         self.sharedSummaries = sharedSummaries
     }
@@ -96,8 +145,7 @@ private actor SharedDetailMockNoteRepository: NoteRepository {
     }
 
     func deleteSharedNote(noteID: UUID) async throws {
-        _ = noteID
-        throw NoteRepositoryError.notSupported
+        deletedSharedNoteIDs.append(noteID)
     }
 }
 

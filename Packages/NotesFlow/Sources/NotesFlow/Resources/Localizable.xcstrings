@@ -61,33 +61,12 @@
         }
       }
     },
-    "notes.attachments.preview" : {
-      "extractionState" : "stale",
+    "notes.attachments.downloadFailed" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preview Attachment"
-          }
-        }
-      }
-    },
-    "notes.attachments.remove" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove Attachment"
-          }
-        }
-      }
-    },
-    "notes.attachments.retry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+            "value" : "Download failed"
           }
         }
       }
@@ -102,12 +81,13 @@
         }
       }
     },
-    "notes.attachments.downloadFailed" : {
+    "notes.attachments.preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Download failed"
+            "value" : "Preview Attachment"
           }
         }
       }
@@ -128,6 +108,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cannot Preview"
+          }
+        }
+      }
+    },
+    "notes.attachments.remove" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Attachment"
+          }
+        }
+      }
+    },
+    "notes.attachments.retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
           }
         }
       }
@@ -183,6 +183,7 @@
       }
     },
     "notes.detail.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -203,6 +204,7 @@
       }
     },
     "notes.list.logout" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -212,27 +214,8 @@
         }
       }
     },
-    "notes.list.settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
-          }
-        }
-      }
-    },
-    "notes.list.title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notes"
-          }
-        }
-      }
-    },
     "notes.list.segment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -262,22 +245,22 @@
         }
       }
     },
-    "notes.shared.detail.title" : {
+    "notes.list.settings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shared Note"
+            "value" : "Settings"
           }
         }
       }
     },
-    "notes.shared.detail.owner" : {
+    "notes.list.title" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shared by"
+            "value" : "Notes"
           }
         }
       }
@@ -288,6 +271,37 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove this shared note from your list?"
+          }
+        }
+      }
+    },
+    "notes.shared.detail.owner" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared by"
+          }
+        }
+      }
+    },
+    "notes.shared.detail.ownerCaption" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared by %@"
+          }
+        }
+      }
+    },
+    "notes.shared.detail.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared Note"
           }
         }
       }

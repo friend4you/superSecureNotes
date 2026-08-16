@@ -95,6 +95,9 @@ public struct CreateNoteView: View {
         .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
         .navigationTitle(NotesFlowUILocalization.localized("notes.create.title"))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(NotesFlowUILocalization.localized("common.save")) {
