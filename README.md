@@ -6,6 +6,8 @@ Built to demonstrate production-style mobile engineering: modular Swift packages
 
 **Stack:** Swift 6 · SwiftUI · CryptoKit · SQLCipher · Keychain · LocalAuthentication · async/await
 
+**Backend:** Companion REST API at [super-secure-notes-api](https://github.com/friend4you/super-secure-notes-api) — auth, vault headers, note blobs, attachments, and share grants. The server stores opaque ciphertext; encryption stays on device.
+
 ---
 
 ## Features
@@ -122,7 +124,7 @@ Protocol products (`*Protocol`) are what feature modules import. Implementation 
 
 ## Getting started
 
-1. Run the companion API at `http://localhost:8000/v1` (the client base URL is `AppDependencies.apiBaseURL`).
+1. Run the [companion API](https://github.com/friend4you/super-secure-notes-api) at `http://localhost:8000/v1` (the client base URL is `AppDependencies.apiBaseURL`).
 2. Open `superSecureNotes.xcodeproj` in Xcode and run on a Simulator or device.
 
 Package tests use `URLProtocol` stubs and isolated Keychain service names — no live backend required:
