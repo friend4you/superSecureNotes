@@ -13,6 +13,14 @@ public struct SharedNoteDetailView: View {
     }
 
     public var body: some View {
+        Text(
+            String(
+                format: NotesFlowUILocalization.localized("notes.shared.detail.ownerCaption"),
+                viewModel.ownerEmail
+            )
+        )
+        .lineLimit(1)
+        
         Form {
             if viewModel.isLoading {
                 Section {
@@ -33,9 +41,6 @@ public struct SharedNoteDetailView: View {
 
             Section {
                 Text(viewModel.title)
-            }
-
-            Section {
                 Text(viewModel.body)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -67,20 +72,10 @@ public struct SharedNoteDetailView: View {
         .attachmentPreview($attachmentPreview)
         .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
         #endif
-        .navigationTitle(NotesFlowUILocalization.localized("notes.shared.detail.title"))
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
         .toolbar {
             if !viewModel.ownerEmail.isEmpty {
                 ToolbarItem(placement: .principal) {
-                    Text(
-                        String(
-                            format: NotesFlowUILocalization.localized("notes.shared.detail.ownerCaption"),
-                            viewModel.ownerEmail
-                        )
-                    )
-                    .lineLimit(1)
+                    
                 }
             }
 

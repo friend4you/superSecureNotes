@@ -1,8 +1,6 @@
 import SwiftUI
 
 public struct NoteListView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
     @Bindable private var viewModel: DefaultNoteListViewModel
     @State private var pendingDeleteNoteID: UUID?
     @State private var pendingDeleteSharedNoteID: UUID?
@@ -12,91 +10,37 @@ public struct NoteListView: View {
     }
 
     public var body: some View {
-        List {
-            Section {
-                Picker(
-                    NotesFlowUILocalization.localized("notes.list.segment"),
-                    selection: $viewModel.selectedSegment
-                ) {
+        TabView(selection: $viewModel.selectedSegment) {
+            noteList{ myNotesList }
+                .tag(NoteListSegment.myNotes)
+                .tabItem {
+                    #if os(iOS)
+                    Image(systemName: "list.bullet.clipboard")
+                    #else
                     Text(NotesFlowUILocalization.localized("notes.list.segment.myNotes"))
-                        .tag(NoteListSegment.myNotes)
+                    #endif
+                }
+
+            noteList{ sharedNotesList }
+                .tag(NoteListSegment.shared)
+                .tabItem {
+                    #if os(iOS)
+                    Image(systemName: "rectangle.stack.badge.person.crop")
+                    #else
                     Text(NotesFlowUILocalization.localized("notes.list.segment.shared"))
-                        .tag(NoteListSegment.shared)
+                    #endif
+                    
                 }
-                .pickerStyle(.segmented)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .onChange(of: viewModel.selectedSegment) { _, segment in
-                    Task {
-                        switch segment {
-                        case .myNotes:
-                            await viewModel.reloadSummaries()
-                        case .shared:
-                            await viewModel.reloadSharedSummaries()
-                        }
-                    }
-                }
-            }
-
-            if viewModel.isLoading {
-                HStack {
-                    Spacer()
-                    ProgressView(NotesFlowUILocalization.localized("common.loading"))
-                    Spacer()
-                }
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-            }
-
-            if viewModel.selectedSegment == .myNotes {
-                ForEach(viewModel.notes, id: \.noteID) { note in
-                    Group {
-                        HStack {
-                            Text(note.title)
-                            Spacer()
-                            NoteSyncStatusLabel(syncState: note.syncState, displayStyle: .iconOnly)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                    }
-                    .onTapGesture {
-                        viewModel.openDetail(noteID: note.noteID)
-                    }
-                    .contextMenu {
-                        Button(NotesFlowUILocalization.localized("common.share")) {
-                            viewModel.share(noteID: note.noteID)
-                        }
-                        Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
-                            pendingDeleteNoteID = note.noteID
-                        }
-                    }
-                }
-            } else {
-                ForEach(viewModel.sharedNotes, id: \.noteID) { note in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(note.title)
-                        Text(note.ownerEmail)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.openSharedDetail(noteID: note.noteID)
-                    }
-                    .contextMenu {
-                        Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
-                            pendingDeleteSharedNoteID = note.noteID
-                        }
-                    }
-                }
-            }
         }
-        .navigationTitle(NotesFlowUILocalization.localized("notes.list.title"))
-        .refreshable {
-            await viewModel.refresh()
+        .onChange(of: viewModel.selectedSegment) { _, segment in
+            Task {
+                switch segment {
+                case .myNotes:
+                    await viewModel.reloadSummaries()
+                case .shared:
+                    await viewModel.reloadSharedSummaries()
+                }
+            }
         }
         .onAppear {
             Task {
@@ -136,6 +80,7 @@ public struct NoteListView: View {
                 .accessibilityLabel(NotesFlowUILocalization.localized("notes.create.title"))
             }
         }
+        .navigationBarTitleDisplayMode(.inline)
         .alert(
             NotesFlowUILocalization.localized("common.delete"),
             isPresented: Binding(
@@ -183,6 +128,77 @@ public struct NoteListView: View {
             }
         } message: { _ in
             Text(NotesFlowUILocalization.localized("notes.shared.delete.confirmation"))
+        }
+    }
+    
+    @ViewBuilder
+    private func noteList(@ViewBuilder content: () -> some View) -> some View {
+        List {
+            if viewModel.isLoading {
+                HStack {
+                    Spacer()
+                    ProgressView(NotesFlowUILocalization.localized("common.loading"))
+                    Spacer()
+                }
+            }
+
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+            }
+
+            content()
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
+
+    @ViewBuilder
+    private var myNotesList: some View {
+        ForEach(viewModel.notes, id: \.noteID) { note in
+            Group {
+                HStack {
+                    Text(note.title)
+                    Spacer()
+                    NoteSyncStatusLabel(syncState: note.syncState, displayStyle: .iconOnly)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .onTapGesture {
+                viewModel.openDetail(noteID: note.noteID)
+            }
+            .contextMenu {
+                Button(NotesFlowUILocalization.localized("common.share")) {
+                    viewModel.share(noteID: note.noteID)
+                }
+                Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                    pendingDeleteNoteID = note.noteID
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sharedNotesList: some View {
+        ForEach(viewModel.sharedNotes, id: \.noteID) { note in
+            VStack(alignment: .leading, spacing: 4) {
+                Text(note.title)
+                Text(note.ownerEmail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                viewModel.openSharedDetail(noteID: note.noteID)
+            }
+            .contextMenu {
+                Button(NotesFlowUILocalization.localized("common.delete"), role: .destructive) {
+                    pendingDeleteSharedNoteID = note.noteID
+                }
+            }
         }
     }
 }

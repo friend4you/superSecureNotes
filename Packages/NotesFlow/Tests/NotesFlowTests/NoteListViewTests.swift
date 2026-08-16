@@ -84,6 +84,16 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("Text(note.title)"))
     }
 
+    func testNoteListViewSourceUsesTabViewForSegments() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("TabView(selection: $viewModel.selectedSegment)"))
+        XCTAssertTrue(source.contains(".tabItem"))
+        XCTAssertTrue(source.contains("notes.list.segment.myNotes"))
+        XCTAssertTrue(source.contains("notes.list.segment.shared"))
+        XCTAssertFalse(source.contains(".pickerStyle(.segmented)"))
+    }
+
     func testNoteListViewSourceUsesRefreshable() throws {
         let source = try Self.noteListViewSource()
 

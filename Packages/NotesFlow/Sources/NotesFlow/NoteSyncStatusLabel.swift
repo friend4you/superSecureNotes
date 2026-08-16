@@ -19,12 +19,12 @@ struct NoteSyncStatusLabel: View {
                     .accessibilityLabel(NotesFlowUILocalization.localized("notes.sync.pending"))
                     .accessibilityIdentifier("note-sync-status-pending")
             } else {
-                Label {
-                    Text(NotesFlowUILocalization.localized("notes.sync.pending"))
-                } icon: {
+                HStack {
                     Image(systemName: "arrow.triangle.2.circlepath")
+                    Text(NotesFlowUILocalization.localized("notes.sync.pending"))
                 }
                 .foregroundStyle(.orange)
+                .font(.subheadline)
                 .accessibilityIdentifier("note-sync-status-pending")
             }
         case .synced:
@@ -34,12 +34,12 @@ struct NoteSyncStatusLabel: View {
                     .accessibilityLabel(NotesFlowUILocalization.localized("notes.sync.synced"))
                     .accessibilityIdentifier("note-sync-status-synced")
             } else {
-                Label {
-                    Text(NotesFlowUILocalization.localized("notes.sync.synced"))
-                } icon: {
+                HStack {
                     Image(systemName: "checkmark.icloud")
+                    Text(NotesFlowUILocalization.localized("notes.sync.synced"))
                 }
                 .foregroundStyle(.secondary)
+                .font(.subheadline)
                 .accessibilityIdentifier("note-sync-status-synced")
             }
         case .pendingDelete:

@@ -256,6 +256,7 @@
       }
     },
     "notes.list.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -297,6 +298,7 @@
       }
     },
     "notes.shared.detail.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

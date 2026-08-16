@@ -98,16 +98,12 @@ public struct NoteDetailView: View {
         #if os(iOS)
         .attachmentPreview($attachmentPreview)
         .attachmentPreviewUnavailableAlert(filename: $previewUnavailableFilename)
-        #endif
-        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .principal) {
                 NoteSyncStatusLabel(syncState: viewModel.syncState)
-                    .font(.subheadline)
             }
-            
             ToolbarItem(placement: .destructiveAction) {
                 Button(NotesFlowUILocalization.localized("common.save")) {
                     Task {
@@ -145,6 +141,7 @@ public struct NoteDetailView: View {
             }
             #endif
         }
+        .toolbarRole(.editor)
         .alert(
             NotesFlowUILocalization.localized("common.delete"),
             isPresented: $showsDeleteConfirmation

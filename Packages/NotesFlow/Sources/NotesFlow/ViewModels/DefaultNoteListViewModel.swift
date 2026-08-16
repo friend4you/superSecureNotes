@@ -30,7 +30,7 @@ public protocol NoteListViewModel: Observable {
     func logout() async
 }
 
-public enum NoteListSegment: String, CaseIterable, Sendable {
+public enum NoteListSegment: String, CaseIterable, Hashable, Sendable {
     case myNotes
     case shared
 }
