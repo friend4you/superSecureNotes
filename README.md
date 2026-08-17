@@ -29,23 +29,13 @@ Built to demonstrate production-style mobile engineering: modular Swift packages
 
 ## Screenshots
 
-Drop PNG captures into `docs/screenshots/` using the filenames below. A short screen recording (GIF or linked video) can replace the first image as a hero demo.
-
 <p align="center">
   <img src="docs/screenshots/unlock.png" width="240" alt="Unlock screen" />
   <img src="docs/screenshots/notes-list.png" width="240" alt="My Notes list" />
   <img src="docs/screenshots/note-detail.png" width="240" alt="Note detail with attachments" />
-  <img src="docs/screenshots/share.png" width="240" alt="Share note screen" />
-  <img src="docs/screenshots/shared-inbox.png" width="240" alt="Shared notes inbox" />
+  <img src="docs/screenshots/share.gif" width="240" alt="Share note screen" />
+  <img src="docs/screenshots/shared-inbox.gif" width="240" alt="Shared notes inbox" />
 </p>
-
-| File | What to capture |
-|------|-----------------|
-| `unlock.png` | Unlock with Face ID or password (read-only email) |
-| `notes-list.png` | My Notes tab — a few notes, sync badge on a row, Settings + Create |
-| `note-detail.png` | Title, body, photo/file attachments, synced status in the toolbar |
-| `share.png` | Share sheet with recipient email |
-| `shared-inbox.png` | Shared tab, then a read-only shared note if you can |
 
 ---
 
