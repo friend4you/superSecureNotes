@@ -34,7 +34,7 @@ Built to demonstrate production-style mobile engineering: modular Swift packages
   <img src="docs/screenshots/notes-list.png" width="240" alt="My Notes list" />
   <img src="docs/screenshots/note-detail.png" width="240" alt="Note detail with attachments" />
   <img src="docs/screenshots/share.gif" width="240" alt="Share note screen" />
-  <img src="docs/screenshots/shared-inbox.gif" width="240" alt="Shared notes inbox" />
+  <img src="docs/screenshots/share-inbox.gif" width="240" alt="Shared notes inbox" />
 </p>
 
 ---
