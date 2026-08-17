@@ -18,6 +18,36 @@ final class DefaultNoteListViewModelSharedTests: XCTestCase {
         XCTAssertEqual(viewModel.selectedSegment, .myNotes)
     }
 
+    func testShowsSharedEmptyPlaceholderAfterEmptyReload() async {
+        let viewModel = makeViewModel()
+
+        XCTAssertFalse(viewModel.showsSharedEmptyPlaceholder)
+
+        await viewModel.reloadSharedSummaries()
+
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.showsSharedEmptyPlaceholder)
+    }
+
+    func testHidesSharedEmptyPlaceholderWhenSharedNotesExist() async {
+        let summary = SharedNoteSummary(
+            noteID: UUID(),
+            title: "Shared title",
+            updatedAt: 1_700_000_200,
+            etag: "etag",
+            ownerEmail: "owner@example.com",
+            ownerID: UUID(),
+            sharedAt: Date(timeIntervalSince1970: 1_700_000_200)
+        )
+        let noteRepository = SharedListMockNoteRepository(sharedNotes: [summary])
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.reloadSharedSummaries()
+
+        XCTAssertFalse(viewModel.showsSharedEmptyPlaceholder)
+    }
+
     func testRefreshLoadsSharedNotesWhenSharedSegmentSelected() async {
         let noteID = UUID()
         let summary = SharedNoteSummary(

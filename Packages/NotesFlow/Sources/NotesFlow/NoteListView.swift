@@ -11,7 +11,14 @@ public struct NoteListView: View {
 
     public var body: some View {
         TabView(selection: $viewModel.selectedSegment) {
-            noteList{ myNotesList }
+            noteList(
+                showsEmptyPlaceholder: viewModel.showsMyNotesEmptyPlaceholder,
+                systemImage: "list.bullet.clipboard",
+                title: NotesFlowUILocalization.localized("notes.list.empty.myNotes.title"),
+                description: NotesFlowUILocalization.localized("notes.list.empty.myNotes.message")
+            ) {
+                myNotesList
+            }
                 .tag(NoteListSegment.myNotes)
                 .tabItem {
                     #if os(iOS)
@@ -21,7 +28,14 @@ public struct NoteListView: View {
                     #endif
                 }
 
-            noteList{ sharedNotesList }
+            noteList(
+                showsEmptyPlaceholder: viewModel.showsSharedEmptyPlaceholder,
+                systemImage: "rectangle.stack.badge.person.crop",
+                title: NotesFlowUILocalization.localized("notes.list.empty.shared.title"),
+                description: NotesFlowUILocalization.localized("notes.list.empty.shared.message")
+            ) {
+                sharedNotesList
+            }
                 .tag(NoteListSegment.shared)
                 .tabItem {
                     #if os(iOS)
@@ -132,7 +146,13 @@ public struct NoteListView: View {
     }
     
     @ViewBuilder
-    private func noteList(@ViewBuilder content: () -> some View) -> some View {
+    private func noteList(
+        showsEmptyPlaceholder: Bool,
+        systemImage: String,
+        title: String,
+        description: String,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
         List {
             if viewModel.isLoading {
                 HStack {
@@ -151,6 +171,16 @@ public struct NoteListView: View {
         }
         .refreshable {
             await viewModel.refresh()
+        }
+        .overlay {
+            if showsEmptyPlaceholder {
+                EmptyPlaceholderView(
+                    systemImage: systemImage,
+                    title: title,
+                    description: description
+                )
+                .allowsHitTesting(false)
+            }
         }
     }
 

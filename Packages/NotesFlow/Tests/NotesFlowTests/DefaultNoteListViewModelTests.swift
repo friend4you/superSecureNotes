@@ -174,6 +174,79 @@ final class DefaultNoteListViewModelTests: XCTestCase {
         XCTAssertFalse(credentialStore.hasLocalSetup)
     }
 
+    func testShowsMyNotesEmptyPlaceholderAfterEmptyReload() async {
+        let viewModel = makeViewModel()
+
+        XCTAssertFalse(viewModel.showsMyNotesEmptyPlaceholder)
+
+        await viewModel.reloadSummaries()
+
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.showsMyNotesEmptyPlaceholder)
+    }
+
+    func testHidesMyNotesEmptyPlaceholderWhenNotesExist() async {
+        let noteRepository = MockNoteRepository(
+            notes: [NoteSummary(noteID: UUID(), title: "Note", updatedAt: 100, syncState: .synced)]
+        )
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+
+        await viewModel.reloadSummaries()
+
+        XCTAssertFalse(viewModel.showsMyNotesEmptyPlaceholder)
+    }
+
+    func testHidesSharedEmptyPlaceholderBeforeFirstSharedLoad() {
+        let viewModel = makeViewModel()
+
+        XCTAssertTrue(viewModel.sharedNotes.isEmpty)
+        XCTAssertFalse(viewModel.hasLoadedSharedNotes)
+        XCTAssertFalse(viewModel.showsSharedEmptyPlaceholder)
+    }
+
+    func testHidesEmptyPlaceholdersWhileLoading() async {
+        let noteSync = HangingNoteSyncService()
+        let viewModel = makeViewModel(noteSync: noteSync)
+        await viewModel.reloadSummaries()
+        XCTAssertTrue(viewModel.showsMyNotesEmptyPlaceholder)
+
+        let refreshTask = Task {
+            await viewModel.refresh()
+        }
+        var didStartFlush = false
+        for _ in 0..<100 {
+            if await noteSync.isFlushing {
+                didStartFlush = true
+                break
+            }
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertTrue(didStartFlush)
+        XCTAssertTrue(viewModel.isLoading)
+        XCTAssertFalse(viewModel.showsMyNotesEmptyPlaceholder)
+        XCTAssertFalse(viewModel.showsSharedEmptyPlaceholder)
+
+        await noteSync.resumeFlush()
+        await refreshTask.value
+    }
+
+    func testHidesEmptyPlaceholdersWhenErrorPresent() async {
+        let noteRepository = MockNoteRepository()
+        let viewModel = makeViewModel(noteRepository: noteRepository)
+        await viewModel.reloadSummaries()
+        await viewModel.reloadSharedSummaries()
+        XCTAssertTrue(viewModel.showsMyNotesEmptyPlaceholder)
+        XCTAssertTrue(viewModel.showsSharedEmptyPlaceholder)
+
+        await noteRepository.setListNotesError(NoteRepositoryError.notSupported)
+        await viewModel.reloadSummaries()
+
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.showsMyNotesEmptyPlaceholder)
+        XCTAssertFalse(viewModel.showsSharedEmptyPlaceholder)
+    }
+
     func testReloadSummariesIncludesNewNoteAfterCreate() async {
         let noteID = UUID()
         let noteRepository = MockNoteRepository(notes: [])
@@ -236,6 +309,43 @@ final class DefaultNoteListViewModelTests: XCTestCase {
     }
 }
 
+private actor HangingNoteSyncService: NoteSyncing {
+    private var flushContinuation: CheckedContinuation<Void, Never>?
+
+    var isFlushing: Bool { flushContinuation != nil }
+
+    nonisolated let syncOutcomes: AsyncStream<NoteSyncOutcome> = AsyncStream { $0.finish() }
+
+    func flushPending() async {
+        await withCheckedContinuation { continuation in
+            flushContinuation = continuation
+        }
+    }
+
+    func resumeFlush() {
+        flushContinuation?.resume()
+        flushContinuation = nil
+    }
+
+    func pullVaultHeaderIfLocalMissing() async throws -> Data? {
+        nil
+    }
+
+    func pullRemoteNotesCatalog() async throws {}
+
+    func pullCatalogIfLocalVaultMissing() async throws -> Data? {
+        nil
+    }
+
+    func uploadVaultHeaderOrThrow(_ header: Data) async throws {}
+
+    nonisolated func scheduleFlush() {
+        Task { await flushPending() }
+    }
+
+    nonisolated func scheduleVaultHeaderUpload(_ header: Data) {}
+}
+
 private actor MockNoteSyncService: NoteSyncing {
     private(set) var flushCallCount = 0
 
@@ -266,6 +376,7 @@ private actor MockNoteSyncService: NoteSyncing {
 
 private actor MockNoteRepository: NoteRepository {
     private var notes: [NoteSummary]
+    private var listNotesError: Error?
     private(set) var listNotesCallCount = 0
     private(set) var deletedNoteIDs: [UUID] = []
 
@@ -277,8 +388,15 @@ private actor MockNoteRepository: NoteRepository {
         self.notes = notes
     }
 
+    func setListNotesError(_ error: Error?) {
+        listNotesError = error
+    }
+
     func listNotes() async throws -> [NoteSummary] {
         listNotesCallCount += 1
+        if let listNotesError {
+            throw listNotesError
+        }
         return notes
     }
 

@@ -165,6 +165,35 @@ final class NoteListViewTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.openSettings()"))
     }
 
+    func testNoteListViewSourceOverlaysEmptyPlaceholderPerSegment() throws {
+        let source = try Self.noteListViewSource()
+
+        XCTAssertTrue(source.contains("EmptyPlaceholderView("))
+        XCTAssertTrue(source.contains("showsMyNotesEmptyPlaceholder"))
+        XCTAssertTrue(source.contains("showsSharedEmptyPlaceholder"))
+        XCTAssertTrue(source.contains(".overlay"))
+        XCTAssertTrue(source.contains(".allowsHitTesting(false)"))
+        XCTAssertTrue(source.contains("systemImage: \"list.bullet.clipboard\""))
+        XCTAssertTrue(source.contains("systemImage: \"rectangle.stack.badge.person.crop\""))
+        XCTAssertTrue(source.contains("notes.list.empty.myNotes.title"))
+        XCTAssertTrue(source.contains("notes.list.empty.myNotes.message"))
+        XCTAssertTrue(source.contains("notes.list.empty.shared.title"))
+        XCTAssertTrue(source.contains("notes.list.empty.shared.message"))
+    }
+
+    func testNoteListViewSourceEmptyPlaceholderIsNotInsideForEach() throws {
+        let source = try Self.noteListViewSource()
+        let myNotesSection = source
+            .components(separatedBy: "ForEach(viewModel.notes")
+            .last?
+            .components(separatedBy: "ForEach(viewModel.sharedNotes")
+            .first ?? ""
+        let sharedSection = source.components(separatedBy: "ForEach(viewModel.sharedNotes").last ?? ""
+
+        XCTAssertFalse(myNotesSection.contains("EmptyPlaceholderView"))
+        XCTAssertFalse(sharedSection.contains("EmptyPlaceholderView"))
+    }
+
     func testNoteListViewSourceDoesNotShowPlaceholderText() throws {
         let source = try Self.noteListViewSource()
 

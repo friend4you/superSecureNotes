@@ -203,6 +203,46 @@
         }
       }
     },
+    "notes.list.empty.myNotes.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your first encrypted note."
+          }
+        }
+      }
+    },
+    "notes.list.empty.myNotes.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Notes"
+          }
+        }
+      }
+    },
+    "notes.list.empty.shared.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes people share with you will show up here."
+          }
+        }
+      }
+    },
+    "notes.list.empty.shared.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Shared Notes"
+          }
+        }
+      }
+    },
     "notes.list.logout" : {
       "extractionState" : "stale",
       "localizations" : {

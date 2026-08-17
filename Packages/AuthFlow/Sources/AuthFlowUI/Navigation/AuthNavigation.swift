@@ -39,7 +39,8 @@ public enum AuthNavigation {
         UnlockView(viewModel: deps.makeUnlockViewModel())
     }
 
-    public static func settingsView(deps: any AuthFlowDependencyProviding) -> BiometricSettingsView {
+    public static func settingsView(deps: any AuthFlowDependencyProviding) -> some View {
         BiometricSettingsView(viewModel: deps.makeBiometricSettingsViewModel())
+            .presentationDetents([.medium, .large])
     }
 }

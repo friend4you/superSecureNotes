@@ -28,6 +28,21 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testNoteListEmptyLocalizationKeysExist() throws {
+        let catalog = try Self.loadStringCatalog()
+        let keys = [
+            "notes.list.empty.myNotes.title",
+            "notes.list.empty.myNotes.message",
+            "notes.list.empty.shared.title",
+            "notes.list.empty.shared.message",
+        ]
+
+        for key in keys {
+            XCTAssertNotNil(catalog.strings[key], "Missing localization key: \(key)")
+            XCTAssertFalse(catalog.strings[key]?.localizations["en"]?.stringUnit.value.isEmpty ?? true)
+        }
+    }
+
     private static func loadStringCatalog() throws -> StringCatalog {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

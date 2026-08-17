@@ -16,6 +16,10 @@ public protocol NoteListViewModel: Observable {
     var selectedSegment: NoteListSegment { get set }
     var isLoading: Bool { get }
     var errorMessage: String? { get }
+    var hasLoadedMyNotes: Bool { get }
+    var hasLoadedSharedNotes: Bool { get }
+    var showsMyNotesEmptyPlaceholder: Bool { get }
+    var showsSharedEmptyPlaceholder: Bool { get }
 
     func refresh() async
     func reloadSummaries() async
@@ -43,6 +47,16 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
     public var selectedSegment: NoteListSegment = .myNotes
     public private(set) var isLoading = false
     public private(set) var errorMessage: String?
+    public private(set) var hasLoadedMyNotes = false
+    public private(set) var hasLoadedSharedNotes = false
+
+    public var showsMyNotesEmptyPlaceholder: Bool {
+        hasLoadedMyNotes && !isLoading && errorMessage == nil && notes.isEmpty
+    }
+
+    public var showsSharedEmptyPlaceholder: Bool {
+        hasLoadedSharedNotes && !isLoading && errorMessage == nil && sharedNotes.isEmpty
+    }
 
     private let authRepository: any AuthRepository
     private let vaultSession: any VaultSessionProtocol
@@ -103,6 +117,7 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+        hasLoadedMyNotes = true
     }
 
     public func reloadSharedSummaries() async {
@@ -112,6 +127,7 @@ public final class DefaultNoteListViewModel: NoteListViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+        hasLoadedSharedNotes = true
     }
 
     private func handleSyncOutcome(_ outcome: NoteSyncOutcome) async {

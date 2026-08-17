@@ -46,6 +46,36 @@ final class AttachmentPreviewTests: XCTestCase {
         store.deletePreviewFile(at: fileURL)
     }
 
+    func testWaitUntilPreviewReadyCompletesForPlainTextFile() async throws {
+        #if !os(iOS)
+        throw XCTSkip("Preview loading is validated on iOS.")
+        #endif
+
+        let store = AttachmentPreviewStore()
+        let fileURL = try store.writePreviewFile(data: Data("preview".utf8), filename: "sample.txt")
+        defer { store.deletePreviewFile(at: fileURL) }
+
+        let started = Date()
+        await AttachmentPreviewSupport.waitUntilPreviewReady(fileURL: fileURL)
+        let elapsed = Date().timeIntervalSince(started)
+        XCTAssertLessThan(elapsed, 1.0)
+    }
+
+    func testPreviewReadinessTimeoutIsLongerForImages() throws {
+        #if os(iOS)
+        let imageTimeout = AttachmentPreviewSupport.previewReadinessTimeout(
+            for: URL(fileURLWithPath: "/tmp/photo.jpg")
+        )
+        let textTimeout = AttachmentPreviewSupport.previewReadinessTimeout(
+            for: URL(fileURLWithPath: "/tmp/notes.txt")
+        )
+        XCTAssertEqual(imageTimeout, .seconds(2))
+        XCTAssertEqual(textTimeout, .milliseconds(250))
+        #else
+        throw XCTSkip("Preview loading is validated on iOS.")
+        #endif
+    }
+
     func testFileImporterAllowsAnyItemType() {
         XCTAssertEqual(NoteAttachmentImportSupport.fileImporterAllowedTypes, [.item])
     }

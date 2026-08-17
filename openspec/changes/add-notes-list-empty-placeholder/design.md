@@ -28,7 +28,7 @@ iOS 17+ is the floor (`ContentUnavailableView` is available). List views are sou
 
 ### 1. Reusable `EmptyPlaceholderView` with three parameters
 
-Add `EmptyPlaceholderView` in `NotesFlow` taking `systemImage: String`, `title: String`, and `description: String`. Internally wrap `ContentUnavailableView(title, systemImage:description:)`. The view does not localize, know which tab it is on, or own a view model.
+Add `EmptyPlaceholderView` in `NotesFlow` taking `systemImage: String`, `title: String`, and `description: String`. Internally wrap `ContentUnavailableView` with a `Label` (verbatim title + system image) and verbatim description text. The convenience `ContentUnavailableView(_:systemImage:description:)` initializer expects `String.LocalizationValue` and would re-localize already-translated strings. The view does not localize, know which tab it is on, or own a view model.
 
 Call sites pass already-localized strings via `NotesFlowUILocalization.localized`.
 

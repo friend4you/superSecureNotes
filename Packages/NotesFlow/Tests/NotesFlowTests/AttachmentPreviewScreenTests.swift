@@ -13,6 +13,15 @@ final class AttachmentPreviewScreenTests: XCTestCase {
         XCTAssertTrue(source.contains("QuickLookPreview"))
     }
 
+    func testAttachmentPreviewScreenSourceShowsLoadingSpinnerUntilReady() throws {
+        let source = try Self.attachmentPreviewScreenSource()
+
+        XCTAssertTrue(source.contains("ProgressView"))
+        XCTAssertTrue(source.contains("common.loading"))
+        XCTAssertTrue(source.contains("isPreviewReady"))
+        XCTAssertTrue(source.contains("waitUntilPreviewReady"))
+    }
+
     private static func attachmentPreviewScreenSource() throws -> String {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
