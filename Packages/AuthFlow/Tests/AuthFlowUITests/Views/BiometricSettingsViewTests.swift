@@ -28,6 +28,14 @@ final class BiometricSettingsViewTests: XCTestCase {
         XCTAssertFalse(source.contains("#if DEBUG"))
     }
 
+    func testBiometricSettingsViewSourceShowsLoadingDuringDestructiveActions() throws {
+        let source = try Self.biometricSettingsViewSource()
+
+        XCTAssertTrue(source.contains("AuthLoadingSection()"))
+        XCTAssertTrue(source.contains("viewModel.isDeletingAccount"))
+        XCTAssertTrue(source.contains("viewModel.isLoggingOut"))
+    }
+
     func testBiometricSettingsViewSourceHasDeleteAccountFlow() throws {
         let source = try Self.biometricSettingsViewSource()
 
@@ -43,8 +51,16 @@ final class BiometricSettingsViewTests: XCTestCase {
 
         XCTAssertTrue(source.contains("bio.settings.privacyPolicy"))
         XCTAssertTrue(source.contains("AuthLegalLinks.privacyPolicyURL"))
-        XCTAssertTrue(source.contains("bio.settings.support"))
+        XCTAssertTrue(source.contains("SupportContactRow()"))
+    }
+
+    func testSupportContactRowOpensMailtoWithFallback() throws {
+        let source = try Self.supportContactRowSource()
+
         XCTAssertTrue(source.contains("AuthLegalLinks.supportEmailURL"))
+        XCTAssertTrue(source.contains("openURL(AuthLegalLinks.supportEmailURL)"))
+        XCTAssertTrue(source.contains("AuthLegalLinks.supportEmailAddress"))
+        XCTAssertTrue(source.contains("bio.settings.support.unavailable"))
     }
 
     func testToggleWiresToBiometricSettingsViewModel() throws {
@@ -74,6 +90,8 @@ final class BiometricSettingsViewTests: XCTestCase {
             "bio.settings.deleteAccount.cancel",
             "bio.settings.privacyPolicy",
             "bio.settings.support",
+            "bio.settings.support.unavailable.title",
+            "bio.settings.support.unavailable.message",
         ]
 
         for key in keys {
@@ -83,13 +101,22 @@ final class BiometricSettingsViewTests: XCTestCase {
     }
 
     private static func biometricSettingsViewSource() throws -> String {
+        try viewSource(named: "BiometricSettingsView.swift")
+    }
+
+    private static func supportContactRowSource() throws -> String {
+        try viewSource(named: "SupportContactRow.swift")
+    }
+
+    private static func viewSource(named fileName: String) throws -> String {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent() // Views
             .deletingLastPathComponent() // AuthFlowUITests
             .deletingLastPathComponent() // Tests
             .deletingLastPathComponent() // AuthFlow package root
         let sourceURL = packageRoot
-            .appendingPathComponent("Sources/AuthFlowUI/Views/BiometricSettingsView.swift")
+            .appendingPathComponent("Sources/AuthFlowUI/Views")
+            .appendingPathComponent(fileName)
         return try String(contentsOf: sourceURL, encoding: .utf8)
     }
 

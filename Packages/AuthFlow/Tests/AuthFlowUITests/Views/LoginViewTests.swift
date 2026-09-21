@@ -17,6 +17,12 @@ final class LoginViewTests: XCTestCase {
         XCTAssertFalse(source.contains(".sheet"))
     }
 
+    func testLoginViewShowsLoadingIndicatorDuringRequest() throws {
+        let source = try Self.viewSource(named: "LoginView.swift")
+        XCTAssertTrue(source.contains("AuthLoadingSection()"))
+        XCTAssertTrue(source.contains("viewModel.state == .loading"))
+    }
+
     private static func viewSource(named fileName: String) throws -> String {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

@@ -190,6 +190,7 @@ public struct NoteDetailView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
         NoteDetailView(
@@ -201,75 +202,5 @@ public struct NoteDetailView: View {
             )
         )
     }
-}
-
-#if DEBUG
-import AuthRepositoryProtocol
-import CryptoKit
-import NavigationProtocol
-import NoteRepositoryProtocol
-import SecureCrypto
-import VaultSessionProtocol
-
-private actor PreviewNoteRepository: NoteRepository {
-    func listNotes() async throws -> [NoteSummary] { [] }
-    func readNote(noteID: UUID) async throws -> StoredNote {
-        StoredNote(
-            metadata: NoteMetadata(
-                noteID: noteID,
-                title: "",
-                createdAt: 0,
-                updatedAt: 0,
-                attachmentCount: 0,
-                attachmentsTotalSize: 0
-            ),
-            wrappedFEK: Data(),
-            encryptedPayload: Data([0x01]),
-            syncState: .pendingSync
-        )
-    }
-    func writeNote(_ note: StoredNote) async throws {}
-    func deleteNote(noteID: UUID) async throws {}
-
-    func shareNote(noteID: UUID, recipientEmail: String, wrappedFEK: Data) async throws {
-        _ = noteID
-        _ = recipientEmail
-        _ = wrappedFEK
-        throw NoteRepositoryError.notSupported
-    }
-
-    func listSharedNotes() async throws -> [SharedNoteSummary] {
-        []
-    }
-
-    func readSharedNote(noteID: UUID) async throws -> SharedNote {
-        _ = noteID
-        throw NoteRepositoryError.notSupported
-    }
-
-    func deleteSharedNote(noteID: UUID) async throws {
-        _ = noteID
-        throw NoteRepositoryError.notSupported
-    }
-
-}
-
-private actor PreviewVaultSession: VaultSessionProtocol {
-    var isActive: Bool { false }
-    nonisolated var changes: AsyncStream<Bool> { AsyncStream { $0.finish() } }
-    func establish(_ keys: VaultSessionKeys) {}
-    func clear() {}
-    func udk() throws -> SymmetricKey { .init(size: .bits256) }
-    func identityPrivateKey() throws -> Data { Data() }
-}
-
-@MainActor
-private final class PreviewNavigator: Navigating {
-    func setRoot<R: Route>(_ route: R) {}
-    func push<R: Route>(_ route: R) {}
-    func present<R: Route>(_ route: R, style: RoutePresentation) {}
-    func pop() {}
-    func popToRoot() {}
-    func dismissPresentation() {}
 }
 #endif

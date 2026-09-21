@@ -11,6 +11,9 @@ public struct UnlockView: View {
     public var body: some View {
         Form {
             credentialsSection
+            if showsLoadingIndicator {
+                AuthLoadingSection()
+            }
             errorSection
             actionsSection
         }
@@ -34,6 +37,7 @@ public struct UnlockView: View {
                     text: $viewModel.password
                 )
                 .textContentType(.password)
+                .disabled(viewModel.state == .loading || viewModel.isLoggingOut)
             }
         }
     }
@@ -57,7 +61,7 @@ public struct UnlockView: View {
                         await viewModel.unlockWithPassword()
                     }
                 }
-                .disabled(viewModel.state == .loading)
+                .disabled(viewModel.state == .loading || viewModel.isLoggingOut)
             }
 
             if showsBiometricRetry {
@@ -66,6 +70,7 @@ public struct UnlockView: View {
                         await viewModel.retryBiometrics()
                     }
                 }
+                .disabled(viewModel.state == .loading || viewModel.isLoggingOut)
             }
 
             Button(String(localized: "unlock.logout", bundle: .module), role: .destructive) {
@@ -73,8 +78,14 @@ public struct UnlockView: View {
                     await viewModel.logout()
                 }
             }
-            .disabled(viewModel.state == .loading)
+            .disabled(viewModel.state == .loading || viewModel.isLoggingOut)
         }
+    }
+
+    private var showsLoadingIndicator: Bool {
+        viewModel.state == .loading
+            || viewModel.state == .awaitingPresence
+            || viewModel.isLoggingOut
     }
 
     private var showsPasswordField: Bool {

@@ -21,6 +21,12 @@ final class RegisterViewTests: XCTestCase {
         XCTAssertTrue(source.contains("AuthLegalLinks.privacyPolicyURL"))
     }
 
+    func testRegisterViewShowsLoadingIndicatorDuringRequest() throws {
+        let source = try Self.viewSource(named: "RegisterView.swift")
+        XCTAssertTrue(source.contains("AuthLoadingSection()"))
+        XCTAssertTrue(source.contains("viewModel.state == .loading"))
+    }
+
     private static func viewSource(named fileName: String) throws -> String {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

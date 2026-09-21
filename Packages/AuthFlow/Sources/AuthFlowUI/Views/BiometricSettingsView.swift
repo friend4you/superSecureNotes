@@ -12,6 +12,10 @@ public struct BiometricSettingsView: View {
     public var body: some View {
         NavigationStack {
             Form {
+                if viewModel.isDeletingAccount || viewModel.isLoggingOut {
+                    AuthLoadingSection()
+                }
+
                 Toggle(
                     String(localized: "bio.settings.toggle", bundle: .module),
                     isOn: Binding(
@@ -40,10 +44,7 @@ public struct BiometricSettingsView: View {
                         String(localized: "bio.settings.privacyPolicy", bundle: .module),
                         destination: AuthLegalLinks.privacyPolicyURL
                     )
-                    Link(
-                        String(localized: "bio.settings.support", bundle: .module),
-                        destination: AuthLegalLinks.supportEmailURL
-                    )
+                    SupportContactRow()
                 }
 
                 if viewModel.isDeleteAccountFlowActive {
@@ -84,6 +85,7 @@ public struct BiometricSettingsView: View {
                             await viewModel.logout()
                         }
                     }
+                    .disabled(viewModel.isLoggingOut || viewModel.isDeletingAccount)
                 }
             }
             .navigationTitle(String(localized: "bio.settings.title", bundle: .module))

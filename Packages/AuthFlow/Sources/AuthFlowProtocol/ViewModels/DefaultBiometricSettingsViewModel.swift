@@ -12,6 +12,7 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
     public var password = ""
     public private(set) var isDeleteAccountFlowActive = false
     public private(set) var isDeletingAccount = false
+    public private(set) var isLoggingOut = false
     public var deleteAccountPassword = ""
     public private(set) var deleteAccountError: AuthFlowError?
 
@@ -111,6 +112,8 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
     }
 
     public func logout() async {
+        isLoggingOut = true
+        defer { isLoggingOut = false }
         await performLogout()
     }
 

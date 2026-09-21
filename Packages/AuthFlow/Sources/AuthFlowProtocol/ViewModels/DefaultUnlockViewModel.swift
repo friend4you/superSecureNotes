@@ -10,6 +10,7 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
     public private(set) var email: String
     public var password = ""
     public private(set) var state: UnlockFormState = .awaitingPresence
+    public private(set) var isLoggingOut = false
 
     private let unlockUseCase: any UnlockUseCase
     private let biometricUnlockUseCase: any BiometricUnlockUseCase
@@ -42,6 +43,8 @@ public final class DefaultUnlockViewModel: UnlockViewModel {
     }
 
     public func logout() async {
+        isLoggingOut = true
+        defer { isLoggingOut = false }
         await performLogout()
     }
 

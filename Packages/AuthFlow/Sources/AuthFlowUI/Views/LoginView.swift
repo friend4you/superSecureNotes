@@ -11,6 +11,9 @@ public struct LoginView: View {
     public var body: some View {
         Form {
             credentialsSection
+            if viewModel.state == .loading {
+                AuthLoadingSection()
+            }
             errorSection
             actionsSection
         }
@@ -28,6 +31,7 @@ public struct LoginView: View {
                 text: $viewModel.email
             )
             .textContentType(.emailAddress)
+            .disabled(viewModel.state == .loading)
             #if os(iOS)
             .textInputAutocapitalization(.never)
             .keyboardType(.emailAddress)
@@ -38,6 +42,7 @@ public struct LoginView: View {
                 text: $viewModel.password
             )
             .textContentType(.password)
+            .disabled(viewModel.state == .loading)
         }
     }
 
@@ -64,6 +69,7 @@ public struct LoginView: View {
             Button(String(localized: "login.registerLink", bundle: .module)) {
                 viewModel.registerTapped()
             }
+            .disabled(viewModel.state == .loading)
         }
     }
 }

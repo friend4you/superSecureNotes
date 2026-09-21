@@ -11,6 +11,9 @@ public struct RegisterView: View {
     public var body: some View {
         Form {
             credentialsSection
+            if viewModel.state == .loading {
+                AuthLoadingSection()
+            }
             privacySection
             errorSection
             actionsSection
@@ -26,6 +29,7 @@ public struct RegisterView: View {
                 text: $viewModel.email
             )
             .textContentType(.emailAddress)
+            .disabled(viewModel.state == .loading)
             #if os(iOS)
             .textInputAutocapitalization(.never)
             .keyboardType(.emailAddress)
@@ -36,6 +40,7 @@ public struct RegisterView: View {
                 text: $viewModel.password
             )
             .textContentType(.newPassword)
+            .disabled(viewModel.state == .loading)
         }
     }
 
