@@ -87,6 +87,13 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
         )
     }()
 
+    private lazy var deleteAccountUseCase: DefaultDeleteAccountUseCase = {
+        DefaultDeleteAccountUseCase(
+            authRepository: authRepository,
+            performFullReset: performLogout
+        )
+    }()
+
     public init(
         authRepository: any AuthRepository,
         vaultRepository: any VaultRepository,
@@ -166,6 +173,7 @@ public final class AuthFlowDependencies: AuthFlowDependencyProviding {
             credentialStore: credentialStore,
             sessionPasswordCache: sessionPasswordCache,
             navigator: navigator,
+            deleteAccountUseCase: deleteAccountUseCase,
             performLogout: performLogout
         )
     }

@@ -50,6 +50,17 @@ public actor NetworkAuthRepository: AuthRepository {
         clear()
     }
 
+    public func deleteAccount(password: String) async throws {
+        guard let session else {
+            throw AuthRepositoryError.notAuthenticated
+        }
+        guard !password.isEmpty else {
+            throw AuthRepositoryError.validationError("Password must not be empty.")
+        }
+        try await apiClient.deleteAccount(accessToken: session.accessToken, password: password)
+        clear()
+    }
+
     public func refreshSession() async throws -> AuthSession {
         guard let session else {
             throw AuthRepositoryError.notAuthenticated

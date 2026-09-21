@@ -252,7 +252,9 @@ actor MockAuthRepository: AuthRepository {
     var loginCallCount = 0
     var registerCallCount = 0
     var logoutCallCount = 0
+    var deleteAccountCallCount = 0
     var clearSessionCallCount = 0
+    var deleteAccountError: AuthRepositoryError?
     var loginError: AuthRepositoryError?
     var registerError: AuthRepositoryError?
     var restoreError: AuthRepositoryError?
@@ -326,6 +328,19 @@ actor MockAuthRepository: AuthRepository {
 
     func logout() async throws {
         logoutCallCount += 1
+        session = nil
+        user = nil
+    }
+
+    func setDeleteAccountError(_ error: AuthRepositoryError?) {
+        deleteAccountError = error
+    }
+
+    func deleteAccount(password: String) async throws {
+        deleteAccountCallCount += 1
+        if let deleteAccountError {
+            throw deleteAccountError
+        }
         session = nil
         user = nil
     }

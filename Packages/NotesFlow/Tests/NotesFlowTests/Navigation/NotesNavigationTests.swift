@@ -85,6 +85,7 @@ private actor MockAuthRepository: AuthRepository {
         AuthSession(accessToken: "", refreshToken: "", expiresAt: .distantFuture)
     }
     func logout() async throws {}
+    func deleteAccount(password: String) async throws {}
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }

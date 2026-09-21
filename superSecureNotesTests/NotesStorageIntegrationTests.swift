@@ -179,6 +179,7 @@ private actor TestAuthRepository: AuthRepository {
     }
 
     func logout() async throws {}
+    func deleteAccount(password: String) async throws {}
     func refreshSession() async throws -> AuthSession {
         throw AuthRepositoryError.notAuthenticated
     }

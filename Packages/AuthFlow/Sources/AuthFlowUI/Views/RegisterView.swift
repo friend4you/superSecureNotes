@@ -11,6 +11,7 @@ public struct RegisterView: View {
     public var body: some View {
         Form {
             credentialsSection
+            privacySection
             errorSection
             actionsSection
         }
@@ -35,6 +36,16 @@ public struct RegisterView: View {
                 text: $viewModel.password
             )
             .textContentType(.newPassword)
+        }
+    }
+
+    @ViewBuilder
+    private var privacySection: some View {
+        Section {
+            Link(
+                String(localized: "register.privacyPolicy", bundle: .module),
+                destination: AuthLegalLinks.privacyPolicyURL
+            )
         }
     }
 

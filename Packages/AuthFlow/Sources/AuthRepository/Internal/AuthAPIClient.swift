@@ -40,6 +40,16 @@ struct AuthAPIClient {
         _ = try await perform(request, expectedSuccessCodes: [204])
     }
 
+    func deleteAccount(accessToken: String, password: String) async throws {
+        var request = try makeRequest(
+            path: "auth/delete-account",
+            method: "POST",
+            body: PasswordRequest(password: password)
+        )
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        _ = try await perform(request, expectedSuccessCodes: [200, 204])
+    }
+
     func refresh(refreshToken: String) async throws -> AuthSession {
         let request = try makeRequest(
             path: "auth/refresh",
@@ -52,6 +62,10 @@ struct AuthAPIClient {
     }
 
     private struct EmptyBody: Encodable {}
+
+    private struct PasswordRequest: Encodable {
+        let password: String
+    }
 
     private func makeRequest<B: Encodable>(
         path: String,

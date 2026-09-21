@@ -1,18 +1,16 @@
+import AuthFlowDomain
+import AuthFlowDomainProtocol
 import AuthFlowProtocol
+import AuthRepositoryProtocol
 import XCTest
 
 @MainActor
 final class BiometricSettingsViewModelTests: XCTestCase {
     func testLogoutCallsPerformLogout() async {
         var logoutCallCount = 0
-        let viewModel = DefaultBiometricSettingsViewModel(
-            credentialStore: MockCredentialStore(),
-            sessionPasswordCache: SessionPasswordCache(),
-            navigator: MockNavigating(),
-            performLogout: {
-                logoutCallCount += 1
-            }
-        )
+        let viewModel = makeViewModel(performLogout: {
+            logoutCallCount += 1
+        })
 
         await viewModel.logout()
 
@@ -21,12 +19,7 @@ final class BiometricSettingsViewModelTests: XCTestCase {
 
     func testDismissCallsNavigatorDismissPresentation() {
         let navigator = MockNavigating()
-        let viewModel = DefaultBiometricSettingsViewModel(
-            credentialStore: MockCredentialStore(),
-            sessionPasswordCache: SessionPasswordCache(),
-            navigator: navigator,
-            performLogout: {}
-        )
+        let viewModel = makeViewModel(navigator: navigator)
 
         viewModel.dismiss()
 
@@ -36,11 +29,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
     func testEnablingRequiresPasswordConfirmationWhenCacheEmpty() async {
         let credentialStore = MockCredentialStore()
         let sessionPasswordCache = SessionPasswordCache()
-        let viewModel = DefaultBiometricSettingsViewModel(
+        let viewModel = makeViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache,
-            navigator: MockNavigating(),
-            performLogout: {}
+            sessionPasswordCache: sessionPasswordCache
         )
 
         await viewModel.enableBiometrics()
@@ -54,11 +45,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
         let credentialStore = MockCredentialStore()
         let sessionPasswordCache = SessionPasswordCache()
         sessionPasswordCache.store("secret")
-        let viewModel = DefaultBiometricSettingsViewModel(
+        let viewModel = makeViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache,
-            navigator: MockNavigating(),
-            performLogout: {}
+            sessionPasswordCache: sessionPasswordCache
         )
 
         await viewModel.enableBiometrics()
@@ -72,11 +61,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
     func testEnableBiometricsWithPasswordFallback() async throws {
         let credentialStore = MockCredentialStore()
         let sessionPasswordCache = SessionPasswordCache()
-        let viewModel = DefaultBiometricSettingsViewModel(
+        let viewModel = makeViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache,
-            navigator: MockNavigating(),
-            performLogout: {}
+            sessionPasswordCache: sessionPasswordCache
         )
         viewModel.password = "secret"
 
@@ -95,11 +82,9 @@ final class BiometricSettingsViewModelTests: XCTestCase {
         try credentialStore.setBioEnabled(true)
         try credentialStore.savePassword("secret")
 
-        let viewModel = DefaultBiometricSettingsViewModel(
+        let viewModel = makeViewModel(
             credentialStore: credentialStore,
-            sessionPasswordCache: sessionPasswordCache,
-            navigator: MockNavigating(),
-            performLogout: {}
+            sessionPasswordCache: sessionPasswordCache
         )
         XCTAssertTrue(viewModel.isBiometricsEnabled)
 
@@ -108,5 +93,76 @@ final class BiometricSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isBiometricsEnabled)
         XCTAssertFalse(credentialStore.bioEnabled())
         XCTAssertThrowsError(try credentialStore.loadPasswordWithBiometrics())
+    }
+
+    func testBeginDeleteAccountActivatesPasswordFlow() {
+        let viewModel = makeViewModel()
+
+        viewModel.beginDeleteAccount()
+
+        XCTAssertTrue(viewModel.isDeleteAccountFlowActive)
+        XCTAssertEqual(viewModel.deleteAccountPassword, "")
+        XCTAssertNil(viewModel.deleteAccountError)
+    }
+
+    func testDeleteAccountCallsUseCaseWithPassword() async throws {
+        let authRepository = MockAuthRepository()
+        var resetCallCount = 0
+        let useCase = DefaultDeleteAccountUseCase(
+            authRepository: authRepository,
+            performFullReset: { resetCallCount += 1 }
+        )
+        let viewModel = makeViewModel(deleteAccountUseCase: useCase)
+        viewModel.beginDeleteAccount()
+        viewModel.deleteAccountPassword = "secret-password"
+
+        await viewModel.deleteAccount()
+
+        let deleteCallCount = await authRepository.deleteAccountCallCount
+        XCTAssertEqual(deleteCallCount, 1)
+        XCTAssertEqual(resetCallCount, 1)
+        XCTAssertFalse(viewModel.isDeleteAccountFlowActive)
+        XCTAssertNil(viewModel.deleteAccountError)
+    }
+
+    func testFailedDeleteAccountPreservesFlowAndSurfacesError() async {
+        let authRepository = MockAuthRepository()
+        await authRepository.setDeleteAccountError(.invalidCredentials)
+        var resetCallCount = 0
+        let useCase = DefaultDeleteAccountUseCase(
+            authRepository: authRepository,
+            performFullReset: { resetCallCount += 1 }
+        )
+        let viewModel = makeViewModel(deleteAccountUseCase: useCase)
+        viewModel.beginDeleteAccount()
+        viewModel.deleteAccountPassword = "wrong-password"
+
+        await viewModel.deleteAccount()
+
+        XCTAssertEqual(resetCallCount, 0)
+        XCTAssertTrue(viewModel.isDeleteAccountFlowActive)
+        XCTAssertEqual(viewModel.deleteAccountError, .invalidCredentials)
+    }
+
+    private func makeViewModel(
+        credentialStore: MockCredentialStore? = nil,
+        sessionPasswordCache: SessionPasswordCache? = nil,
+        navigator: MockNavigating? = nil,
+        deleteAccountUseCase: (any DeleteAccountUseCase)? = nil,
+        performLogout: @escaping () async -> Void = {}
+    ) -> DefaultBiometricSettingsViewModel {
+        let credentialStore = credentialStore ?? MockCredentialStore()
+        let sessionPasswordCache = sessionPasswordCache ?? SessionPasswordCache()
+        let navigator = navigator ?? MockNavigating()
+        return DefaultBiometricSettingsViewModel(
+            credentialStore: credentialStore,
+            sessionPasswordCache: sessionPasswordCache,
+            navigator: navigator,
+            deleteAccountUseCase: deleteAccountUseCase ?? DefaultDeleteAccountUseCase(
+                authRepository: MockAuthRepository(),
+                performFullReset: {}
+            ),
+            performLogout: performLogout
+        )
     }
 }

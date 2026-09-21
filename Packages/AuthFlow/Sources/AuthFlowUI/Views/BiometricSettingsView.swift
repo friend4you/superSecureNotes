@@ -3,6 +3,7 @@ import SwiftUI
 
 public struct BiometricSettingsView: View {
     @Bindable private var viewModel: DefaultBiometricSettingsViewModel
+    @State private var showDeleteConfirmation = false
 
     public init(viewModel: DefaultBiometricSettingsViewModel) {
         self.viewModel = viewModel
@@ -35,6 +36,49 @@ public struct BiometricSettingsView: View {
                 }
 
                 Section {
+                    Link(
+                        String(localized: "bio.settings.privacyPolicy", bundle: .module),
+                        destination: AuthLegalLinks.privacyPolicyURL
+                    )
+                    Link(
+                        String(localized: "bio.settings.support", bundle: .module),
+                        destination: AuthLegalLinks.supportEmailURL
+                    )
+                }
+
+                if viewModel.isDeleteAccountFlowActive {
+                    Section {
+                        Text(String(localized: "bio.settings.deleteAccount.message", bundle: .module))
+                            .foregroundStyle(.secondary)
+                        SecureField(
+                            String(localized: "bio.settings.deleteAccount.password", bundle: .module),
+                            text: $viewModel.deleteAccountPassword
+                        )
+                        if let deleteAccountError = viewModel.deleteAccountError {
+                            Text(AuthFlowErrorText.localized(deleteAccountError))
+                                .foregroundStyle(.red)
+                        }
+                        Button(
+                            String(localized: "bio.settings.deleteAccount.confirmButton", bundle: .module),
+                            role: .destructive
+                        ) {
+                            Task {
+                                await viewModel.deleteAccount()
+                            }
+                        }
+                        .disabled(viewModel.isDeletingAccount)
+                        Button(String(localized: "bio.settings.deleteAccount.cancel", bundle: .module)) {
+                            viewModel.cancelDeleteAccount()
+                        }
+                    }
+                }
+
+                Section {
+                    Button(String(localized: "bio.settings.deleteAccount", bundle: .module), role: .destructive) {
+                        showDeleteConfirmation = true
+                    }
+                    .disabled(viewModel.isDeleteAccountFlowActive)
+
                     Button(String(localized: "bio.settings.logout", bundle: .module), role: .destructive) {
                         Task {
                             await viewModel.logout()
@@ -49,6 +93,19 @@ public struct BiometricSettingsView: View {
                         viewModel.dismiss()
                     }
                 }
+            }
+            .confirmationDialog(
+                String(localized: "bio.settings.deleteAccount.confirm", bundle: .module),
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(
+                    String(localized: "bio.settings.deleteAccount.confirmButton", bundle: .module),
+                    role: .destructive
+                ) {
+                    viewModel.beginDeleteAccount()
+                }
+                Button(String(localized: "bio.settings.deleteAccount.cancel", bundle: .module), role: .cancel) {}
             }
         }
     }

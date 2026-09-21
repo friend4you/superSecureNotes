@@ -317,6 +317,7 @@ private actor MockAuthRepository: AuthRepository {
     func logout() async throws {
         session = nil
     }
+    func deleteAccount(password: String) async throws {}
 
     func refreshSession() async throws -> AuthSession {
         guard let session else {

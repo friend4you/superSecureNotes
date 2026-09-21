@@ -7,6 +7,7 @@ public protocol AuthRepository: Sendable {
     func register(_ credentials: RegisterCredentials) async throws -> AuthSession
     func login(_ credentials: LoginCredentials) async throws -> AuthSession
     func logout() async throws
+    func deleteAccount(password: String) async throws
     func refreshSession() async throws -> AuthSession
     func restoreSession(refreshToken: String) async throws -> AuthSession
     func clearSession() async

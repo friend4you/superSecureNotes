@@ -10,8 +10,11 @@ import XCTest
 
 @MainActor
 final class AppDependenciesTests: XCTestCase {
-    func testUsesLocalhostAPIBaseURL() {
-        XCTAssertEqual(AppDependencies.apiBaseURL.absoluteString, "http://localhost:8000/v1")
+    func testUsesProductionAPIBaseURL() {
+        XCTAssertEqual(
+            AppDependencies.apiBaseURL.absoluteString,
+            "https://super-secure-notes-api.onrender.com/v1"
+        )
     }
 
     func testUsesNetworkAuthRepository() async {

@@ -10,21 +10,28 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
     public private(set) var isBiometricsEnabled: Bool
     public private(set) var requiresPasswordConfirmation = false
     public var password = ""
+    public private(set) var isDeleteAccountFlowActive = false
+    public private(set) var isDeletingAccount = false
+    public var deleteAccountPassword = ""
+    public private(set) var deleteAccountError: AuthFlowError?
 
     private let credentialStore: any CredentialStore
     private let sessionPasswordCache: any SessionPasswordCaching
     private let navigator: any Navigating
+    private let deleteAccountUseCase: any DeleteAccountUseCase
     private let performLogout: () async -> Void
 
     public init(
         credentialStore: any CredentialStore,
         sessionPasswordCache: any SessionPasswordCaching,
         navigator: any Navigating,
+        deleteAccountUseCase: any DeleteAccountUseCase,
         performLogout: @escaping () async -> Void
     ) {
         self.credentialStore = credentialStore
         self.sessionPasswordCache = sessionPasswordCache
         self.navigator = navigator
+        self.deleteAccountUseCase = deleteAccountUseCase
         self.performLogout = performLogout
         self.isBiometricsEnabled = credentialStore.bioEnabled()
     }
@@ -67,6 +74,39 @@ public final class DefaultBiometricSettingsViewModel: BiometricSettingsViewModel
             requiresPasswordConfirmation = false
         } catch {
             requiresPasswordConfirmation = false
+        }
+    }
+
+    public func beginDeleteAccount() {
+        isDeleteAccountFlowActive = true
+        deleteAccountPassword = ""
+        deleteAccountError = nil
+    }
+
+    public func cancelDeleteAccount() {
+        isDeleteAccountFlowActive = false
+        deleteAccountPassword = ""
+        deleteAccountError = nil
+    }
+
+    public func deleteAccount() async {
+        guard !deleteAccountPassword.isEmpty else {
+            deleteAccountError = .validationError(nil)
+            return
+        }
+
+        isDeletingAccount = true
+        deleteAccountError = nil
+        defer { isDeletingAccount = false }
+
+        do {
+            try await deleteAccountUseCase.execute(password: deleteAccountPassword)
+            isDeleteAccountFlowActive = false
+            deleteAccountPassword = ""
+        } catch let error as AuthFlowError {
+            deleteAccountError = error
+        } catch {
+            deleteAccountError = .unknown
         }
     }
 

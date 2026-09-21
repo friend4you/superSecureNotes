@@ -58,6 +58,11 @@ private actor MockAuthRepository: AuthRepository {
         user = nil
     }
 
+    func deleteAccount(password: String) async throws {
+        session = nil
+        user = nil
+    }
+
     func refreshSession() async throws -> AuthSession {
         guard let session else {
             throw AuthRepositoryError.notAuthenticated

@@ -14,7 +14,7 @@ import VaultSession
 
 @MainActor
 final class AppDependencies {
-    static let apiBaseURL = URL(string: "https://super-secure-notes-api.onrender.com")!
+    static let apiBaseURL = URL(string: "https://super-secure-notes-api.onrender.com/v1")!
 
     let notesIndexStore: NotesIndexStore
     let localNoteRepository: LocalNoteRepository

@@ -28,6 +28,25 @@ final class BiometricSettingsViewTests: XCTestCase {
         XCTAssertFalse(source.contains("#if DEBUG"))
     }
 
+    func testBiometricSettingsViewSourceHasDeleteAccountFlow() throws {
+        let source = try Self.biometricSettingsViewSource()
+
+        XCTAssertTrue(source.contains("bio.settings.deleteAccount"))
+        XCTAssertTrue(source.contains("viewModel.beginDeleteAccount()"))
+        XCTAssertTrue(source.contains("viewModel.deleteAccount()"))
+        XCTAssertTrue(source.contains("confirmationDialog"))
+        XCTAssertTrue(source.contains("bio.settings.deleteAccount.password"))
+    }
+
+    func testBiometricSettingsViewSourceHasLegalAndSupportLinks() throws {
+        let source = try Self.biometricSettingsViewSource()
+
+        XCTAssertTrue(source.contains("bio.settings.privacyPolicy"))
+        XCTAssertTrue(source.contains("AuthLegalLinks.privacyPolicyURL"))
+        XCTAssertTrue(source.contains("bio.settings.support"))
+        XCTAssertTrue(source.contains("AuthLegalLinks.supportEmailURL"))
+    }
+
     func testToggleWiresToBiometricSettingsViewModel() throws {
         let source = try Self.biometricSettingsViewSource()
 
@@ -47,6 +66,14 @@ final class BiometricSettingsViewTests: XCTestCase {
             "bio.settings.password",
             "bio.settings.done",
             "bio.settings.logout",
+            "bio.settings.deleteAccount",
+            "bio.settings.deleteAccount.confirm",
+            "bio.settings.deleteAccount.message",
+            "bio.settings.deleteAccount.password",
+            "bio.settings.deleteAccount.confirmButton",
+            "bio.settings.deleteAccount.cancel",
+            "bio.settings.privacyPolicy",
+            "bio.settings.support",
         ]
 
         for key in keys {

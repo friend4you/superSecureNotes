@@ -13,6 +13,14 @@ final class RegisterViewTests: XCTestCase {
         XCTAssertFalse(source.contains(".sheet"))
     }
 
+    func testRegisterViewContainsPrivacyPolicyLink() throws {
+        let source = try Self.viewSource(named: "RegisterView.swift")
+
+        XCTAssertTrue(source.contains("privacySection"))
+        XCTAssertTrue(source.contains("register.privacyPolicy"))
+        XCTAssertTrue(source.contains("AuthLegalLinks.privacyPolicyURL"))
+    }
+
     private static func viewSource(named fileName: String) throws -> String {
         let packageRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
